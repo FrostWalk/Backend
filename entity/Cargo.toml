@@ -1,0 +1,14 @@
+[package]
+name = "entity"
+version = "0.1.0"
+edition = "2021"
+publish = false
+authors = ["Federico Frigerio"]
+
+[lib]
+name = "entity"
+path = "src/lib.rs"
+
+[dependencies]
+sea-orm = "1.0.1"
+serde = { version = "1.0.210", features = ["derive"] }
