@@ -1620,10 +1620,12 @@ name = "market"
 version = "0.1.0"
 dependencies = [
  "actix-web",
+ "entity",
  "env_logger",
  "figment",
  "lazy_static",
  "log",
+ "migration",
  "sea-orm",
  "serde",
  "serde_json",

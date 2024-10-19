@@ -6,7 +6,7 @@ publish = false
 authors = ["Federico Frigerio"]
 
 [lib]
-name = "entities"
+name = "entity"
 path = "src/lib.rs"
 
 [dependencies]
