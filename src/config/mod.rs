@@ -1,6 +1,9 @@
 use std::sync::{Arc, RwLock};
 
-use figment::{providers::{Env, Format, Toml}, Figment};
+use figment::{
+    providers::{Env, Format, Toml},
+    Figment,
+};
 use lazy_static::lazy_static;
 use serde::Deserialize;
 
@@ -9,7 +12,6 @@ pub(crate) struct MarketConfig {
     address: String,
     port: u16,
     workers: usize,
-
 }
 lazy_static! {
     static ref CONFIG: Arc<RwLock<MarketConfig>> = Arc::new(RwLock::new(MarketConfig::load()));
@@ -20,7 +22,8 @@ impl MarketConfig {
         Figment::new()
             .merge(Env::prefixed("MARKET_"))
             .merge(Toml::file("config.toml"))
-            .extract().expect("Failed to load configuration")
+            .extract()
+            .expect("Failed to load configuration")
     }
 
     pub(crate) fn address() -> String {
