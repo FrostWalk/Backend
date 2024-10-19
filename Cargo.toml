@@ -14,6 +14,8 @@ sea-orm = { version = "1.0.1", features = ["sqlx-postgres", "runtime-tokio-rustl
 serde = { version = "1.0.203", features = ["derive"] }
 serde_json = "1.0.120"
 tokio = { version = "1.40.0", features = ["full"] }
+entity = { path = "entity" }
+migration = { path = "migration" }
 
 [workspace]
-members = [".", "entities", "migrations"]
+members = [".", "entity", "migration"]

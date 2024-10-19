@@ -6,7 +6,7 @@ publish = false
 authors = ["Federico Frigerio"]
 
 [lib]
-name = "migrations"
+name = "migration"
 path = "src/lib.rs"
 
 [dependencies]
