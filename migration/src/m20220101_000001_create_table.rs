@@ -190,7 +190,7 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(
                         ColumnDef::new(Roles::Id)
-                            .big_integer()
+                            .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
@@ -211,40 +211,40 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        // Roles ParentRoles table
+        // RolesHierarchy table
         manager
             .create_table(
                 Table::create()
-                    .table(RolesParentRoles::Table)
+                    .table(RolesHierarchy::Table)
                     .if_not_exists()
                     .col(
-                        ColumnDef::new(RolesParentRoles::RoleId)
-                            .big_integer()
+                        ColumnDef::new(RolesHierarchy::RoleId)
+                            .integer()
                             .not_null()
                             .unique_key(),
                     )
                     .col(
-                        ColumnDef::new(RolesParentRoles::ParentId)
-                            .big_integer()
+                        ColumnDef::new(RolesHierarchy::ParentId)
+                            .integer()
                             .not_null()
                             .default(1),
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .from(Roles::Table, Roles::Id)
-                            .to(RolesParentRoles::Table, RolesParentRoles::RoleId)
+                            .from(RolesHierarchy::Table, RolesHierarchy::RoleId)
+                            .to(Roles::Table, Roles::Id)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .from(Roles::Table, Roles::Id)
-                            .to(RolesParentRoles::Table, RolesParentRoles::ParentId)
+                            .to(Roles::Table, Roles::Id)
+                            .from(RolesHierarchy::Table, RolesHierarchy::ParentId)
                             .on_delete(ForeignKeyAction::SetDefault),
                     )
                     .primary_key(
                         Index::create()
-                            .col(RolesParentRoles::RoleId)
-                            .col(RolesParentRoles::ParentId),
+                            .col(RolesHierarchy::RoleId)
+                            .col(RolesHierarchy::ParentId),
                     )
                     .to_owned(),
             )
@@ -378,6 +378,13 @@ impl MigrationTrait for Migration {
                     .table(GroupsAndProjectComponents::Table)
                     .if_not_exists()
                     .col(
+                        ColumnDef::new(GroupsAndProjectComponents::Id)
+                            .big_integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
+                    .col(
                         ColumnDef::new(GroupsAndProjectComponents::GroupId)
                             .big_integer()
                             .not_null(),
@@ -436,6 +443,13 @@ impl MigrationTrait for Migration {
                     .table(StudentsAndGroups::Table)
                     .if_not_exists()
                     .col(
+                        ColumnDef::new(StudentsAndGroups::Id)
+                            .big_integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
+                    .col(
                         ColumnDef::new(StudentsAndGroups::GroupId)
                             .big_integer()
                             .not_null(),
@@ -480,6 +494,13 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(UsersProjectsRoles::Table)
                     .if_not_exists()
+                    .col(
+                        ColumnDef::new(UsersProjectsRoles::Id)
+                            .big_integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
                     .col(
                         ColumnDef::new(UsersProjectsRoles::UserId)
                             .big_integer()
@@ -647,6 +668,13 @@ impl MigrationTrait for Migration {
                     .table(StudentsIndividualWork::Table)
                     .if_not_exists()
                     .col(
+                        ColumnDef::new(StudentsIndividualWork::Id)
+                            .big_integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
+                    .col(
                         ColumnDef::new(StudentsIndividualWork::UserId)
                             .big_integer()
                             .not_null(),
@@ -708,6 +736,13 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(Complaints::Table)
                     .if_not_exists()
+                    .col(
+                        ColumnDef::new(Complaints::Id)
+                            .big_integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
                     .col(
                         ColumnDef::new(Complaints::FromGroupId)
                             .big_integer()
@@ -810,6 +845,10 @@ impl MigrationTrait for Migration {
             .await?;
 
         manager
+            .drop_table(Table::drop().table(RolesHierarchy::Table).to_owned())
+            .await?;
+
+        manager
             .drop_table(Table::drop().table(Roles::Table).to_owned())
             .await?;
 
@@ -877,7 +916,7 @@ pub enum Roles {
 }
 
 #[derive(Iden)]
-pub enum RolesParentRoles {
+pub enum RolesHierarchy {
     Table,
     RoleId,
     ParentId,
@@ -911,6 +950,7 @@ pub enum Groups {
 #[derive(Iden)]
 pub enum GroupsAndProjectComponents {
     Table,
+    Id,
     GroupId,
     ComponentId,
     CustomName,
@@ -922,6 +962,7 @@ pub enum GroupsAndProjectComponents {
 #[derive(Iden)]
 pub enum StudentsAndGroups {
     Table,
+    Id,
     GroupId,
     UserId,
     IsRetired,
@@ -930,6 +971,7 @@ pub enum StudentsAndGroups {
 #[derive(Iden)]
 pub enum UsersProjectsRoles {
     Table,
+    Id,
     UserId,
     ProjectId,
     RoleId,
@@ -957,6 +999,7 @@ pub enum IndividualWorkOptions {
 #[derive(Iden)]
 pub enum StudentsIndividualWork {
     Table,
+    Id,
     UserId,
     IndividualWorkOptionId,
     FileName,
@@ -967,6 +1010,7 @@ pub enum StudentsIndividualWork {
 #[derive(Iden)]
 pub enum Complaints {
     Table,
+    Id,
     FromGroupId,
     ToGroupId,
     ComplainText,

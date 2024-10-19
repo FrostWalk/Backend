@@ -8,9 +8,9 @@ mod config;
 async fn main() -> std::io::Result<()> {
     MarketConfig::load();
 
-    HttpServer::new(|| {
-        App::new()
-    }).workers(MarketConfig::workers())
+    HttpServer::new(|| App::new())
+        .workers(MarketConfig::workers())
         .bind((MarketConfig::address(), MarketConfig::port()))?
-        .run().await
+        .run()
+        .await
 }
