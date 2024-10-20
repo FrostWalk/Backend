@@ -227,7 +227,7 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(RolesHierarchy::ParentId)
                             .integer()
                             .not_null()
-                            .default(1),
+                            .default(2),
                     )
                     .foreign_key(
                         ForeignKey::create()
