@@ -16,13 +16,7 @@ pub struct Model {
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(
-        belongs_to = "super::courses::Entity",
-        from = "Column::CourseId",
-        to = "super::courses::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
+    #[sea_orm(belongs_to = "super::courses::Entity", from = "Column::CourseId", to = "super::courses::Column::Id", on_update = "NoAction", on_delete = "Cascade")]
     Courses,
     #[sea_orm(has_many = "super::groups::Entity")]
     Groups,

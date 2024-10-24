@@ -7,8 +7,9 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "project_options")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: i64,
-    pub name: Option<String>,
+    pub id: i32,
+    #[sea_orm(unique)]
+    pub name: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

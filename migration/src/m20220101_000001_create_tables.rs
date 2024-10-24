@@ -11,19 +11,8 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(Courses::Table)
                     .if_not_exists()
-                    .col(
-                        ColumnDef::new(Courses::Id)
-                            .big_integer()
-                            .not_null()
-                            .auto_increment()
-                            .primary_key(),
-                    )
-                    .col(
-                        ColumnDef::new(Courses::Name)
-                            .string()
-                            .not_null()
-                            .unique_key(),
-                    )
+                    .col(ColumnDef::new(Courses::Id).big_integer().not_null().auto_increment().primary_key())
+                    .col(ColumnDef::new(Courses::Name).string().not_null().unique_key())
                     .to_owned(),
             )
             .await?;
@@ -33,21 +22,11 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(Projects::Table)
                     .if_not_exists()
-                    .col(
-                        ColumnDef::new(Projects::Id)
-                            .big_integer()
-                            .not_null()
-                            .auto_increment()
-                            .primary_key(),
-                    )
+                    .col(ColumnDef::new(Projects::Id).big_integer().not_null().auto_increment().primary_key())
                     .col(ColumnDef::new(Projects::CourseId).big_integer().not_null())
                     .col(ColumnDef::new(Projects::Name).string().not_null())
                     .col(ColumnDef::new(Projects::Year).tiny_unsigned().not_null())
-                    .col(
-                        ColumnDef::new(Projects::MaxGroupSize)
-                            .tiny_unsigned()
-                            .not_null(),
-                    )
+                    .col(ColumnDef::new(Projects::MaxGroupSize).tiny_unsigned().not_null())
                     .foreign_key(
                         ForeignKey::create()
                             .from(Projects::Table, Projects::CourseId)
@@ -70,41 +49,17 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        manager
-            .create_index(
-                Index::create()
-                    .table(Projects::Table)
-                    .col((Projects::Year, IndexOrder::Desc))
-                    .to_owned(),
-            )
-            .await?;
+        manager.create_index(Index::create().table(Projects::Table).col((Projects::Year, IndexOrder::Desc)).to_owned()).await?;
 
-        manager
-            .create_index(
-                Index::create()
-                    .table(Projects::Table)
-                    .col(Projects::CourseId)
-                    .to_owned(),
-            )
-            .await?;
+        manager.create_index(Index::create().table(Projects::Table).col(Projects::CourseId).to_owned()).await?;
 
         manager
             .create_table(
                 Table::create()
                     .table(ProjectComponents::Table)
                     .if_not_exists()
-                    .col(
-                        ColumnDef::new(ProjectComponents::Id)
-                            .big_integer()
-                            .not_null()
-                            .auto_increment()
-                            .primary_key(),
-                    )
-                    .col(
-                        ColumnDef::new(ProjectComponents::ProjectId)
-                            .big_integer()
-                            .not_null(),
-                    )
+                    .col(ColumnDef::new(ProjectComponents::Id).big_integer().not_null().auto_increment().primary_key())
+                    .col(ColumnDef::new(ProjectComponents::ProjectId).big_integer().not_null())
                     .col(ColumnDef::new(ProjectComponents::Name).string().not_null())
                     .foreign_key(
                         ForeignKey::create()
@@ -132,21 +87,10 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(Users::Table)
                     .if_not_exists()
-                    .col(
-                        ColumnDef::new(Users::Id)
-                            .big_integer()
-                            .not_null()
-                            .auto_increment()
-                            .primary_key(),
-                    )
+                    .col(ColumnDef::new(Users::Id).big_integer().not_null().auto_increment().primary_key())
                     .col(ColumnDef::new(Users::Name).string().not_null())
                     .col(ColumnDef::new(Users::Surname).string().not_null())
-                    .col(
-                        ColumnDef::new(Users::Email)
-                            .string()
-                            .not_null()
-                            .unique_key(),
-                    )
+                    .col(ColumnDef::new(Users::Email).string().not_null().unique_key())
                     .col(ColumnDef::new(Users::PasswordHash).blob().not_null())
                     .col(ColumnDef::new(Users::Salt).blob().not_null())
                     .col(ColumnDef::new(Users::TelegramNick).string().null())
@@ -154,33 +98,11 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        manager
-            .create_index(
-                Index::create()
-                    .table(Users::Table)
-                    .col(Users::Name)
-                    .to_owned(),
-            )
-            .await?;
+        manager.create_index(Index::create().table(Users::Table).col(Users::Name).to_owned()).await?;
 
-        manager
-            .create_index(
-                Index::create()
-                    .table(Users::Table)
-                    .col(Users::Surname)
-                    .to_owned(),
-            )
-            .await?;
+        manager.create_index(Index::create().table(Users::Table).col(Users::Surname).to_owned()).await?;
 
-        manager
-            .create_index(
-                Index::create()
-                    .table(Users::Table)
-                    .col(Users::Email)
-                    .unique()
-                    .to_owned(),
-            )
-            .await?;
+        manager.create_index(Index::create().table(Users::Table).col(Users::Email).unique().to_owned()).await?;
 
         // Roles table
         manager
@@ -188,28 +110,14 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(Roles::Table)
                     .if_not_exists()
-                    .col(
-                        ColumnDef::new(Roles::Id)
-                            .integer()
-                            .not_null()
-                            .auto_increment()
-                            .primary_key(),
-                    )
+                    .col(ColumnDef::new(Roles::Id).integer().not_null().auto_increment().primary_key())
                     .col(ColumnDef::new(Roles::Name).string().not_null().unique_key())
                     .col(ColumnDef::new(Roles::IsAuxiliary).boolean().default(true))
                     .to_owned(),
             )
             .await?;
 
-        manager
-            .create_index(
-                Index::create()
-                    .table(Roles::Table)
-                    .col(Roles::Name)
-                    .unique()
-                    .to_owned(),
-            )
-            .await?;
+        manager.create_index(Index::create().table(Roles::Table).col(Roles::Name).unique().to_owned()).await?;
 
         // RolesHierarchy table
         manager
@@ -217,18 +125,8 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(RolesHierarchy::Table)
                     .if_not_exists()
-                    .col(
-                        ColumnDef::new(RolesHierarchy::RoleId)
-                            .integer()
-                            .not_null()
-                            .unique_key(),
-                    )
-                    .col(
-                        ColumnDef::new(RolesHierarchy::ParentId)
-                            .integer()
-                            .not_null()
-                            .default(2),
-                    )
+                    .col(ColumnDef::new(RolesHierarchy::RoleId).integer().not_null().unique_key())
+                    .col(ColumnDef::new(RolesHierarchy::ParentId).integer().not_null().default(2))
                     .foreign_key(
                         ForeignKey::create()
                             .from(RolesHierarchy::Table, RolesHierarchy::RoleId)
@@ -241,11 +139,7 @@ impl MigrationTrait for Migration {
                             .from(RolesHierarchy::Table, RolesHierarchy::ParentId)
                             .on_delete(ForeignKeyAction::SetDefault),
                     )
-                    .primary_key(
-                        Index::create()
-                            .col(RolesHierarchy::RoleId)
-                            .col(RolesHierarchy::ParentId),
-                    )
+                    .primary_key(Index::create().col(RolesHierarchy::RoleId).col(RolesHierarchy::ParentId))
                     .to_owned(),
             )
             .await?;
@@ -256,17 +150,13 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(ProjectOptions::Table)
                     .if_not_exists()
-                    .col(
-                        ColumnDef::new(ProjectOptions::Id)
-                            .big_integer()
-                            .not_null()
-                            .auto_increment()
-                            .primary_key(),
-                    )
-                    .col(ColumnDef::new(ProjectOptions::Name).string().null())
+                    .col(ColumnDef::new(ProjectOptions::Id).integer().not_null().auto_increment().primary_key())
+                    .col(ColumnDef::new(ProjectOptions::Name).string().not_null())
                     .to_owned(),
             )
             .await?;
+
+        manager.create_index(Index::create().table(ProjectOptions::Table).col(ProjectOptions::Name).unique().to_owned()).await?;
 
         // OptionsComponentsAndQuantity table
         manager
@@ -274,44 +164,19 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(OptionsComponentsAndQuantity::Table)
                     .if_not_exists()
-                    .col(
-                        ColumnDef::new(OptionsComponentsAndQuantity::Id)
-                            .big_integer()
-                            .not_null()
-                            .auto_increment()
-                            .primary_key(),
-                    )
-                    .col(
-                        ColumnDef::new(OptionsComponentsAndQuantity::OptionId)
-                            .big_integer()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(OptionsComponentsAndQuantity::ComponentId)
-                            .big_integer()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(OptionsComponentsAndQuantity::Quantity)
-                            .tiny_unsigned()
-                            .not_null()
-                            .default(1),
-                    )
+                    .col(ColumnDef::new(OptionsComponentsAndQuantity::Id).big_integer().not_null().auto_increment().primary_key())
+                    .col(ColumnDef::new(OptionsComponentsAndQuantity::OptionId).big_integer().not_null())
+                    .col(ColumnDef::new(OptionsComponentsAndQuantity::ComponentId).big_integer().not_null())
+                    .col(ColumnDef::new(OptionsComponentsAndQuantity::Quantity).tiny_unsigned().not_null().default(1))
                     .foreign_key(
                         ForeignKey::create()
-                            .from(
-                                OptionsComponentsAndQuantity::Table,
-                                OptionsComponentsAndQuantity::OptionId,
-                            )
+                            .from(OptionsComponentsAndQuantity::Table, OptionsComponentsAndQuantity::OptionId)
                             .to(ProjectOptions::Table, ProjectOptions::Id)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .from(
-                                OptionsComponentsAndQuantity::Table,
-                                OptionsComponentsAndQuantity::ComponentId,
-                            )
+                            .from(OptionsComponentsAndQuantity::Table, OptionsComponentsAndQuantity::ComponentId)
                             .to(ProjectComponents::Table, ProjectComponents::Id)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
@@ -335,13 +200,7 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(Groups::Table)
                     .if_not_exists()
-                    .col(
-                        ColumnDef::new(Groups::Id)
-                            .big_integer()
-                            .not_null()
-                            .auto_increment()
-                            .primary_key(),
-                    )
+                    .col(ColumnDef::new(Groups::Id).big_integer().not_null().auto_increment().primary_key())
                     .col(ColumnDef::new(Groups::Name).string().not_null())
                     .col(ColumnDef::new(Groups::OptionId).big_integer().not_null())
                     .col(ColumnDef::new(Groups::ProjectId).big_integer().not_null())
@@ -362,14 +221,7 @@ impl MigrationTrait for Migration {
             .await?;
 
         manager
-            .create_index(
-                Index::create()
-                    .table(Groups::Table)
-                    .col(Groups::Name)
-                    .col(Groups::ProjectId)
-                    .unique()
-                    .to_owned(),
-            )
+            .create_index(Index::create().table(Groups::Table).col(Groups::Name).col(Groups::ProjectId).unique().to_owned())
             .await?;
 
         manager
@@ -377,59 +229,22 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(GroupsAndProjectComponents::Table)
                     .if_not_exists()
-                    .col(
-                        ColumnDef::new(GroupsAndProjectComponents::Id)
-                            .big_integer()
-                            .not_null()
-                            .auto_increment()
-                            .primary_key(),
-                    )
-                    .col(
-                        ColumnDef::new(GroupsAndProjectComponents::GroupId)
-                            .big_integer()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(GroupsAndProjectComponents::ComponentId)
-                            .big_integer()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(GroupsAndProjectComponents::CustomName)
-                            .string()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(GroupsAndProjectComponents::FlyerName)
-                            .string()
-                            .null(),
-                    )
-                    .col(
-                        ColumnDef::new(GroupsAndProjectComponents::CodeLink)
-                            .text()
-                            .null(),
-                    )
-                    .col(
-                        ColumnDef::new(GroupsAndProjectComponents::TelegramSupportLink)
-                            .text()
-                            .null()
-                            .unique_key(),
-                    )
+                    .col(ColumnDef::new(GroupsAndProjectComponents::Id).big_integer().not_null().auto_increment().primary_key())
+                    .col(ColumnDef::new(GroupsAndProjectComponents::GroupId).big_integer().not_null())
+                    .col(ColumnDef::new(GroupsAndProjectComponents::ComponentId).big_integer().not_null())
+                    .col(ColumnDef::new(GroupsAndProjectComponents::CustomName).string().not_null())
+                    .col(ColumnDef::new(GroupsAndProjectComponents::FlyerName).string().null())
+                    .col(ColumnDef::new(GroupsAndProjectComponents::CodeLink).text().null())
+                    .col(ColumnDef::new(GroupsAndProjectComponents::TelegramSupportLink).text().null().unique_key())
                     .foreign_key(
                         ForeignKey::create()
-                            .from(
-                                GroupsAndProjectComponents::Table,
-                                GroupsAndProjectComponents::GroupId,
-                            )
+                            .from(GroupsAndProjectComponents::Table, GroupsAndProjectComponents::GroupId)
                             .to(Groups::Table, Groups::Id)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .from(
-                                GroupsAndProjectComponents::Table,
-                                GroupsAndProjectComponents::ComponentId,
-                            )
+                            .from(GroupsAndProjectComponents::Table, GroupsAndProjectComponents::ComponentId)
                             .to(ProjectComponents::Table, ProjectComponents::Id)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
@@ -442,28 +257,10 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(StudentsAndGroups::Table)
                     .if_not_exists()
-                    .col(
-                        ColumnDef::new(StudentsAndGroups::Id)
-                            .big_integer()
-                            .not_null()
-                            .auto_increment()
-                            .primary_key(),
-                    )
-                    .col(
-                        ColumnDef::new(StudentsAndGroups::GroupId)
-                            .big_integer()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(StudentsAndGroups::UserId)
-                            .big_integer()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(StudentsAndGroups::IsRetired)
-                            .boolean()
-                            .default(false),
-                    )
+                    .col(ColumnDef::new(StudentsAndGroups::Id).big_integer().not_null().auto_increment().primary_key())
+                    .col(ColumnDef::new(StudentsAndGroups::GroupId).big_integer().not_null())
+                    .col(ColumnDef::new(StudentsAndGroups::UserId).big_integer().not_null())
+                    .col(ColumnDef::new(StudentsAndGroups::IsRetired).boolean().default(false))
                     .foreign_key(
                         ForeignKey::create()
                             .from(StudentsAndGroups::Table, StudentsAndGroups::GroupId)
@@ -480,42 +277,17 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        manager
-            .create_index(
-                Index::create()
-                    .table(StudentsAndGroups::Table)
-                    .col(StudentsAndGroups::GroupId)
-                    .to_owned(),
-            )
-            .await?;
+        manager.create_index(Index::create().table(StudentsAndGroups::Table).col(StudentsAndGroups::GroupId).to_owned()).await?;
 
         manager
             .create_table(
                 Table::create()
                     .table(UsersProjectsRoles::Table)
                     .if_not_exists()
-                    .col(
-                        ColumnDef::new(UsersProjectsRoles::Id)
-                            .big_integer()
-                            .not_null()
-                            .auto_increment()
-                            .primary_key(),
-                    )
-                    .col(
-                        ColumnDef::new(UsersProjectsRoles::UserId)
-                            .big_integer()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(UsersProjectsRoles::ProjectId)
-                            .big_integer()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(UsersProjectsRoles::RoleId)
-                            .big_integer()
-                            .not_null(),
-                    )
+                    .col(ColumnDef::new(UsersProjectsRoles::Id).big_integer().not_null().auto_increment().primary_key())
+                    .col(ColumnDef::new(UsersProjectsRoles::UserId).big_integer().not_null())
+                    .col(ColumnDef::new(UsersProjectsRoles::ProjectId).big_integer().not_null())
+                    .col(ColumnDef::new(UsersProjectsRoles::RoleId).big_integer().not_null())
                     .foreign_key(
                         ForeignKey::create()
                             .from(UsersProjectsRoles::Table, UsersProjectsRoles::UserId)
@@ -555,34 +327,11 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(SecurityCodes::Table)
                     .if_not_exists()
-                    .col(
-                        ColumnDef::new(SecurityCodes::Id)
-                            .big_integer()
-                            .not_null()
-                            .auto_increment()
-                            .primary_key(),
-                    )
-                    .col(
-                        ColumnDef::new(SecurityCodes::GroupId)
-                            .big_integer()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(SecurityCodes::ProjectId)
-                            .big_integer()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(SecurityCodes::SecurityCodeHash)
-                            .binary()
-                            .not_null()
-                            .unique_key(),
-                    )
-                    .col(
-                        ColumnDef::new(SecurityCodes::RoleId)
-                            .big_integer()
-                            .not_null(),
-                    )
+                    .col(ColumnDef::new(SecurityCodes::Id).big_integer().not_null().auto_increment().primary_key())
+                    .col(ColumnDef::new(SecurityCodes::GroupId).big_integer().not_null())
+                    .col(ColumnDef::new(SecurityCodes::ProjectId).big_integer().not_null())
+                    .col(ColumnDef::new(SecurityCodes::SecurityCodeHash).binary().not_null().unique_key())
+                    .col(ColumnDef::new(SecurityCodes::RoleId).big_integer().not_null())
                     .col(ColumnDef::new(SecurityCodes::ValidUntil).date().not_null())
                     .foreign_key(
                         ForeignKey::create()
@@ -607,13 +356,7 @@ impl MigrationTrait for Migration {
             .await?;
 
         manager
-            .create_index(
-                Index::create()
-                    .table(SecurityCodes::Table)
-                    .col(SecurityCodes::SecurityCodeHash)
-                    .unique()
-                    .to_owned(),
-            )
+            .create_index(Index::create().table(SecurityCodes::Table).col(SecurityCodes::SecurityCodeHash).unique().to_owned())
             .await?;
 
         // IndividualWorkOptions table
@@ -622,29 +365,12 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(IndividualWorkOptions::Table)
                     .if_not_exists()
-                    .col(
-                        ColumnDef::new(IndividualWorkOptions::Id)
-                            .big_integer()
-                            .not_null()
-                            .auto_increment()
-                            .primary_key(),
-                    )
-                    .col(
-                        ColumnDef::new(IndividualWorkOptions::ProjectId)
-                            .big_integer()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(IndividualWorkOptions::Name)
-                            .string()
-                            .not_null(),
-                    )
+                    .col(ColumnDef::new(IndividualWorkOptions::Id).big_integer().not_null().auto_increment().primary_key())
+                    .col(ColumnDef::new(IndividualWorkOptions::ProjectId).big_integer().not_null())
+                    .col(ColumnDef::new(IndividualWorkOptions::Name).string().not_null())
                     .foreign_key(
                         ForeignKey::create()
-                            .from(
-                                IndividualWorkOptions::Table,
-                                IndividualWorkOptions::ProjectId,
-                            )
+                            .from(IndividualWorkOptions::Table, IndividualWorkOptions::ProjectId)
                             .to(Projects::Table, Projects::Id)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
@@ -653,12 +379,7 @@ impl MigrationTrait for Migration {
             .await?;
 
         manager
-            .create_index(
-                Index::create()
-                    .table(IndividualWorkOptions::Table)
-                    .col(IndividualWorkOptions::ProjectId)
-                    .to_owned(),
-            )
+            .create_index(Index::create().table(IndividualWorkOptions::Table).col(IndividualWorkOptions::ProjectId).to_owned())
             .await?;
 
         // StudentsIndividualWork table
@@ -667,53 +388,21 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(StudentsIndividualWork::Table)
                     .if_not_exists()
-                    .col(
-                        ColumnDef::new(StudentsIndividualWork::Id)
-                            .big_integer()
-                            .not_null()
-                            .auto_increment()
-                            .primary_key(),
-                    )
-                    .col(
-                        ColumnDef::new(StudentsIndividualWork::UserId)
-                            .big_integer()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(StudentsIndividualWork::IndividualWorkOptionId)
-                            .big_integer()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(StudentsIndividualWork::FileName)
-                            .string()
-                            .null(),
-                    )
-                    .col(
-                        ColumnDef::new(StudentsIndividualWork::FileHash)
-                            .binary()
-                            .null(),
-                    )
-                    .col(
-                        ColumnDef::new(StudentsIndividualWork::DateOfUpload)
-                            .date()
-                            .null(),
-                    )
+                    .col(ColumnDef::new(StudentsIndividualWork::Id).big_integer().not_null().auto_increment().primary_key())
+                    .col(ColumnDef::new(StudentsIndividualWork::UserId).big_integer().not_null())
+                    .col(ColumnDef::new(StudentsIndividualWork::IndividualWorkOptionId).big_integer().not_null())
+                    .col(ColumnDef::new(StudentsIndividualWork::FileName).string().null())
+                    .col(ColumnDef::new(StudentsIndividualWork::FileHash).binary().null())
+                    .col(ColumnDef::new(StudentsIndividualWork::DateOfUpload).date().null())
                     .foreign_key(
                         ForeignKey::create()
-                            .from(
-                                StudentsIndividualWork::Table,
-                                StudentsIndividualWork::UserId,
-                            )
+                            .from(StudentsIndividualWork::Table, StudentsIndividualWork::UserId)
                             .to(Users::Table, Users::Id)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .from(
-                                StudentsIndividualWork::Table,
-                                StudentsIndividualWork::IndividualWorkOptionId,
-                            )
+                            .from(StudentsIndividualWork::Table, StudentsIndividualWork::IndividualWorkOptionId)
                             .to(IndividualWorkOptions::Table, IndividualWorkOptions::Id)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
@@ -722,12 +411,7 @@ impl MigrationTrait for Migration {
             .await?;
 
         manager
-            .create_index(
-                Index::create()
-                    .table(StudentsIndividualWork::Table)
-                    .col(StudentsIndividualWork::UserId)
-                    .to_owned(),
-            )
+            .create_index(Index::create().table(StudentsIndividualWork::Table).col(StudentsIndividualWork::UserId).to_owned())
             .await?;
 
         // Complaints table
@@ -736,23 +420,9 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(Complaints::Table)
                     .if_not_exists()
-                    .col(
-                        ColumnDef::new(Complaints::Id)
-                            .big_integer()
-                            .not_null()
-                            .auto_increment()
-                            .primary_key(),
-                    )
-                    .col(
-                        ColumnDef::new(Complaints::FromGroupId)
-                            .big_integer()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(Complaints::ToGroupId)
-                            .big_integer()
-                            .not_null(),
-                    )
+                    .col(ColumnDef::new(Complaints::Id).big_integer().not_null().auto_increment().primary_key())
+                    .col(ColumnDef::new(Complaints::FromGroupId).big_integer().not_null())
+                    .col(ColumnDef::new(Complaints::ToGroupId).big_integer().not_null())
                     .col(ColumnDef::new(Complaints::ComplainText).text().not_null())
                     .col(ColumnDef::new(Complaints::DateOfCreation).date().not_null())
                     .foreign_key(
@@ -771,102 +441,44 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        manager
-            .create_index(
-                Index::create()
-                    .table(Complaints::Table)
-                    .col(Complaints::ToGroupId)
-                    .to_owned(),
-            )
-            .await?;
+        manager.create_index(Index::create().table(Complaints::Table).col(Complaints::ToGroupId).to_owned()).await?;
 
-        manager
-            .create_index(
-                Index::create()
-                    .table(Complaints::Table)
-                    .col(Complaints::FromGroupId)
-                    .to_owned(),
-            )
-            .await
+        manager.create_index(Index::create().table(Complaints::Table).col(Complaints::FromGroupId).to_owned()).await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         // Drop tables in reverse order of creation
-        manager
-            .drop_table(Table::drop().table(Complaints::Table).to_owned())
-            .await?;
+        manager.drop_table(Table::drop().table(Complaints::Table).to_owned()).await?;
 
-        manager
-            .drop_table(
-                Table::drop()
-                    .table(StudentsIndividualWork::Table)
-                    .to_owned(),
-            )
-            .await?;
+        manager.drop_table(Table::drop().table(StudentsIndividualWork::Table).to_owned()).await?;
 
-        manager
-            .drop_table(Table::drop().table(IndividualWorkOptions::Table).to_owned())
-            .await?;
+        manager.drop_table(Table::drop().table(IndividualWorkOptions::Table).to_owned()).await?;
 
-        manager
-            .drop_table(Table::drop().table(SecurityCodes::Table).to_owned())
-            .await?;
+        manager.drop_table(Table::drop().table(SecurityCodes::Table).to_owned()).await?;
 
-        manager
-            .drop_table(Table::drop().table(UsersProjectsRoles::Table).to_owned())
-            .await?;
+        manager.drop_table(Table::drop().table(UsersProjectsRoles::Table).to_owned()).await?;
 
-        manager
-            .drop_table(Table::drop().table(StudentsAndGroups::Table).to_owned())
-            .await?;
+        manager.drop_table(Table::drop().table(StudentsAndGroups::Table).to_owned()).await?;
 
-        manager
-            .drop_table(
-                Table::drop()
-                    .table(GroupsAndProjectComponents::Table)
-                    .to_owned(),
-            )
-            .await?;
+        manager.drop_table(Table::drop().table(GroupsAndProjectComponents::Table).to_owned()).await?;
 
-        manager
-            .drop_table(Table::drop().table(Groups::Table).to_owned())
-            .await?;
+        manager.drop_table(Table::drop().table(Groups::Table).to_owned()).await?;
 
-        manager
-            .drop_table(
-                Table::drop()
-                    .table(OptionsComponentsAndQuantity::Table)
-                    .to_owned(),
-            )
-            .await?;
+        manager.drop_table(Table::drop().table(OptionsComponentsAndQuantity::Table).to_owned()).await?;
 
-        manager
-            .drop_table(Table::drop().table(ProjectOptions::Table).to_owned())
-            .await?;
+        manager.drop_table(Table::drop().table(ProjectOptions::Table).to_owned()).await?;
 
-        manager
-            .drop_table(Table::drop().table(RolesHierarchy::Table).to_owned())
-            .await?;
+        manager.drop_table(Table::drop().table(RolesHierarchy::Table).to_owned()).await?;
 
-        manager
-            .drop_table(Table::drop().table(Roles::Table).to_owned())
-            .await?;
+        manager.drop_table(Table::drop().table(Roles::Table).to_owned()).await?;
 
-        manager
-            .drop_table(Table::drop().table(Users::Table).to_owned())
-            .await?;
+        manager.drop_table(Table::drop().table(Users::Table).to_owned()).await?;
 
-        manager
-            .drop_table(Table::drop().table(ProjectComponents::Table).to_owned())
-            .await?;
+        manager.drop_table(Table::drop().table(ProjectComponents::Table).to_owned()).await?;
 
-        manager
-            .drop_table(Table::drop().table(Projects::Table).to_owned())
-            .await?;
+        manager.drop_table(Table::drop().table(Projects::Table).to_owned()).await?;
 
-        manager
-            .drop_table(Table::drop().table(Courses::Table).to_owned())
-            .await
+        manager.drop_table(Table::drop().table(Courses::Table).to_owned()).await
     }
 }
 

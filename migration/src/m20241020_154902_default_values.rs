@@ -44,8 +44,6 @@ impl MigrationTrait for Migration {
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager
-            .truncate_table(Table::truncate().table(RolesHierarchy::Table).to_owned())
-            .await
+        manager.truncate_table(Table::truncate().table(RolesHierarchy::Table).to_owned()).await
     }
 }

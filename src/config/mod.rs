@@ -12,6 +12,7 @@ pub(crate) struct MarketConfig {
     address: String,
     port: u16,
     workers: usize,
+    db_url: String,
 }
 lazy_static! {
     static ref CONFIG: Arc<RwLock<MarketConfig>> = Arc::new(RwLock::new(MarketConfig::load()));
@@ -36,5 +37,8 @@ impl MarketConfig {
 
     pub(crate) fn workers() -> usize {
         CONFIG.read().expect(LOCK_ERROR).workers
+    }
+    pub(crate) fn db_url() -> String {
+        CONFIG.read().expect(LOCK_ERROR).db_url.clone()
     }
 }

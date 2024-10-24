@@ -18,13 +18,7 @@ pub enum Relation {
     GroupsAndProjectComponents,
     #[sea_orm(has_many = "super::options_components_and_quantity::Entity")]
     OptionsComponentsAndQuantity,
-    #[sea_orm(
-        belongs_to = "super::projects::Entity",
-        from = "Column::ProjectId",
-        to = "super::projects::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
+    #[sea_orm(belongs_to = "super::projects::Entity", from = "Column::ProjectId", to = "super::projects::Column::Id", on_update = "NoAction", on_delete = "Cascade")]
     Projects,
 }
 

@@ -14,21 +14,9 @@ pub struct Model {
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(
-        belongs_to = "super::roles::Entity",
-        from = "Column::ParentId",
-        to = "super::roles::Column::Id",
-        on_update = "NoAction",
-        on_delete = "SetDefault"
-    )]
+    #[sea_orm(belongs_to = "super::roles::Entity", from = "Column::ParentId", to = "super::roles::Column::Id", on_update = "NoAction", on_delete = "SetDefault")]
     Roles2,
-    #[sea_orm(
-        belongs_to = "super::roles::Entity",
-        from = "Column::RoleId",
-        to = "super::roles::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
+    #[sea_orm(belongs_to = "super::roles::Entity", from = "Column::RoleId", to = "super::roles::Column::Id", on_update = "NoAction", on_delete = "Cascade")]
     Roles1,
 }
 
