@@ -17,21 +17,9 @@ pub struct Model {
 pub enum Relation {
     #[sea_orm(has_many = "super::groups_and_project_components::Entity")]
     GroupsAndProjectComponents,
-    #[sea_orm(
-        belongs_to = "super::project_options::Entity",
-        from = "Column::OptionId",
-        to = "super::project_options::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
+    #[sea_orm(belongs_to = "super::project_options::Entity", from = "Column::OptionId", to = "super::project_options::Column::Id", on_update = "NoAction", on_delete = "Cascade")]
     ProjectOptions,
-    #[sea_orm(
-        belongs_to = "super::projects::Entity",
-        from = "Column::ProjectId",
-        to = "super::projects::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
+    #[sea_orm(belongs_to = "super::projects::Entity", from = "Column::ProjectId", to = "super::projects::Column::Id", on_update = "NoAction", on_delete = "Cascade")]
     Projects,
     #[sea_orm(has_many = "super::security_codes::Entity")]
     SecurityCodes,
