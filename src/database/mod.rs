@@ -1,8 +1,8 @@
-mod complaints_repository;
-mod courses_repository;
-mod groups_repository;
-mod project_options_repository;
-mod projects_repository;
-mod roles_repository;
-mod security_codes_repository;
-mod users_repository;
+pub(crate) mod complaints_repository;
+pub(crate) mod courses_repository;
+pub(crate) mod groups_repository;
+pub(crate) mod project_options_repository;
+pub(crate) mod projects_repository;
+pub(crate) mod roles_repository;
+pub(crate) mod security_codes_repository;
+pub(crate) mod users_repository;
