@@ -29,15 +29,15 @@ mod tests {
             id: Set(1),
             name: Set("Option A".to_owned()),
         })
-        .await
-        .unwrap();
+            .await
+            .unwrap();
 
         repo.create(ProjectOptionsActiveModel {
             id: Set(2),
             name: Set("Option B".to_owned()),
         })
-        .await
-        .unwrap();
+            .await
+            .unwrap();
 
         // Execute the test
         let result = repo.get_all().await.unwrap();
@@ -57,8 +57,8 @@ mod tests {
             id: Set(1),
             name: Set("Option A".to_owned()),
         })
-        .await
-        .unwrap();
+            .await
+            .unwrap();
 
         let result = repo.get_from_name("Option A").await.unwrap();
         assert!(result.is_some());
@@ -76,8 +76,8 @@ mod tests {
             id: Set(1),
             name: Set("Option A".to_owned()),
         })
-        .await
-        .unwrap();
+            .await
+            .unwrap();
 
         let result = repo.get_from_id(1).await.unwrap();
         assert!(result.is_some());
@@ -154,8 +154,8 @@ mod tests {
             id: Set(1),
             name: Set("Option A".to_owned()),
         })
-        .await
-        .unwrap();
+            .await
+            .unwrap();
 
         let updated_model = ProjectOptionsActiveModel {
             id: Set(1),
@@ -177,8 +177,8 @@ mod tests {
             id: Set(1),
             name: Set("Option A".to_owned()),
         })
-        .await
-        .unwrap();
+            .await
+            .unwrap();
 
         let result = repo.delete_by_id(1).await.unwrap();
         assert_eq!(result.rows_affected, 1);
