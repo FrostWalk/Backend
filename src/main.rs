@@ -9,7 +9,7 @@ mod api;
 mod app_state;
 mod config;
 mod database;
-mod tests;
+mod test;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
