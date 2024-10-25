@@ -1,7 +1,17 @@
-use derive_new::new;
+use crate::database::complaints_repository::ComplaintsRepository;
+use crate::database::project_options_repository::ProjectOptionsRepository;
 use sea_orm::DatabaseConnection;
 
-#[derive(new)]
 pub(crate) struct AppState {
-    pub(crate) db_connection: DatabaseConnection,
+    pub(crate) project_options_repository: ProjectOptionsRepository,
+    pub(crate) complaints_repository: ComplaintsRepository,
+}
+
+impl AppState {
+    pub(crate) fn new(db_conn: DatabaseConnection) -> Self {
+        Self {
+            project_options_repository: ProjectOptionsRepository::new(db_conn.clone()),
+            complaints_repository: ComplaintsRepository::new(db_conn.clone()),
+        }
+    }
 }

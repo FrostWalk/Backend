@@ -4,7 +4,7 @@ use entity::project_options;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, DeleteResult, EntityTrait, InsertResult, QueryFilter, QueryOrder};
 
 #[derive(new)]
-pub struct ProjectOptionsRepository {
+pub(crate) struct ProjectOptionsRepository {
     db_conn: DatabaseConnection,
 }
 
