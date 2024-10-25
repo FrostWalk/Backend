@@ -4,7 +4,7 @@ mod tests {
     use entity::prelude::ProjectOptions;
     use entity::project_options::ActiveModel as ProjectOptionsActiveModel;
     use sea_orm::ActiveValue::Set;
-    use sea_orm::{Database, DatabaseConnection, EntityTrait};
+    use sea_orm::{Database, DatabaseConnection, EntityTrait, NotSet, SqlErr};
     use std::env;
 
     // Helper function to establish a connection to the test database
@@ -121,6 +121,26 @@ mod tests {
         let repo = ProjectOptionsRepository::new(db.clone());
         let result = repo.create_all(models).await.unwrap();
         assert_eq!(result.last_insert_id, 2);
+
+        clean_up_database(&db).await;
+    }
+
+    #[tokio::test]
+    async fn test_create_fail_constraint() {
+        let db = get_test_db_connection().await;
+
+        let model = ProjectOptionsActiveModel {
+            id: NotSet,
+            name: Set("Option A".to_owned()),
+        };
+
+        let repo = ProjectOptionsRepository::new(db.clone());
+        let _ = repo.create(model.clone()).await.unwrap();
+
+        let fail = repo.create(model).await;
+        assert!(fail.is_err());
+
+        assert!(matches!(fail.err().unwrap().sql_err().unwrap(), SqlErr::UniqueConstraintViolation(_)));
 
         clean_up_database(&db).await;
     }
