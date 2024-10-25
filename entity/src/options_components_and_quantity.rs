@@ -15,9 +15,21 @@ pub struct Model {
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(belongs_to = "super::project_components::Entity", from = "Column::ComponentId", to = "super::project_components::Column::Id", on_update = "NoAction", on_delete = "Cascade")]
+    #[sea_orm(
+        belongs_to = "super::project_components::Entity",
+        from = "Column::ComponentId",
+        to = "super::project_components::Column::Id",
+        on_update = "NoAction",
+        on_delete = "Cascade"
+    )]
     ProjectComponents,
-    #[sea_orm(belongs_to = "super::project_options::Entity", from = "Column::OptionId", to = "super::project_options::Column::Id", on_update = "NoAction", on_delete = "Cascade")]
+    #[sea_orm(
+        belongs_to = "super::project_options::Entity",
+        from = "Column::OptionId",
+        to = "super::project_options::Column::Id",
+        on_update = "NoAction",
+        on_delete = "Cascade"
+    )]
     ProjectOptions,
 }
 

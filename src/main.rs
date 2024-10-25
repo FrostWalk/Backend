@@ -2,8 +2,8 @@ use crate::app_state::AppState;
 use crate::config::MarketConfig;
 use actix_web::web::Data;
 use actix_web::{middleware, App, HttpServer};
-use std::env::set_var;
 use sea_orm::Database;
+use std::env::set_var;
 
 mod api;
 mod app_state;

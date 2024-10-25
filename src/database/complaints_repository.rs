@@ -1,9 +1,8 @@
 use derive_new::new;
-use sea_orm::{DatabaseConnection, DbErr};
-use entity::complaints;
+use sea_orm::DatabaseConnection;
 #[derive(new)]
 pub struct ComplaintsRepository {
-    db_conn: DatabaseConnection
+    db_conn: DatabaseConnection,
 }
 
 impl ComplaintsRepository {
