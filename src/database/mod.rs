@@ -6,3 +6,4 @@ pub(crate) mod projects_repository;
 pub(crate) mod roles_repository;
 pub(crate) mod security_codes_repository;
 pub(crate) mod users_repository;
+pub(crate) mod repository_methods;
