@@ -1,10 +1,15 @@
+use crate::database::repository_methods::RepositoryMethods;
 use derive_new::new;
-use sea_orm::DatabaseConnection;
+use entity::complaints::{ActiveModel, Entity};
+use sea_orm::{DatabaseConnection, EntityTrait};
+
 #[derive(new)]
 pub struct ComplaintsRepository {
     db_conn: DatabaseConnection,
 }
 
-impl ComplaintsRepository {
-    /*pub async fn get_all(&self) -> Result<Vec<complaints::Model>, DbErr> {}*/
+impl RepositoryMethods<Entity, ActiveModel> for ComplaintsRepository {
+    fn db_conn(&self) -> &DatabaseConnection {
+        &self.db_conn
+    }
 }

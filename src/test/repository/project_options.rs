@@ -1,10 +1,11 @@
 #[cfg(test)]
 mod tests {
     use crate::database::project_options_repository::ProjectOptionsRepository;
+    use crate::database::repository_methods::RepositoryMethods;
     use entity::prelude::ProjectOptions;
-    use entity::project_options::ActiveModel as ProjectOptionsActiveModel;
+    use entity::project_options::{ActiveModel as ProjectOptionsActiveModel, Column};
     use sea_orm::ActiveValue::Set;
-    use sea_orm::{Database, DatabaseConnection, EntityTrait, NotSet, SqlErr};
+    use sea_orm::{ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet, SqlErr};
     use std::env;
 
     // Helper function to establish a connection to the test database
@@ -29,40 +30,21 @@ mod tests {
             id: Set(1),
             name: Set("Option A".to_owned()),
         })
-            .await
-            .unwrap();
+        .await
+        .unwrap();
 
         repo.create(ProjectOptionsActiveModel {
             id: Set(2),
             name: Set("Option B".to_owned()),
         })
-            .await
-            .unwrap();
+        .await
+        .unwrap();
 
         // Execute the test
         let result = repo.get_all().await.unwrap();
         assert_eq!(result.len(), 2);
         assert_eq!(result[0].name, "Option A");
         assert_eq!(result[1].name, "Option B");
-
-        clean_up_database(&db).await;
-    }
-
-    #[tokio::test]
-    async fn test_get_from_name() {
-        let db = get_test_db_connection().await;
-
-        let repo = ProjectOptionsRepository::new(db.clone());
-        repo.create(ProjectOptionsActiveModel {
-            id: Set(1),
-            name: Set("Option A".to_owned()),
-        })
-            .await
-            .unwrap();
-
-        let result = repo.get_from_name("Option A").await.unwrap();
-        assert!(result.is_some());
-        assert_eq!(result.unwrap().name, "Option A");
 
         clean_up_database(&db).await;
     }
@@ -76,12 +58,31 @@ mod tests {
             id: Set(1),
             name: Set("Option A".to_owned()),
         })
-            .await
-            .unwrap();
+        .await
+        .unwrap();
 
         let result = repo.get_from_id(1).await.unwrap();
         assert!(result.is_some());
         assert_eq!(result.unwrap().id, 1);
+
+        clean_up_database(&db).await;
+    }
+
+    #[tokio::test]
+    async fn test_get_from_filter() {
+        let db = get_test_db_connection().await;
+
+        let repo = ProjectOptionsRepository::new(db.clone());
+        repo.create(ProjectOptionsActiveModel {
+            id: Set(1),
+            name: Set("Option A".to_owned()),
+        })
+        .await
+        .unwrap();
+
+        let result = repo.get_from_filter(Column::Name.contains("Option A")).await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().len(), 1);
 
         clean_up_database(&db).await;
     }
@@ -97,8 +98,7 @@ mod tests {
 
         let repo = ProjectOptionsRepository::new(db.clone());
         let result = repo.create(model).await.unwrap();
-        assert_eq!(result.id, 1);
-        assert_eq!(result.name, "Option A");
+        assert_eq!(result.last_insert_id, 1);
 
         clean_up_database(&db).await;
     }
@@ -154,8 +154,8 @@ mod tests {
             id: Set(1),
             name: Set("Option A".to_owned()),
         })
-            .await
-            .unwrap();
+        .await
+        .unwrap();
 
         let updated_model = ProjectOptionsActiveModel {
             id: Set(1),
@@ -177,10 +177,10 @@ mod tests {
             id: Set(1),
             name: Set("Option A".to_owned()),
         })
-            .await
-            .unwrap();
+        .await
+        .unwrap();
 
-        let result = repo.delete_by_id(1).await.unwrap();
+        let result = repo.delete_from_id(1).await.unwrap();
         assert_eq!(result.rows_affected, 1);
 
         clean_up_database(&db).await;
