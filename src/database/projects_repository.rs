@@ -2,14 +2,9 @@ use crate::database::repository_methods::RepositoryMethods;
 use derive_new::new;
 use entity::projects::{ActiveModel, Entity};
 use sea_orm::DatabaseConnection;
+use repository_macro::RepositoryMethods;
 
-#[derive(new)]
+#[derive(new, RepositoryMethods)]
 pub(crate) struct ProjectRepository {
     db_conn: DatabaseConnection,
-}
-
-impl RepositoryMethods<Entity, ActiveModel> for ProjectRepository {
-    fn db_conn(&self) -> &DatabaseConnection {
-        &self.db_conn
-    }
 }

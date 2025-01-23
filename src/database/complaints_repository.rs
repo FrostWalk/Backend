@@ -1,15 +1,11 @@
+use entity::complaints::ActiveModel;
+use entity::complaints::Entity;
 use crate::database::repository_methods::RepositoryMethods;
 use derive_new::new;
-use entity::complaints::{ActiveModel, Entity};
-use sea_orm::{DatabaseConnection, EntityTrait};
+use sea_orm::{DatabaseConnection};
+use repository_macro::RepositoryMethods;
 
-#[derive(new)]
+#[derive(new, RepositoryMethods)]
 pub struct ComplaintsRepository {
     db_conn: DatabaseConnection,
-}
-
-impl RepositoryMethods<Entity, ActiveModel> for ComplaintsRepository {
-    fn db_conn(&self) -> &DatabaseConnection {
-        &self.db_conn
-    }
 }
