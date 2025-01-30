@@ -1,4 +1,4 @@
-use crate::m20220101_000001_create_tables::{Roles, RolesHierarchy};
+use crate::m20220101_000001_create_tables::{AuxiliaryRoles, Roles};
 use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
@@ -11,16 +11,15 @@ impl MigrationTrait for Migration {
             .exec_stmt(
                 Query::insert()
                     .into_table(Roles::Table)
-                    .columns([Roles::Id, Roles::Name, Roles::IsAuxiliary])
-                    .values_panic([1.into(), "Root".into(), false.into()])
-                    .values_panic([2.into(), "Professor".into(), false.into()])
-                    .values_panic([3.into(), "Tutor".into(), false.into()])
-                    .values_panic([4.into(), "Working group coordinator".into(), false.into()])
-                    .values_panic([5.into(), "Group leader".into(), false.into()])
-                    .values_panic([6.into(), "Group member".into(), false.into()])
-                    .values_panic([7.into(), "Git maintainer".into(), true.into()])
-                    .values_panic([8.into(), "Tester".into(), true.into()])
-                    .values_panic([9.into(), "Reporter".into(), true.into()])
+                    .columns([Roles::Id, Roles::Name])
+                    .values_panic([1.into(), "Professor".into()])
+                    .values_panic([2.into(), "Tutor".into()])
+                    .values_panic([3.into(), "Working group coordinator".into()])
+                    .values_panic([4.into(), "Group leader".into()])
+                    .values_panic([5.into(), "Group member".into()])
+                    .values_panic([6.into(), "Git maintainer".into()])
+                    .values_panic([7.into(), "Tester".into()])
+                    .values_panic([8.into(), "Reporter".into()])
                     .to_owned(),
             )
             .await?;
@@ -28,22 +27,17 @@ impl MigrationTrait for Migration {
         manager
             .exec_stmt(
                 Query::insert()
-                    .into_table(RolesHierarchy::Table)
-                    .columns([RolesHierarchy::RoleId, RolesHierarchy::ParentId])
-                    .values_panic([2.into(), 1.into()])
-                    .values_panic([3.into(), 2.into()])
-                    .values_panic([4.into(), 3.into()])
-                    .values_panic([5.into(), 4.into()])
-                    .values_panic([6.into(), 5.into()])
-                    .values_panic([7.into(), 4.into()])
-                    .values_panic([8.into(), 4.into()])
-                    .values_panic([9.into(), 4.into()])
+                    .into_table(AuxiliaryRoles::Table)
+                    .columns([AuxiliaryRoles::Id, AuxiliaryRoles::Name])
+                    .values_panic([1.into(), "Git maintainer".into()])
+                    .values_panic([2.into(), "Tester".into()])
+                    .values_panic([3.into(), "Reporter".into()])
                     .to_owned(),
             )
             .await
     }
 
-    async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager.truncate_table(Table::truncate().table(RolesHierarchy::Table).to_owned()).await
+    async fn down(&self, _manager: &SchemaManager) -> Result<(), DbErr> {
+        Ok(())
     }
 }

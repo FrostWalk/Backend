@@ -1,6 +1,8 @@
 use migration::IntoCondition;
 use sea_orm::QueryFilter;
-use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, DeleteResult, EntityTrait, InsertResult};
+use sea_orm::{
+    ActiveModelTrait, DatabaseConnection, DbErr, DeleteResult, EntityTrait, InsertResult,
+};
 
 pub(crate) trait RepositoryMethods<E, AM>
 where

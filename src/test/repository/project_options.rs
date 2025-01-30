@@ -11,12 +11,17 @@ mod tests {
     // Helper function to establish a connection to the test database
     async fn get_test_db_connection() -> DatabaseConnection {
         let db_url = env::var("TEST_DB_URL").expect("TEST_DB_URL must be set in .env");
-        Database::connect(&db_url).await.expect("Failed to connect to test database")
+        Database::connect(&db_url)
+            .await
+            .expect("Failed to connect to test database")
     }
 
     // Helper function to clean up the project_options table after each test
     async fn clean_up_database(db: &DatabaseConnection) {
-        ProjectOptions::delete_many().exec(db).await.expect("Failed to clean up database");
+        ProjectOptions::delete_many()
+            .exec(db)
+            .await
+            .expect("Failed to clean up database");
         let _ = db.clone().close().await;
     }
 
@@ -80,7 +85,9 @@ mod tests {
         .await
         .unwrap();
 
-        let result = repo.get_from_filter(Column::Name.contains("Option A")).await;
+        let result = repo
+            .get_from_filter(Column::Name.contains("Option A"))
+            .await;
         assert!(result.is_ok());
         assert_eq!(result.unwrap().len(), 1);
 
@@ -140,7 +147,10 @@ mod tests {
         let fail = repo.create(model).await;
         assert!(fail.is_err());
 
-        assert!(matches!(fail.err().unwrap().sql_err().unwrap(), SqlErr::UniqueConstraintViolation(_)));
+        assert!(matches!(
+            fail.err().unwrap().sql_err().unwrap(),
+            SqlErr::UniqueConstraintViolation(_)
+        ));
 
         clean_up_database(&db).await;
     }

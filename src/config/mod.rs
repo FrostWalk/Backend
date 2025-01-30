@@ -13,6 +13,9 @@ pub(crate) struct MarketConfig {
     port: u16,
     workers: usize,
     db_url: String,
+    jwt_secret: String,
+    jwt_expires_in: String,
+    jwt_max_age: i32,
 }
 lazy_static! {
     static ref CONFIG: Arc<RwLock<MarketConfig>> = Arc::new(RwLock::new(MarketConfig::load()));
@@ -30,15 +33,22 @@ impl MarketConfig {
     pub(crate) fn address() -> String {
         CONFIG.read().expect(LOCK_ERROR).address.clone()
     }
-
     pub(crate) fn port() -> u16 {
         CONFIG.read().expect(LOCK_ERROR).port
     }
-
     pub(crate) fn workers() -> usize {
         CONFIG.read().expect(LOCK_ERROR).workers
     }
     pub(crate) fn db_url() -> String {
         CONFIG.read().expect(LOCK_ERROR).db_url.clone()
+    }
+    pub(crate) fn jwt_secret() -> String {
+        CONFIG.read().expect(LOCK_ERROR).jwt_secret.clone()
+    }
+    pub(crate) fn jwt_expires_in() -> String {
+        CONFIG.read().expect(LOCK_ERROR).jwt_expires_in.clone()
+    }
+    pub(crate) fn jwt_max_age() -> i32 {
+        CONFIG.read().expect(LOCK_ERROR).jwt_max_age
     }
 }

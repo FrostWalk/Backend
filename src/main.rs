@@ -9,6 +9,7 @@ mod api;
 mod app_state;
 mod config;
 mod database;
+mod jwt;
 mod test;
 
 #[actix_web::main]
@@ -19,9 +20,13 @@ async fn main() -> std::io::Result<()> {
 
     let db_conn = Database::connect(MarketConfig::db_url()).await.unwrap();
 
-    HttpServer::new(move || App::new().app_data(Data::new(AppState::new(db_conn.clone()))).wrap(middleware::Logger::default()))
-        .workers(MarketConfig::workers())
-        .bind((MarketConfig::address(), MarketConfig::port()))?
-        .run()
-        .await
+    HttpServer::new(move || {
+        App::new()
+            .app_data(Data::new(AppState::new(db_conn.clone())))
+            .wrap(middleware::Logger::default())
+    })
+    .workers(MarketConfig::workers())
+    .bind((MarketConfig::address(), MarketConfig::port()))?
+    .run()
+    .await
 }
