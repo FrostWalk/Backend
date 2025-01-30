@@ -4,7 +4,7 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "students_individual_work")]
+#[sea_orm(table_name = "students_and_individual_work")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
@@ -26,7 +26,13 @@ pub enum Relation {
         on_delete = "Cascade"
     )]
     IndividualWorkOptions,
-    #[sea_orm(belongs_to = "super::users::Entity", from = "Column::UserId", to = "super::users::Column::Id", on_update = "NoAction", on_delete = "Cascade")]
+    #[sea_orm(
+        belongs_to = "super::users::Entity",
+        from = "Column::UserId",
+        to = "super::users::Column::Id",
+        on_update = "NoAction",
+        on_delete = "Cascade"
+    )]
     Users,
 }
 

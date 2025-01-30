@@ -4,25 +4,44 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "students_and_groups")]
+#[sea_orm(table_name = "users_projects_and_roles")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
-    pub group_id: i64,
     pub user_id: i64,
-    pub is_retired: Option<bool>,
+    pub project_id: i64,
+    pub role_id: i32,
+    pub auxiliary_role_id: Option<i32>,
+    pub has_retired: bool,
+    pub retirement_date: Option<DateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::groups::Entity",
-        from = "Column::GroupId",
-        to = "super::groups::Column::Id",
+        belongs_to = "super::projects::Entity",
+        from = "Column::ProjectId",
+        to = "super::projects::Column::Id",
         on_update = "NoAction",
         on_delete = "Cascade"
     )]
-    Groups,
+    Projects,
+    #[sea_orm(
+        belongs_to = "super::roles::Entity",
+        from = "Column::AuxiliaryRoleId",
+        to = "super::roles::Column::Id",
+        on_update = "NoAction",
+        on_delete = "SetNull"
+    )]
+    Roles2,
+    #[sea_orm(
+        belongs_to = "super::roles::Entity",
+        from = "Column::RoleId",
+        to = "super::roles::Column::Id",
+        on_update = "NoAction",
+        on_delete = "Cascade"
+    )]
+    Roles1,
     #[sea_orm(
         belongs_to = "super::users::Entity",
         from = "Column::UserId",
@@ -33,9 +52,9 @@ pub enum Relation {
     Users,
 }
 
-impl Related<super::groups::Entity> for Entity {
+impl Related<super::projects::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Groups.def()
+        Relation::Projects.def()
     }
 }
 
