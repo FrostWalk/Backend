@@ -5,6 +5,8 @@ pub mod prelude;
 pub mod auxiliary_roles;
 pub mod black_list;
 pub mod complaints;
+pub mod fair;
+pub mod fair_purchasing;
 pub mod groups;
 pub mod groups_and_project_components;
 pub mod individual_work_options;

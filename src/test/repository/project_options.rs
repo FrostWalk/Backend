@@ -86,7 +86,7 @@ mod tests {
         .unwrap();
 
         let result = repo
-            .get_from_filter(Column::Name.contains("Option A"))
+            .get_all_from_filter(Column::Name.contains("Option A"))
             .await;
         assert!(result.is_ok());
         assert_eq!(result.unwrap().len(), 1);

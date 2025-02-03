@@ -4,37 +4,38 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "individual_work_options")]
+#[sea_orm(table_name = "fair")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
+    pub start_date: Option<DateTime>,
+    pub end_date: Option<DateTime>,
     pub project_id: i32,
-    pub name: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
+    #[sea_orm(has_many = "super::fair_purchasing::Entity")]
+    FairPurchasing,
     #[sea_orm(
         belongs_to = "super::projects::Entity",
         from = "Column::ProjectId",
         to = "super::projects::Column::Id",
         on_update = "NoAction",
-        on_delete = "Cascade"
+        on_delete = "Restrict"
     )]
     Projects,
-    #[sea_orm(has_many = "super::students_and_individual_work::Entity")]
-    StudentsAndIndividualWork,
+}
+
+impl Related<super::fair_purchasing::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::FairPurchasing.def()
+    }
 }
 
 impl Related<super::projects::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Projects.def()
-    }
-}
-
-impl Related<super::students_and_individual_work::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::StudentsAndIndividualWork.def()
     }
 }
 

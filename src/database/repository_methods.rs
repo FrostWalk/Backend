@@ -21,8 +21,16 @@ where
     {
         E::find_by_id(id).one(self.db_conn()).await
     }
-    async fn get_from_filter(&self, filter: impl IntoCondition) -> Result<Vec<E::Model>, DbErr> {
+    async fn get_all_from_filter(
+        &self, filter: impl IntoCondition,
+    ) -> Result<Vec<E::Model>, DbErr> {
         E::find().filter(filter).all(self.db_conn()).await
+    }
+
+    async fn get_one_from_filter(
+        &self, filter: impl IntoCondition,
+    ) -> Result<Option<E::Model>, DbErr> {
+        E::find().filter(filter).one(self.db_conn()).await
     }
     async fn create(&self, model: AM) -> Result<InsertResult<AM>, DbErr> {
         E::insert(model).exec(self.db_conn()).await

@@ -7,9 +7,9 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "students_and_groups")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: i64,
-    pub group_id: i64,
-    pub user_id: i64,
+    pub id: i32,
+    pub group_id: i32,
+    pub user_id: i32,
     pub is_retired: Option<bool>,
 }
 

@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "projects")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: i64,
+    pub id: i32,
     pub name: String,
     pub year: i16,
     pub max_group_size: i16,
@@ -15,6 +15,8 @@ pub struct Model {
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
+    #[sea_orm(has_many = "super::fair::Entity")]
+    Fair,
     #[sea_orm(has_many = "super::groups::Entity")]
     Groups,
     #[sea_orm(has_many = "super::individual_work_options::Entity")]
@@ -25,6 +27,12 @@ pub enum Relation {
     SecurityCodes,
     #[sea_orm(has_many = "super::users_projects_and_roles::Entity")]
     UsersProjectsAndRoles,
+}
+
+impl Related<super::fair::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Fair.def()
+    }
 }
 
 impl Related<super::groups::Entity> for Entity {

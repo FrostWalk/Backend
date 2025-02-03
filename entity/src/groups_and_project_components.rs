@@ -7,11 +7,12 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "groups_and_project_components")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: i64,
-    pub group_id: i64,
-    pub component_id: i64,
+    pub id: i32,
+    pub group_id: i32,
+    pub component_id: i32,
     pub custom_name: String,
-    pub flyer_name: Option<String>,
+    #[sea_orm(column_type = "Text", nullable)]
+    pub mark_down_description: Option<String>,
     #[sea_orm(column_type = "Text", nullable)]
     pub code_link: Option<String>,
     #[sea_orm(column_type = "Text", nullable, unique)]
@@ -20,6 +21,8 @@ pub struct Model {
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
+    #[sea_orm(has_many = "super::fair_purchasing::Entity")]
+    FairPurchasing,
     #[sea_orm(
         belongs_to = "super::groups::Entity",
         from = "Column::GroupId",
@@ -36,6 +39,12 @@ pub enum Relation {
         on_delete = "Cascade"
     )]
     ProjectComponents,
+}
+
+impl Related<super::fair_purchasing::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::FairPurchasing.def()
+    }
 }
 
 impl Related<super::groups::Entity> for Entity {

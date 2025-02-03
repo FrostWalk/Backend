@@ -7,9 +7,9 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "users_projects_and_roles")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: i64,
-    pub user_id: i64,
-    pub project_id: i64,
+    pub id: i32,
+    pub user_id: i32,
+    pub project_id: i32,
     pub role_id: i32,
     pub auxiliary_role_id: Option<i32>,
     pub has_retired: bool,
@@ -18,6 +18,14 @@ pub struct Model {
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
+    #[sea_orm(
+        belongs_to = "super::auxiliary_roles::Entity",
+        from = "Column::AuxiliaryRoleId",
+        to = "super::auxiliary_roles::Column::Id",
+        on_update = "NoAction",
+        on_delete = "SetNull"
+    )]
+    AuxiliaryRoles,
     #[sea_orm(
         belongs_to = "super::projects::Entity",
         from = "Column::ProjectId",
@@ -28,20 +36,12 @@ pub enum Relation {
     Projects,
     #[sea_orm(
         belongs_to = "super::roles::Entity",
-        from = "Column::AuxiliaryRoleId",
-        to = "super::roles::Column::Id",
-        on_update = "NoAction",
-        on_delete = "SetNull"
-    )]
-    Roles2,
-    #[sea_orm(
-        belongs_to = "super::roles::Entity",
         from = "Column::RoleId",
         to = "super::roles::Column::Id",
         on_update = "NoAction",
         on_delete = "Cascade"
     )]
-    Roles1,
+    Roles,
     #[sea_orm(
         belongs_to = "super::users::Entity",
         from = "Column::UserId",
@@ -52,9 +52,21 @@ pub enum Relation {
     Users,
 }
 
+impl Related<super::auxiliary_roles::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::AuxiliaryRoles.def()
+    }
+}
+
 impl Related<super::projects::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Projects.def()
+    }
+}
+
+impl Related<super::roles::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Roles.def()
     }
 }
 

@@ -7,12 +7,12 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "security_codes")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: i64,
-    pub group_id: i64,
-    pub project_id: i64,
+    pub id: i32,
+    pub group_id: i32,
+    pub project_id: i32,
     #[sea_orm(column_type = "VarBinary(StringLen::None)", unique)]
     pub security_code_hash: Vec<u8>,
-    pub role_id: i64,
+    pub role_id: i32,
     pub valid_until: Date,
 }
 
