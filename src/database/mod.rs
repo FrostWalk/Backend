@@ -1,10 +1,12 @@
-mod auxiliary_roles_repository;
+pub(crate) mod auxiliary_roles_repository;
 pub(crate) mod blacklist_repository;
 pub(crate) mod complaints_repository;
+pub(crate) mod fair_repository;
 pub(crate) mod groups_repository;
 pub(crate) mod project_options_repository;
 pub(crate) mod projects_repository;
 pub(crate) mod repository_methods;
 pub(crate) mod roles_repository;
 pub(crate) mod security_codes_repository;
+pub(crate) mod users_projects_roles_repository;
 pub(crate) mod users_repository;

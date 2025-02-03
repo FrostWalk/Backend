@@ -3,6 +3,8 @@
 pub use super::auxiliary_roles::Entity as AuxiliaryRoles;
 pub use super::black_list::Entity as BlackList;
 pub use super::complaints::Entity as Complaints;
+pub use super::fair::Entity as Fair;
+pub use super::fair_purchasing::Entity as FairPurchasing;
 pub use super::groups::Entity as Groups;
 pub use super::groups_and_project_components::Entity as GroupsAndProjectComponents;
 pub use super::individual_work_options::Entity as IndividualWorkOptions;

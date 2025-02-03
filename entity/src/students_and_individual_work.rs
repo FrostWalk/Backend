@@ -7,9 +7,9 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "students_and_individual_work")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: i64,
-    pub user_id: i64,
-    pub individual_work_option_id: i64,
+    pub id: i32,
+    pub user_id: i32,
+    pub individual_work_option_id: i32,
     pub file_name: Option<String>,
     #[sea_orm(column_type = "VarBinary(StringLen::None)", nullable)]
     pub file_hash: Option<Vec<u8>>,

@@ -1,54 +1,56 @@
-use std::sync::{Arc, RwLock};
-
+use derive_getters::Getters;
 use figment::{
     providers::{Env, Format, Toml},
     Figment,
 };
-use lazy_static::lazy_static;
 use serde::Deserialize;
 
-#[derive(Deserialize)]
-pub(crate) struct MarketConfig {
-    address: String,
-    port: u16,
-    workers: usize,
-    db_url: String,
-    jwt_secret: String,
-    jwt_expires_in: String,
-    jwt_max_age: i32,
-}
-lazy_static! {
-    static ref CONFIG: Arc<RwLock<MarketConfig>> = Arc::new(RwLock::new(MarketConfig::load()));
-}
-const LOCK_ERROR: &str = "Unable to lock CONFIG";
-impl MarketConfig {
-    pub(crate) fn load() -> Self {
-        Figment::new()
-            .merge(Env::prefixed("MARKET_"))
-            .merge(Toml::file("config.toml"))
-            .extract()
-            .expect("Failed to load configuration")
-    }
+const ENV_PREFIX: &str = "APP_";
+const CONFIG_FILE: &str = "config.toml";
 
-    pub(crate) fn address() -> String {
-        CONFIG.read().expect(LOCK_ERROR).address.clone()
-    }
-    pub(crate) fn port() -> u16 {
-        CONFIG.read().expect(LOCK_ERROR).port
-    }
-    pub(crate) fn workers() -> usize {
-        CONFIG.read().expect(LOCK_ERROR).workers
-    }
-    pub(crate) fn db_url() -> String {
-        CONFIG.read().expect(LOCK_ERROR).db_url.clone()
-    }
-    pub(crate) fn jwt_secret() -> String {
-        CONFIG.read().expect(LOCK_ERROR).jwt_secret.clone()
-    }
-    pub(crate) fn jwt_expires_in() -> String {
-        CONFIG.read().expect(LOCK_ERROR).jwt_expires_in.clone()
-    }
-    pub(crate) fn jwt_max_age() -> i32 {
-        CONFIG.read().expect(LOCK_ERROR).jwt_max_age
+/// Application configs
+#[derive(Deserialize, Getters, Clone)]
+pub(crate) struct Config {
+    /// Interface address on which the app is listening `127.0.0.1`, `0.0.0.0`
+    address: String,
+    /// Local port on which the app is listening `8080`
+    port: u16,
+    /// Number of workers for the server, normally one per thread
+    workers: usize,
+    /// Connection string for Postgres in standard format  
+    db_url: String,
+    /// Key used to sign and crypt jwt tokens, should be random and long
+    jwt_secret: String,
+    /// Seconds after which the token is considered expired and the cookie is deleted
+    jwt_expires_in: i64,
+    /// Enable secure cookie only, set true in production
+    secure_cookie: bool,
+}
+impl Config {
+    /// Loads and validates the application configuration from multiple sources.
+    ///
+    /// This function aggregates configuration values from environment variables and
+    /// a TOML file, with the following precedence rules:
+    /// 1. TOML file values override environment variables
+    /// 2. Environment variables override default values (if any exist in `Config` struct)
+    ///
+    /// # Configuration Sources
+    /// - **Environment Variables**: Must be prefixed with `APP_` (e.g., `APP_DATABASE_URL`)
+    /// - **TOML File**: Looks for `config.toml` in the current working directory
+    ///
+    /// # Panics
+    /// This function will panic if:
+    /// - No valid configuration sources are found
+    /// - Configuration values fail validation
+    /// - There are type mismatches in configuration values
+    /// - The TOML file contains syntax errors
+    pub(crate) fn load() -> Self {
+        let res: figment::Result<Config> = Figment::new()
+            .merge(Env::prefixed(ENV_PREFIX)) // each var must start with `APP_`
+            .merge(Toml::file(CONFIG_FILE)) // config files overwrite env vars
+            .extract();
+
+        // in case it fails, panic with message and specific error
+        res.unwrap_or_else(|e| panic!("Unable to load config: {:?}", e))
     }
 }

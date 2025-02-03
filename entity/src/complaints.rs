@@ -7,9 +7,9 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "complaints")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: i64,
-    pub from_group_id: i64,
-    pub to_group_id: i64,
+    pub id: i32,
+    pub from_group_id: i32,
+    pub to_group_id: i32,
     #[sea_orm(column_type = "Text")]
     pub complain_text: String,
     pub date_of_creation: Date,

@@ -14,7 +14,7 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(
                         ColumnDef::new(Projects::Id)
-                            .big_integer()
+                            .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
@@ -58,14 +58,14 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(
                         ColumnDef::new(ProjectComponents::Id)
-                            .big_integer()
+                            .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
                     )
                     .col(
                         ColumnDef::new(ProjectComponents::ProjectId)
-                            .big_integer()
+                            .integer()
                             .not_null(),
                     )
                     .col(ColumnDef::new(ProjectComponents::Name).string().not_null())
@@ -159,7 +159,7 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(
                         ColumnDef::new(Users::Id)
-                            .big_integer()
+                            .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
@@ -179,15 +179,7 @@ impl MigrationTrait for Migration {
                             .unique_key(),
                     )
                     .col(ColumnDef::new(Users::PasswordHash).blob().not_null())
-                    .col(ColumnDef::new(Users::Salt).blob().not_null())
                     .col(ColumnDef::new(Users::TelegramNick).string().null())
-                    .col(ColumnDef::new(Users::CurrentRoleId).integer().not_null())
-                    .foreign_key(
-                        ForeignKey::create()
-                            .from(Users::Table, Users::CurrentRoleId)
-                            .to(Roles::Table, Roles::Id)
-                            .on_delete(ForeignKeyAction::SetDefault),
-                    )
                     .to_owned(),
             )
             .await?;
@@ -263,19 +255,19 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(
                         ColumnDef::new(OptionsComponentsAndQuantity::Id)
-                            .big_integer()
+                            .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
                     )
                     .col(
                         ColumnDef::new(OptionsComponentsAndQuantity::OptionId)
-                            .big_integer()
+                            .integer()
                             .not_null(),
                     )
                     .col(
                         ColumnDef::new(OptionsComponentsAndQuantity::ComponentId)
-                            .big_integer()
+                            .integer()
                             .not_null(),
                     )
                     .col(
@@ -324,14 +316,14 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(
                         ColumnDef::new(Groups::Id)
-                            .big_integer()
+                            .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
                     )
                     .col(ColumnDef::new(Groups::Name).string().not_null())
-                    .col(ColumnDef::new(Groups::OptionId).big_integer().not_null())
-                    .col(ColumnDef::new(Groups::ProjectId).big_integer().not_null())
+                    .col(ColumnDef::new(Groups::OptionId).integer().not_null())
+                    .col(ColumnDef::new(Groups::ProjectId).integer().not_null())
                     .foreign_key(
                         ForeignKey::create()
                             .from(Groups::Table, Groups::OptionId)
@@ -359,6 +351,7 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
+        // Groups Project Components table
         manager
             .create_table(
                 Table::create()
@@ -366,19 +359,19 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(
                         ColumnDef::new(GroupsAndProjectComponents::Id)
-                            .big_integer()
+                            .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
                     )
                     .col(
                         ColumnDef::new(GroupsAndProjectComponents::GroupId)
-                            .big_integer()
+                            .integer()
                             .not_null(),
                     )
                     .col(
                         ColumnDef::new(GroupsAndProjectComponents::ComponentId)
-                            .big_integer()
+                            .integer()
                             .not_null(),
                     )
                     .col(
@@ -387,8 +380,8 @@ impl MigrationTrait for Migration {
                             .not_null(),
                     )
                     .col(
-                        ColumnDef::new(GroupsAndProjectComponents::FlyerName)
-                            .string()
+                        ColumnDef::new(GroupsAndProjectComponents::MarkDownDescription)
+                            .text()
                             .null(),
                     )
                     .col(
@@ -424,6 +417,105 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
+        // Fair table
+        manager
+            .create_table(
+                Table::create()
+                    .table(Fair::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(Fair::Id)
+                            .integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
+                    .col(ColumnDef::new(Fair::StartDate).date_time().null())
+                    .col(ColumnDef::new(Fair::EndDate).date_time().null())
+                    .col(ColumnDef::new(Fair::ProjectId).integer().not_null())
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(Fair::Table, Fair::ProjectId)
+                            .to(Projects::Table, Projects::Id)
+                            .on_delete(ForeignKeyAction::Restrict),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        // Fair purchase table
+        manager
+            .create_table(
+                Table::create()
+                    .table(FairPurchasing::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(FairPurchasing::Id)
+                            .integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(FairPurchasing::DateOfPurchase)
+                            .date_time()
+                            .null(),
+                    )
+                    .col(ColumnDef::new(FairPurchasing::FairId).integer().not_null())
+                    .col(
+                        ColumnDef::new(FairPurchasing::PurchasedComponentId)
+                            .integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(FairPurchasing::PurchasingGroupId)
+                            .integer()
+                            .not_null(),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(FairPurchasing::Table, FairPurchasing::FairId)
+                            .to(Fair::Table, Fair::Id)
+                            .on_delete(ForeignKeyAction::Restrict),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(FairPurchasing::Table, FairPurchasing::PurchasingGroupId)
+                            .to(Groups::Table, Groups::Id)
+                            .on_delete(ForeignKeyAction::Restrict),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(FairPurchasing::Table, FairPurchasing::PurchasedComponentId)
+                            .to(
+                                GroupsAndProjectComponents::Table,
+                                GroupsAndProjectComponents::Id,
+                            )
+                            .on_delete(ForeignKeyAction::Restrict),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .table(FairPurchasing::Table)
+                    .col(FairPurchasing::PurchasingGroupId)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .table(FairPurchasing::Table)
+                    .col(FairPurchasing::PurchasedComponentId)
+                    .to_owned(),
+            )
+            .await?;
+
+        // Students Groups table
         manager
             .create_table(
                 Table::create()
@@ -431,19 +523,19 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(
                         ColumnDef::new(StudentsAndGroups::Id)
-                            .big_integer()
+                            .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
                     )
                     .col(
                         ColumnDef::new(StudentsAndGroups::GroupId)
-                            .big_integer()
+                            .integer()
                             .not_null(),
                     )
                     .col(
                         ColumnDef::new(StudentsAndGroups::UserId)
-                            .big_integer()
+                            .integer()
                             .not_null(),
                     )
                     .col(
@@ -476,6 +568,7 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
+        // Users Projects Roles table
         manager
             .create_table(
                 Table::create()
@@ -483,19 +576,19 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(
                         ColumnDef::new(UsersProjectsAndRoles::Id)
-                            .big_integer()
+                            .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
                     )
                     .col(
                         ColumnDef::new(UsersProjectsAndRoles::UserId)
-                            .big_integer()
+                            .integer()
                             .not_null(),
                     )
                     .col(
                         ColumnDef::new(UsersProjectsAndRoles::ProjectId)
-                            .big_integer()
+                            .integer()
                             .not_null(),
                     )
                     .col(
@@ -546,7 +639,7 @@ impl MigrationTrait for Migration {
                                 UsersProjectsAndRoles::Table,
                                 UsersProjectsAndRoles::AuxiliaryRoleId,
                             )
-                            .to(Roles::Table, AuxiliaryRoles::Id)
+                            .to(AuxiliaryRoles::Table, AuxiliaryRoles::Id)
                             .on_delete(ForeignKeyAction::SetNull),
                     )
                     .to_owned(),
@@ -572,19 +665,15 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(
                         ColumnDef::new(SecurityCodes::Id)
-                            .big_integer()
+                            .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(
-                        ColumnDef::new(SecurityCodes::GroupId)
-                            .big_integer()
-                            .not_null(),
-                    )
+                    .col(ColumnDef::new(SecurityCodes::GroupId).integer().not_null())
                     .col(
                         ColumnDef::new(SecurityCodes::ProjectId)
-                            .big_integer()
+                            .integer()
                             .not_null(),
                     )
                     .col(
@@ -593,11 +682,7 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .unique_key(),
                     )
-                    .col(
-                        ColumnDef::new(SecurityCodes::RoleId)
-                            .big_integer()
-                            .not_null(),
-                    )
+                    .col(ColumnDef::new(SecurityCodes::RoleId).integer().not_null())
                     .col(ColumnDef::new(SecurityCodes::ValidUntil).date().not_null())
                     .foreign_key(
                         ForeignKey::create()
@@ -639,14 +724,14 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(
                         ColumnDef::new(IndividualWorkOptions::Id)
-                            .big_integer()
+                            .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
                     )
                     .col(
                         ColumnDef::new(IndividualWorkOptions::ProjectId)
-                            .big_integer()
+                            .integer()
                             .not_null(),
                     )
                     .col(
@@ -684,19 +769,19 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(
                         ColumnDef::new(StudentsAndIndividualWork::Id)
-                            .big_integer()
+                            .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
                     )
                     .col(
                         ColumnDef::new(StudentsAndIndividualWork::UserId)
-                            .big_integer()
+                            .integer()
                             .not_null(),
                     )
                     .col(
                         ColumnDef::new(StudentsAndIndividualWork::IndividualWorkOptionId)
-                            .big_integer()
+                            .integer()
                             .not_null(),
                     )
                     .col(
@@ -753,21 +838,13 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(
                         ColumnDef::new(Complaints::Id)
-                            .big_integer()
+                            .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(
-                        ColumnDef::new(Complaints::FromGroupId)
-                            .big_integer()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(Complaints::ToGroupId)
-                            .big_integer()
-                            .not_null(),
-                    )
+                    .col(ColumnDef::new(Complaints::FromGroupId).integer().not_null())
+                    .col(ColumnDef::new(Complaints::ToGroupId).integer().not_null())
                     .col(ColumnDef::new(Complaints::ComplainText).text().not_null())
                     .col(ColumnDef::new(Complaints::DateOfCreation).date().not_null())
                     .foreign_key(
@@ -812,12 +889,12 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(
                         ColumnDef::new(BlackList::Id)
-                            .big_integer()
+                            .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(BlackList::UserId).big_integer().not_null())
+                    .col(ColumnDef::new(BlackList::UserId).integer().not_null())
                     .col(ColumnDef::new(BlackList::NoteText).text().not_null())
                     .foreign_key(
                         ForeignKey::create()
@@ -870,6 +947,14 @@ impl MigrationTrait for Migration {
 
         manager
             .drop_table(Table::drop().table(StudentsAndGroups::Table).to_owned())
+            .await?;
+
+        manager
+            .drop_table(Table::drop().table(FairPurchasing::Table).to_owned())
+            .await?;
+
+        manager
+            .drop_table(Table::drop().table(Fair::Table).to_owned())
             .await?;
 
         manager
@@ -944,8 +1029,6 @@ pub enum Users {
     Email,
     StudentId,
     PasswordHash,
-    Salt,
-    CurrentRoleId,
     TelegramNick,
 }
 
@@ -995,9 +1078,28 @@ pub enum GroupsAndProjectComponents {
     GroupId,
     ComponentId,
     CustomName,
-    FlyerName,
     CodeLink,
+    MarkDownDescription,
     TelegramSupportLink,
+}
+
+#[derive(Iden)]
+pub enum Fair {
+    Table,
+    Id,
+    ProjectId,
+    StartDate,
+    EndDate,
+}
+
+#[derive(Iden)]
+pub enum FairPurchasing {
+    Table,
+    Id,
+    FairId,
+    PurchasedComponentId,
+    PurchasingGroupId,
+    DateOfPurchase,
 }
 
 #[derive(Iden)]

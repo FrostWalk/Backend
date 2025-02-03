@@ -54,9 +54,9 @@ pub fn check_field_type_derive(input: TokenStream) -> TokenStream {
         Some(f) => {
             if let Type::Path(type_path) = &f.ty {
                 if !type_path.path.is_ident(FIELD_TYPE) {
-                    let span = &f.ty.span();
+                    let span = f.ty.span();
                     return syn::Error::new(
-                        *span,
+                        span,
                         format!(
                             "Expected: `{}` but found: `{}`",
                             FIELD_TYPE,

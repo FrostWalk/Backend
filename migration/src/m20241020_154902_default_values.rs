@@ -17,9 +17,6 @@ impl MigrationTrait for Migration {
                     .values_panic([3.into(), "Working group coordinator".into()])
                     .values_panic([4.into(), "Group leader".into()])
                     .values_panic([5.into(), "Group member".into()])
-                    .values_panic([6.into(), "Git maintainer".into()])
-                    .values_panic([7.into(), "Tester".into()])
-                    .values_panic([8.into(), "Reporter".into()])
                     .to_owned(),
             )
             .await?;

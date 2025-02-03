@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "users")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: i64,
+    pub id: i32,
     pub name: String,
     pub surname: String,
     #[sea_orm(unique)]
@@ -16,24 +16,13 @@ pub struct Model {
     pub student_id: Option<i32>,
     #[sea_orm(column_type = "VarBinary(StringLen::None)")]
     pub password_hash: Vec<u8>,
-    #[sea_orm(column_type = "VarBinary(StringLen::None)")]
-    pub salt: Vec<u8>,
     pub telegram_nick: Option<String>,
-    pub current_role_id: i32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(has_many = "super::black_list::Entity")]
     BlackList,
-    #[sea_orm(
-        belongs_to = "super::roles::Entity",
-        from = "Column::CurrentRoleId",
-        to = "super::roles::Column::Id",
-        on_update = "NoAction",
-        on_delete = "SetDefault"
-    )]
-    Roles,
     #[sea_orm(has_many = "super::students_and_groups::Entity")]
     StudentsAndGroups,
     #[sea_orm(has_many = "super::students_and_individual_work::Entity")]
@@ -45,12 +34,6 @@ pub enum Relation {
 impl Related<super::black_list::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::BlackList.def()
-    }
-}
-
-impl Related<super::roles::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::Roles.def()
     }
 }
 
