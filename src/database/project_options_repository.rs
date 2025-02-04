@@ -5,7 +5,7 @@ use entity::project_options::Entity;
 use repository_macro::RepositoryMethods;
 use sea_orm::DatabaseConnection;
 
-#[derive(new, RepositoryMethods)]
+#[derive(new, RepositoryMethods, Clone)]
 pub(crate) struct ProjectOptionsRepository {
     db_conn: DatabaseConnection,
 }

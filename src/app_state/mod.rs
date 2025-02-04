@@ -4,11 +4,12 @@ use crate::database::project_options_repository::ProjectOptionsRepository;
 use crate::database::users_repository::UsersRepository;
 use sea_orm::Database;
 
+#[derive(Clone)]
 pub(crate) struct AppState {
     pub(crate) repositories: Repositories,
     pub(crate) config: Config,
 }
-
+#[derive(Clone)]
 pub(crate) struct Repositories {
     pub(crate) project_options_repository: ProjectOptionsRepository,
     pub(crate) complaints_repository: ComplaintsRepository,

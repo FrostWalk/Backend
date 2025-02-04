@@ -10,70 +10,37 @@ use actix_web::web::Json;
 use actix_web::{Error, HttpResponse};
 use password_auth::verify_password;
 use serde::Deserialize;
+use utoipa::ToSchema;
 
 const WRONG_CREDENTIALS: &str = "Incorrect email or password";
 
 /// Represents data needed for login
-#[derive(Deserialize)]
-pub(super) struct LoginUserSchema {
+#[derive(Deserialize, ToSchema)]
+pub(crate) struct LoginUserSchema {
+    #[schema(example = "user@example.com")]
     email: String,
+    #[schema(example = "password123")]
     password: String,
 }
 /// Authenticates a user and returns a JWT token cookie.
 ///
 /// This endpoint validates user credentials and issues a JWT token upon successful authentication.
-/// The token is returned as an HTTP-only cookie for enhanced security.
-///
-/// # Flow
-/// 1. Validate email/password credentials
-/// 2. Verify user exists in database
-/// 3. Check password hash matches
-/// 4. Verify user has an active role in a project
-/// 5. Generate JWT token with user claims
-/// 6. Set token in secure HTTP-only cookie
-///
-/// # Arguments
-/// * `req` - JSON payload containing user credentials (`LoginUserSchema`)
-/// * `app_state` - Shared application state containing database connections and configuration
-///
-/// # Returns
-/// * `200 OK` - With JWT token in `COOKIE_NAME` cookie
-/// * Error responses with appropriate status codes
-///
-/// # Errors
-/// * `400 Bad Request` - Invalid request format
-/// * `401 Unauthorized` - Multiple scenarios:
-///   - Invalid email/password combination
-///   - User not found in database
-///   - User has no assigned project role
-/// * `500 Internal Server Error` - Database errors or token generation failures
-///
-/// # Example Request
-/// ```json
-/// POST /api/auth/login
-/// {
-///     "email": "user@example.com",
-///     "password": "securepassword123"
-/// }
-/// ```
-///
-/// # Example Response
-/// ```http
-/// HTTP/1.1 200 OK
-/// Set-Cookie: token=eyJhbGci...; HttpOnly; Secure; Path=/; Max-Age=3600
-/// ```
-///
-/// # Security
-/// - Uses HTTP-only cookies to prevent XSS attacks
-/// - Requires secure flag when running in production
-/// - Password verification uses constant-time comparison
-/// - Sensitive credentials are never stored in plain text
-///
-/// # Notes
-/// - JWT configuration (secret, expiration) comes from application config
-/// - Cookie security settings depend on environment configuration
-/// - User roles are determined by their latest project participation
-pub(super) async fn login_handler(
+#[utoipa::path(
+    post,
+    path = "/v1/auth/login",
+    request_body = LoginUserSchema,
+    responses(
+        (status = 200, description = "Login successful",
+            headers(
+                ("Set-Cookie" = String, description = "JWT token in a cookie")
+            )
+        ),
+        (status = 401, description = "Wrong credentials or no role in any project"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Auth"
+)]
+pub(crate) async fn login_handler(
     req: Json<LoginUserSchema>, app_state: Data<AppState>,
 ) -> Result<HttpResponse, Error> {
     // convenience variable storing error in case of wrong credentials or user not found
