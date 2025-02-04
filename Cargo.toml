@@ -21,6 +21,8 @@ futures-util = "0.3.31"
 password-auth = "1.0.0"
 derive-getters = { version = "0.5.0", features = ["auto_copy_getters"] }
 env_logger = "0.11.6"
+utoipa = { version = "5.3.1", features = ["actix_extras"] }
+utoipa-swagger-ui = { version = "9.0.0", features = ["actix-web"] }
 
 [workspace]
 members = [".", "entity", "migration", "repository_macro"]

@@ -5,7 +5,7 @@ use entity::complaints::Entity;
 use repository_macro::RepositoryMethods;
 use sea_orm::DatabaseConnection;
 
-#[derive(new, RepositoryMethods)]
+#[derive(new, RepositoryMethods, Clone)]
 pub struct ComplaintsRepository {
     db_conn: DatabaseConnection,
 }

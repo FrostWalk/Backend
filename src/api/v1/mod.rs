@@ -3,6 +3,7 @@ use crate::api::v1::users::users_scope;
 use actix_web::{web, Scope};
 
 mod auth;
+pub(crate) mod doc;
 mod users;
 
 pub(super) fn v1_scope() -> Scope {

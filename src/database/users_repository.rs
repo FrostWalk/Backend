@@ -8,7 +8,7 @@ use repository_macro::RepositoryMethods;
 use sea_orm::{ColumnTrait, JoinType, QuerySelect, RelationTrait};
 use sea_orm::{DatabaseConnection, DbErr, EntityTrait, QueryFilter, QueryOrder};
 
-#[derive(new, RepositoryMethods)]
+#[derive(new, RepositoryMethods, Clone)]
 pub(crate) struct UsersRepository {
     db_conn: DatabaseConnection,
 }
