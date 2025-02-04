@@ -1,5 +1,5 @@
 use crate::app_state::AppState;
-use crate::common::json_error::JsonError;
+use crate::common::json_error::{JsonError, ToJsonError};
 use crate::jwt::COOKIE_NAME;
 use actix_web::cookie::Cookie;
 use actix_web::error::ErrorBadRequest;
@@ -13,7 +13,7 @@ use actix_web::{Error, HttpRequest};
     responses(
         (status = 200, description = "Logout successful", 
             headers(("Set-Cookie" = String, description = "Expired authentication cookie"))),
-        (status = 400, description = "Missing authentication cookie")
+        (status = 400, description = "Missing authentication cookie", body = JsonError)
     ),
     tag = "Authentication",
     security(

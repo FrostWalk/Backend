@@ -1,5 +1,5 @@
 use crate::app_state::AppState;
-use crate::common::json_error::JsonError;
+use crate::common::json_error::{JsonError, ToJsonError};
 use crate::jwt::token::create_token;
 use crate::jwt::COOKIE_NAME;
 use actix_web::cookie::time::Duration;
@@ -35,8 +35,8 @@ pub(crate) struct LoginUserSchema {
                 ("Set-Cookie" = String, description = "JWT token in a cookie")
             )
         ),
-        (status = 401, description = "Wrong credentials or no role in any project"),
-        (status = 500, description = "Internal server error")
+        (status = 401, description = "Wrong credentials or no role in any project", body = JsonError),
+        (status = 500, description = "Internal server error", body = JsonError)
     ),
     tag = "Auth"
 )]

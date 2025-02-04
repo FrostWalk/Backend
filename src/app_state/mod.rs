@@ -1,6 +1,14 @@
 use crate::config::Config;
+use crate::database::auxiliary_roles_repository::AuxiliaryRolesRepository;
+use crate::database::blacklist_repository::BlacklistRepository;
 use crate::database::complaints_repository::ComplaintsRepository;
+use crate::database::fair_repository::FairRepository;
+use crate::database::groups_repository::GroupsRepository;
 use crate::database::project_options_repository::ProjectOptionsRepository;
+use crate::database::projects_repository::ProjectRepository;
+use crate::database::roles_repository::RolesRepository;
+use crate::database::security_codes_repository::SecurityCodesRepository;
+use crate::database::users_projects_roles_repository::UsersProjectsRolesRepository;
 use crate::database::users_repository::UsersRepository;
 use sea_orm::Database;
 
@@ -14,6 +22,14 @@ pub(crate) struct Repositories {
     pub(crate) project_options_repository: ProjectOptionsRepository,
     pub(crate) complaints_repository: ComplaintsRepository,
     pub(crate) users_repository: UsersRepository,
+    pub(crate) project_repository: ProjectRepository,
+    pub(crate) auxiliary_roles_repository: AuxiliaryRolesRepository,
+    pub(crate) blacklist_repository: BlacklistRepository,
+    pub(crate) fair_repository: FairRepository,
+    pub(crate) groups_repository: GroupsRepository,
+    pub(crate) roles_repository: RolesRepository,
+    pub(crate) security_codes_repository: SecurityCodesRepository,
+    pub(crate) users_projects_roles_repository: UsersProjectsRolesRepository,
     // todo Missing repositories
 }
 
@@ -25,6 +41,14 @@ impl AppState {
                 project_options_repository: ProjectOptionsRepository::new(db_conn.clone()),
                 complaints_repository: ComplaintsRepository::new(db_conn.clone()),
                 users_repository: UsersRepository::new(db_conn.clone()),
+                project_repository: ProjectRepository::new(db_conn.clone()),
+                auxiliary_roles_repository: AuxiliaryRolesRepository::new(db_conn.clone()),
+                blacklist_repository: BlacklistRepository::new(db_conn.clone()),
+                fair_repository: FairRepository::new(db_conn.clone()),
+                groups_repository: GroupsRepository::new(db_conn.clone()),
+                roles_repository: RolesRepository::new(db_conn.clone()),
+                security_codes_repository: SecurityCodesRepository::new(db_conn.clone()),
+                users_projects_roles_repository: UsersProjectsRolesRepository::new(db_conn.clone()),
             },
             config,
         }

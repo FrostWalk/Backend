@@ -1,11 +1,11 @@
 use crate::app_state::AppState;
-use crate::common::json_error::JsonError;
+use crate::common::json_error::ToJsonError;
 use crate::database::repository_methods::RepositoryMethods;
 use crate::jwt::role::UserRole;
 use crate::jwt::token::decode_token;
 use crate::jwt::COOKIE_NAME;
 use actix_web::dev::{Service, ServiceRequest, ServiceResponse};
-use actix_web::error::{ErrorForbidden, ErrorUnauthorized};
+use actix_web::error::{ErrorForbidden, ErrorInternalServerError, ErrorUnauthorized};
 use actix_web::{http, web, HttpMessage};
 use futures_util::future::{ready, LocalBoxFuture};
 use futures_util::FutureExt;
@@ -13,7 +13,7 @@ use std::rc::Rc;
 use std::task::{Context, Poll};
 
 /// Middleware responsible for handling authentication and user information extraction.
-pub struct AuthMiddleware<const N: usize, S> {
+pub(crate) struct AuthMiddleware<const N: usize, S> {
     pub(crate) service: Rc<S>,
     pub(crate) allowed_roles: Rc<[UserRole; N]>,
 }
@@ -85,7 +85,7 @@ where
             let model = match result {
                 Ok(m) => m,
                 Err(e) => {
-                    return Err(ErrorUnauthorized(e.to_json_error()));
+                    return Err(ErrorInternalServerError(e.to_json_error()));
                 }
             };
 

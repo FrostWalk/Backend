@@ -5,7 +5,7 @@ use entity::fair::Entity;
 use repository_macro::RepositoryMethods;
 use sea_orm::DatabaseConnection;
 
-#[derive(new, RepositoryMethods)]
+#[derive(new, RepositoryMethods, Clone)]
 pub struct FairRepository {
     db_conn: DatabaseConnection,
 }

@@ -1,13 +1,15 @@
-use crate::api::v1::users::get_me::get_me;
+use crate::api::v1::users::me::me_handler;
 use crate::jwt::auth_factory::RequireAuth;
 use crate::jwt::role::ALL;
 use actix_web::{web, Scope};
 
-mod get_me;
+pub(crate) mod me;
 
 pub(super) fn users_scope() -> Scope {
     web::scope("/users").route(
         "/me",
-        web::get().to(get_me).wrap(RequireAuth::allowed_roles(ALL)),
+        web::get()
+            .to(me_handler)
+            .wrap(RequireAuth::allowed_roles(ALL)),
     )
 }
