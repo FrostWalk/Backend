@@ -4,7 +4,7 @@ use entity::groups::{ActiveModel, Entity};
 use repository_macro::RepositoryMethods;
 use sea_orm::DatabaseConnection;
 
-#[derive(new, RepositoryMethods)]
+#[derive(new, RepositoryMethods, Clone)]
 pub(crate) struct GroupsRepository {
     db_conn: DatabaseConnection,
 }

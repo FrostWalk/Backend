@@ -1,6 +1,8 @@
 use crate::api::v1::auth::login::LoginUserSchema;
 use crate::api::v1::auth::login::__path_login_handler;
 use crate::api::v1::auth::logout::__path_logout_handler;
+use crate::api::v1::users::me::UserProjectsSchema;
+use crate::api::v1::users::me::__path_me_handler;
 use utoipa::openapi::Server;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -10,10 +12,12 @@ use utoipa_swagger_ui::SwaggerUi;
     paths(
         login_handler,
         logout_handler,
+        me_handler,
     ),
     components(
         schemas(
-            LoginUserSchema
+            LoginUserSchema,
+            UserProjectsSchema,
         )
     ),
     tags(
