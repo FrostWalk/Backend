@@ -1,10 +1,10 @@
-use crate::database::repository_methods::RepositoryMethods;
+use crate::database::repository_methods_trait::RepositoryMethods;
 use derive_new::new;
-use entity::security_codes::{ActiveModel, Entity};
+use entity::groups::{ActiveModel, Entity};
 use repository_macro::RepositoryMethods;
 use sea_orm::DatabaseConnection;
 
 #[derive(new, RepositoryMethods, Clone)]
-pub(crate) struct SecurityCodesRepository {
+pub(crate) struct GroupsRepository {
     db_conn: DatabaseConnection,
 }

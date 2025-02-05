@@ -1,11 +1,11 @@
-use crate::database::repository_methods::RepositoryMethods;
+use crate::database::repository_methods_trait::RepositoryMethods;
 use derive_new::new;
-use entity::fair::ActiveModel;
-use entity::fair::Entity;
+use entity::complaints::ActiveModel;
+use entity::complaints::Entity;
 use repository_macro::RepositoryMethods;
 use sea_orm::DatabaseConnection;
 
 #[derive(new, RepositoryMethods, Clone)]
-pub struct FairRepository {
+pub struct ComplaintsRepository {
     db_conn: DatabaseConnection,
 }

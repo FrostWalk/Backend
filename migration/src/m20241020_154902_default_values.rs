@@ -12,11 +12,10 @@ impl MigrationTrait for Migration {
                 Query::insert()
                     .into_table(Roles::Table)
                     .columns([Roles::Id, Roles::Name])
-                    .values_panic([1.into(), "Professor".into()])
-                    .values_panic([2.into(), "Tutor".into()])
-                    .values_panic([3.into(), "Working group coordinator".into()])
-                    .values_panic([4.into(), "Group leader".into()])
-                    .values_panic([5.into(), "Group member".into()])
+                    .values_panic([1.into(), "Tutor".into()])
+                    .values_panic([2.into(), "Working group coordinator".into()])
+                    .values_panic([3.into(), "Group leader".into()])
+                    .values_panic([4.into(), "Group member".into()])
                     .to_owned(),
             )
             .await?;

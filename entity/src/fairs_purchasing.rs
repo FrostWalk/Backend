@@ -4,7 +4,7 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "fair_purchasing")]
+#[sea_orm(table_name = "fairs_purchasing")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
@@ -17,13 +17,13 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::fair::Entity",
+        belongs_to = "super::fairs::Entity",
         from = "Column::FairId",
-        to = "super::fair::Column::Id",
+        to = "super::fairs::Column::Id",
         on_update = "NoAction",
         on_delete = "Restrict"
     )]
-    Fair,
+    Fairs,
     #[sea_orm(
         belongs_to = "super::groups::Entity",
         from = "Column::PurchasingGroupId",
@@ -42,9 +42,9 @@ pub enum Relation {
     GroupsAndProjectComponents,
 }
 
-impl Related<super::fair::Entity> for Entity {
+impl Related<super::fairs::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Fair.def()
+        Relation::Fairs.def()
     }
 }
 
