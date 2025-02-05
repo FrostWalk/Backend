@@ -50,6 +50,56 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
+        // Admins Table
+        manager
+            .create_table(
+                Table::create()
+                    .table(Admins::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(Admins::Id)
+                            .integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(Admins::Username)
+                            .string()
+                            .not_null()
+                            .unique_key(),
+                    )
+                    .col(
+                        ColumnDef::new(Admins::Email)
+                            .string()
+                            .not_null()
+                            .unique_key(),
+                    )
+                    .col(ColumnDef::new(Admins::PasswordHash).blob().not_null())
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .table(Admins::Table)
+                    .col(Admins::Email)
+                    .unique()
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .table(Admins::Table)
+                    .col(Admins::Username)
+                    .unique()
+                    .to_owned(),
+            )
+            .await?;
+
         // Project Components table
         manager
             .create_table(
@@ -247,6 +297,35 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
+        // Settings
+        manager
+            .create_table(
+                Table::create()
+                    .table(Settings::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(Settings::Id)
+                            .integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
+                    .col(ColumnDef::new(Settings::Name).string().not_null())
+                    .col(ColumnDef::new(Settings::Value).string().not_null())
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .table(ProjectOptions::Table)
+                    .col(ProjectOptions::Name)
+                    .unique()
+                    .to_owned(),
+            )
+            .await?;
+
         // OptionsComponentsAndQuantity table
         manager
             .create_table(
@@ -421,21 +500,21 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Fair::Table)
+                    .table(Fairs::Table)
                     .if_not_exists()
                     .col(
-                        ColumnDef::new(Fair::Id)
+                        ColumnDef::new(Fairs::Id)
                             .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Fair::StartDate).date_time().null())
-                    .col(ColumnDef::new(Fair::EndDate).date_time().null())
-                    .col(ColumnDef::new(Fair::ProjectId).integer().not_null())
+                    .col(ColumnDef::new(Fairs::StartDate).date_time().null())
+                    .col(ColumnDef::new(Fairs::EndDate).date_time().null())
+                    .col(ColumnDef::new(Fairs::ProjectId).integer().not_null())
                     .foreign_key(
                         ForeignKey::create()
-                            .from(Fair::Table, Fair::ProjectId)
+                            .from(Fairs::Table, Fairs::ProjectId)
                             .to(Projects::Table, Projects::Id)
                             .on_delete(ForeignKeyAction::Restrict),
                     )
@@ -443,50 +522,53 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        // Fair purchase table
+        // Fairs purchase table
         manager
             .create_table(
                 Table::create()
-                    .table(FairPurchasing::Table)
+                    .table(FairsPurchasing::Table)
                     .if_not_exists()
                     .col(
-                        ColumnDef::new(FairPurchasing::Id)
+                        ColumnDef::new(FairsPurchasing::Id)
                             .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
                     )
                     .col(
-                        ColumnDef::new(FairPurchasing::DateOfPurchase)
+                        ColumnDef::new(FairsPurchasing::DateOfPurchase)
                             .date_time()
                             .null(),
                     )
-                    .col(ColumnDef::new(FairPurchasing::FairId).integer().not_null())
+                    .col(ColumnDef::new(FairsPurchasing::FairId).integer().not_null())
                     .col(
-                        ColumnDef::new(FairPurchasing::PurchasedComponentId)
+                        ColumnDef::new(FairsPurchasing::PurchasedComponentId)
                             .integer()
                             .not_null(),
                     )
                     .col(
-                        ColumnDef::new(FairPurchasing::PurchasingGroupId)
+                        ColumnDef::new(FairsPurchasing::PurchasingGroupId)
                             .integer()
                             .not_null(),
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .from(FairPurchasing::Table, FairPurchasing::FairId)
-                            .to(Fair::Table, Fair::Id)
+                            .from(FairsPurchasing::Table, FairsPurchasing::FairId)
+                            .to(Fairs::Table, Fairs::Id)
                             .on_delete(ForeignKeyAction::Restrict),
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .from(FairPurchasing::Table, FairPurchasing::PurchasingGroupId)
+                            .from(FairsPurchasing::Table, FairsPurchasing::PurchasingGroupId)
                             .to(Groups::Table, Groups::Id)
                             .on_delete(ForeignKeyAction::Restrict),
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .from(FairPurchasing::Table, FairPurchasing::PurchasedComponentId)
+                            .from(
+                                FairsPurchasing::Table,
+                                FairsPurchasing::PurchasedComponentId,
+                            )
                             .to(
                                 GroupsAndProjectComponents::Table,
                                 GroupsAndProjectComponents::Id,
@@ -500,8 +582,8 @@ impl MigrationTrait for Migration {
         manager
             .create_index(
                 Index::create()
-                    .table(FairPurchasing::Table)
-                    .col(FairPurchasing::PurchasingGroupId)
+                    .table(FairsPurchasing::Table)
+                    .col(FairsPurchasing::PurchasingGroupId)
                     .to_owned(),
             )
             .await?;
@@ -509,8 +591,8 @@ impl MigrationTrait for Migration {
         manager
             .create_index(
                 Index::create()
-                    .table(FairPurchasing::Table)
-                    .col(FairPurchasing::PurchasedComponentId)
+                    .table(FairsPurchasing::Table)
+                    .col(FairsPurchasing::PurchasedComponentId)
                     .to_owned(),
             )
             .await?;
@@ -918,6 +1000,14 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
+            .drop_table(Table::drop().table(Settings::Table).to_owned())
+            .await?;
+
+        manager
+            .drop_table(Table::drop().table(Admins::Table).to_owned())
+            .await?;
+
+        manager
             .drop_table(Table::drop().table(BlackList::Table).to_owned())
             .await?;
 
@@ -950,11 +1040,11 @@ impl MigrationTrait for Migration {
             .await?;
 
         manager
-            .drop_table(Table::drop().table(FairPurchasing::Table).to_owned())
+            .drop_table(Table::drop().table(FairsPurchasing::Table).to_owned())
             .await?;
 
         manager
-            .drop_table(Table::drop().table(Fair::Table).to_owned())
+            .drop_table(Table::drop().table(Fairs::Table).to_owned())
             .await?;
 
         manager
@@ -1018,6 +1108,22 @@ pub enum ProjectComponents {
     Id,
     ProjectId,
     Name,
+}
+#[derive(Iden)]
+pub enum Settings {
+    Table,
+    Id,
+    Name,
+    Value,
+}
+
+#[derive(Iden)]
+pub enum Admins {
+    Table,
+    Id,
+    Username,
+    Email,
+    PasswordHash,
 }
 
 #[derive(Iden)]
@@ -1084,7 +1190,7 @@ pub enum GroupsAndProjectComponents {
 }
 
 #[derive(Iden)]
-pub enum Fair {
+pub enum Fairs {
     Table,
     Id,
     ProjectId,
@@ -1093,7 +1199,7 @@ pub enum Fair {
 }
 
 #[derive(Iden)]
-pub enum FairPurchasing {
+pub enum FairsPurchasing {
     Table,
     Id,
     FairId,

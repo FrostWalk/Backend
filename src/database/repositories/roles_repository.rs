@@ -1,4 +1,4 @@
-use crate::database::repository_methods::RepositoryMethods;
+use crate::database::repository_methods_trait::RepositoryMethods;
 use derive_new::new;
 use entity::roles::{ActiveModel, Entity};
 use repository_macro::RepositoryMethods;

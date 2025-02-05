@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use crate::database::project_options_repository::ProjectOptionsRepository;
-    use crate::database::repository_methods::RepositoryMethods;
+    use crate::database::repositories::project_options_repository::ProjectOptionsRepository;
+    use crate::database::repository_methods_trait::RepositoryMethods;
     use entity::prelude::ProjectOptions;
     use entity::project_options::{ActiveModel as ProjectOptionsActiveModel, Column};
     use sea_orm::ActiveValue::Set;

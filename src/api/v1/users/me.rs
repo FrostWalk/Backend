@@ -1,6 +1,6 @@
 use crate::app_state::AppState;
 use crate::common::json_error::{JsonError, ToJsonError};
-use crate::database::projects_repository::ProjectsAndRoles;
+use crate::database::repositories::projects_repository::ProjectsAndRoles;
 use actix_web::error::{ErrorInternalServerError, ErrorNotFound};
 use actix_web::web::Data;
 use actix_web::{Error, HttpMessage, HttpRequest, HttpResponse};

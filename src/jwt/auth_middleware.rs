@@ -1,6 +1,6 @@
 use crate::app_state::AppState;
 use crate::common::json_error::ToJsonError;
-use crate::database::repository_methods::RepositoryMethods;
+use crate::database::repository_methods_trait::RepositoryMethods;
 use crate::jwt::role::UserRole;
 use crate::jwt::token::decode_token;
 use crate::jwt::COOKIE_NAME;
