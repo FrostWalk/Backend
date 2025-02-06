@@ -1,3 +1,4 @@
+pub(crate) mod admins_repository;
 pub(crate) mod auxiliary_roles_repository;
 pub(crate) mod blacklist_repository;
 pub(crate) mod complaints_repository;

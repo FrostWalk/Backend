@@ -1,11 +1,13 @@
 use crate::database::repository_methods_trait::RepositoryMethods;
 use derive_new::new;
-use entity::users_projects_and_roles::ActiveModel;
-use entity::users_projects_and_roles::Entity;
+use entity::admins::ActiveModel;
+use entity::admins::Entity;
 use repository_macro::RepositoryMethods;
 use sea_orm::DatabaseConnection;
 
-#[derive(new, Clone, RepositoryMethods)]
-pub(crate) struct UsersProjectsRolesRepository {
+#[derive(new, RepositoryMethods, Clone)]
+pub(crate) struct AdminsRepository {
     db_conn: DatabaseConnection,
 }
+
+impl AdminsRepository {}
