@@ -84,7 +84,7 @@ pub(crate) async fn login_handler(
         user.id,
         role,
         app_state.config.jwt_secret().as_bytes(),
-        app_state.config.jwt_expires_in(),
+        Duration::days(app_state.config.jwt_validity_days()).whole_seconds(),
     )
     .map_err(|e| ErrorInternalServerError(e.to_json_error()))?;
 
@@ -93,7 +93,7 @@ pub(crate) async fn login_handler(
         .path("/")
         .secure(app_state.config.secure_cookie())
         .http_only(true)
-        .max_age(Duration::new(app_state.config.jwt_expires_in(), 0))
+        .max_age(Duration::days(app_state.config.jwt_validity_days()))
         .finish();
 
     // return status code 200 with cookie

@@ -69,12 +69,7 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .unique_key(),
                     )
-                    .col(
-                        ColumnDef::new(Admins::Email)
-                            .string()
-                            .not_null()
-                            .unique_key(),
-                    )
+                    .col(ColumnDef::new(Admins::Email).string().null().unique_key())
                     .col(ColumnDef::new(Admins::PasswordHash).blob().not_null())
                     .to_owned(),
             )

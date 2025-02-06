@@ -3,5 +3,5 @@ port = 8080
 workers = 4
 db_url = "postgres://market:market@localhost/market"
 jwt_secret = "jwt_super_secret"
-jwt_expires_in = 3600
+jwt_validity_days = 7
 secure_cookie = false
