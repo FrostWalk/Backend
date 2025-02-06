@@ -22,7 +22,7 @@ pub(crate) struct Config {
     /// Key used to sign and crypt jwt tokens, should be random and long
     jwt_secret: String,
     /// Seconds after which the token is considered expired and the cookie is deleted
-    jwt_expires_in: i64,
+    jwt_validity_days: i64,
     /// Enable secure cookie only, set true in production
     secure_cookie: bool,
 }
