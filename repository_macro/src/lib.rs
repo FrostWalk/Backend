@@ -72,6 +72,7 @@ pub fn check_field_type_derive(input: TokenStream) -> TokenStream {
 
     // Generate the implementation
     let expanded = quote! {
+        #[automatically_derived]
         impl RepositoryMethods<Entity, ActiveModel> for #struct_name {
             fn db_conn(&self) -> &DatabaseConnection {
                 &self.db_conn

@@ -3,7 +3,7 @@ use sea_orm::QueryFilter;
 use sea_orm::{
     ActiveModelTrait, DatabaseConnection, DbErr, DeleteResult, EntityTrait, InsertResult,
 };
-
+#[allow(dead_code)]
 pub(crate) trait RepositoryMethods<E, AM>
 where
     E: EntityTrait,
