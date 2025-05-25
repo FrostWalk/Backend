@@ -4,14 +4,12 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "fairs")]
+#[sea_orm(table_name = "students_components")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub fair_id: i32,
+    pub students_component_id: i32,
     pub project_id: i32,
-    pub details: String,
-    pub start_date: DateTime,
-    pub end_date: DateTime,
+    pub name: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -24,8 +22,8 @@ pub enum Relation {
         on_delete = "Cascade"
     )]
     Projects,
-    #[sea_orm(has_many = "super::transactions::Entity")]
-    Transactions,
+    #[sea_orm(has_many = "super::student_parts_components::Entity")]
+    StudentPartsComponents,
 }
 
 impl Related<super::projects::Entity> for Entity {
@@ -34,9 +32,22 @@ impl Related<super::projects::Entity> for Entity {
     }
 }
 
-impl Related<super::transactions::Entity> for Entity {
+impl Related<super::student_parts_components::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Transactions.def()
+        Relation::StudentPartsComponents.def()
+    }
+}
+
+impl Related<super::student_parts::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::student_parts_components::Relation::StudentParts.def()
+    }
+    fn via() -> Option<RelationDef> {
+        Some(
+            super::student_parts_components::Relation::StudentsComponents
+                .def()
+                .rev(),
+        )
     }
 }
 
