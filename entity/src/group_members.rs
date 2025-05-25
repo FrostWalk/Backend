@@ -4,27 +4,25 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "security_codes")]
+#[sea_orm(table_name = "group_members")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub security_code_id: i32,
-    pub project_id: i32,
+    pub group_member_id: i32,
+    pub group_id: i32,
+    pub student_id: i32,
     pub student_role_id: i32,
-    #[sea_orm(unique)]
-    pub code: String,
-    pub expiration: DateTime,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::projects::Entity",
-        from = "Column::ProjectId",
-        to = "super::projects::Column::ProjectId",
+        belongs_to = "super::groups::Entity",
+        from = "Column::GroupId",
+        to = "super::groups::Column::GroupId",
         on_update = "NoAction",
         on_delete = "Cascade"
     )]
-    Projects,
+    Groups,
     #[sea_orm(
         belongs_to = "super::student_roles::Entity",
         from = "Column::StudentRoleId",
@@ -33,17 +31,31 @@ pub enum Relation {
         on_delete = "Cascade"
     )]
     StudentRoles,
+    #[sea_orm(
+        belongs_to = "super::students::Entity",
+        from = "Column::StudentId",
+        to = "super::students::Column::StudentId",
+        on_update = "NoAction",
+        on_delete = "Cascade"
+    )]
+    Students,
 }
 
-impl Related<super::projects::Entity> for Entity {
+impl Related<super::groups::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Projects.def()
+        Relation::Groups.def()
     }
 }
 
 impl Related<super::student_roles::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::StudentRoles.def()
+    }
+}
+
+impl Related<super::students::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Students.def()
     }
 }
 

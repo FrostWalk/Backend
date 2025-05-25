@@ -15,7 +15,6 @@ mod common;
 mod config;
 mod database;
 mod jwt;
-mod test;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
