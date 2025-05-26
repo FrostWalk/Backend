@@ -35,7 +35,7 @@ async fn main() -> std::io::Result<()> {
             .configure(configure_endpoints) // add scopes and routes
     })
     .workers(app_config.workers()) // normally 1 worker per thread
-        .bind((app_config.address().clone(), app_config.port()))? // address and port on which the server is listening to
+    .bind((app_config.address().clone(), app_config.port()))? // address and port on which the server is listening to
     .run()
     .await
 }

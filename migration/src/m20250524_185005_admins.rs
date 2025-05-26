@@ -17,7 +17,7 @@ impl MigrationTrait for Migration {
                     .col(string(Admins::LastName).not_null())
                     .col(string(Admins::Email).not_null().unique_key())
                     .col(string(Admins::PasswordHash).not_null())
-                    .col(small_integer(Admins::AdminRoleId).not_null())
+                    .col(integer(Admins::AdminRoleId).not_null())
                     .foreign_key(
                         ForeignKey::create()
                             .from(Admins::Table, Admins::AdminRoleId)
