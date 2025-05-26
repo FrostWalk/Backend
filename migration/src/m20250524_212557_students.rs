@@ -18,7 +18,7 @@ impl MigrationTrait for Migration {
                     .col(string(Students::Email).not_null().unique_key())
                     .col(integer(Students::UniversityId).not_null().unique_key())
                     .col(string(Students::PasswordHash).not_null())
-                    .col(small_integer(Students::StudentRoleId).not_null())
+                    .col(integer(Students::StudentRoleId).not_null())
                     .foreign_key(
                         ForeignKey::create()
                             .from(Students::Table, Students::StudentRoleId)
