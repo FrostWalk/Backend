@@ -2,6 +2,7 @@ use crate::database::repository_methods_trait::RepositoryMethods;
 use derive_new::new;
 use entity::admins::ActiveModel;
 use entity::admins::Entity;
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use password_auth::generate_hash;
 use repository_macro::RepositoryMethods;
 use sea_orm::{ActiveValue, DatabaseConnection};
@@ -25,15 +26,11 @@ impl AdminsRepository {
         .expect("Failed to create default admin");
     }
 }
+#[derive(PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
+#[repr(i32)]
 pub(crate) enum AdminRole {
     Root = 1,
     Professor = 2,
     Tutor = 3,
     Coordinator = 4,
-}
-
-impl Into<i32> for AdminRole {
-    fn into(self) -> i32 {
-        self as i32
-    }
 }
