@@ -1,7 +1,7 @@
 use crate::app_state::AppState;
 use crate::common::json_error::{JsonError, ToJsonError};
 use crate::jwt::token::create_token;
-use crate::jwt::COOKIE_NAME;
+use crate::jwt::HEADER;
 use actix_web::cookie::time::Duration;
 use actix_web::cookie::Cookie;
 use actix_web::error::{ErrorInternalServerError, ErrorUnauthorized};
@@ -49,7 +49,7 @@ pub(crate) async fn login_handler(
     // find the user in the db
     let opt = app_state
         .repositories
-        .users_repository
+        .admins
         .get_from_mail(&req.email)
         .await
         .map_err(|e| ErrorInternalServerError(e.to_json_error()))?;
@@ -69,7 +69,7 @@ pub(crate) async fn login_handler(
     // get the user's role in the last project he/she participated in
     let role_opt = app_state
         .repositories
-        .users_repository
+        .admins
         .get_current_role(user.id)
         .await
         .map_err(|e| ErrorInternalServerError(e.to_json_error()))?;
@@ -89,7 +89,7 @@ pub(crate) async fn login_handler(
     .map_err(|e| ErrorInternalServerError(e.to_json_error()))?;
 
     // create cookie with token, in production change `secure_cookie` to true in `config.toml`
-    let jwt_cookie = Cookie::build(COOKIE_NAME, token)
+    let jwt_cookie = Cookie::build(HEADER, token)
         .path("/")
         .secure(app_state.config.secure_cookie())
         .http_only(true)

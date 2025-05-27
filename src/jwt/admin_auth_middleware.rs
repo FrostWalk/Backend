@@ -1,9 +1,9 @@
 use crate::app_state::AppState;
 use crate::common::json_error::ToJsonError;
+use crate::database::repositories::admins_repository::AdminRole;
 use crate::database::repository_methods_trait::RepositoryMethods;
-use crate::jwt::role::UserRole;
 use crate::jwt::token::decode_token;
-use crate::jwt::COOKIE_NAME;
+use crate::jwt::HEADER;
 use actix_web::dev::{Service, ServiceRequest, ServiceResponse};
 use actix_web::error::{ErrorForbidden, ErrorInternalServerError, ErrorUnauthorized};
 use actix_web::{http, web, HttpMessage};
@@ -13,12 +13,12 @@ use std::rc::Rc;
 use std::task::{Context, Poll};
 
 /// Middleware responsible for handling authentication and user information extraction.
-pub(crate) struct AuthMiddleware<const N: usize, S> {
+pub(crate) struct AdminAuthMiddleware<const N: usize, S> {
     pub(crate) service: Rc<S>,
-    pub(crate) allowed_roles: Rc<[UserRole; N]>,
+    pub(crate) allowed_roles: Rc<[AdminRole; N]>,
 }
 
-impl<const N: usize, S> Service<ServiceRequest> for AuthMiddleware<N, S>
+impl<const N: usize, S> Service<ServiceRequest> for AdminAuthMiddleware<N, S>
 where
     S: Service<
             ServiceRequest,
@@ -39,7 +39,7 @@ where
     fn call(&self, req: ServiceRequest) -> Self::Future {
         // Attempt to extract token from cookie or authorization header
         let token = req
-            .cookie(COOKIE_NAME)
+            .cookie(HEADER)
             .map(|c| c.value().to_string())
             .or_else(|| {
                 req.headers()
@@ -47,7 +47,7 @@ where
                     .map(|h| h.to_str().unwrap().split_at(7).1.to_string())
             });
 
-        // If token is missing, return unauthorized error
+        // If the token is missing, return unauthorized error
         if token.is_none() {
             return Box::pin(ready(Err(ErrorUnauthorized(
                 "Token not provided".to_json_error(),
@@ -70,7 +70,12 @@ where
 
         // Handle user extraction and request processing
         async move {
-            if !allowed_roles.contains(&token.role) {
+            let role: AdminRole = match token.rl.try_into() {
+                Ok(role) => role,
+                Err(_) => return Err(ErrorUnauthorized("Invalid role".to_json_error())),
+            };
+
+            if !allowed_roles.contains(&role) {
                 return Err(ErrorForbidden(
                     "user does not have the necessary permissions".to_json_error(),
                 ));
@@ -78,7 +83,7 @@ where
 
             let result = cloned_app_state
                 .repositories
-                .users_repository
+                .admins
                 .get_from_id(token.sub)
                 .await;
 
@@ -97,7 +102,7 @@ where
             };
 
             // Insert user information into request extensions
-            req.extensions_mut().insert::<entity::users::Model>(user);
+            req.extensions_mut().insert::<entity::admins::Model>(user);
 
             // Call the wrapped service to handle the request
             let res = srv.call(req).await?;

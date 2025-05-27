@@ -1,6 +1,5 @@
 pub(super) mod auth_factory;
-mod auth_middleware;
-pub(super) mod role;
+mod admin_auth_middleware;
 pub(crate) mod token;
 
-pub(crate) const COOKIE_NAME: &str = "auth_token";
+const HEADER: &str = "auth_token";

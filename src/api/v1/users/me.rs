@@ -1,11 +1,10 @@
 use crate::app_state::AppState;
 use crate::common::json_error::{JsonError, ToJsonError};
-use crate::database::repositories::projects_repository::ProjectsAndRoles;
-use actix_web::error::{ErrorInternalServerError, ErrorNotFound};
+use actix_web::error::ErrorNotFound;
 use actix_web::web::Data;
 use actix_web::{Error, HttpMessage, HttpRequest, HttpResponse};
 use derive_new::new;
-use entity::users;
+use entity::students;
 use sea_orm::prelude::DateTime;
 use serde::Serialize;
 use utoipa::ToSchema;
@@ -76,49 +75,20 @@ pub(super) async fn me_handler(
     req: HttpRequest, app_state: Data<AppState>,
 ) -> Result<HttpResponse, Error> {
     // extract user from request, loaded by auth middleware
-    let user = match req.extensions().get::<users::Model>() {
+    let user = match req.extensions().get::<students::Model>() {
         None => return Err(ErrorNotFound("user does not exists".to_json_error())),
         Some(user) => user.clone(),
     };
 
-    // find all the projects in which user took part and his role in it
-    let projects_roles = to_projects_roles(
-        app_state
-            .repositories
-            .project_repository
-            .get_user_projects(user.id)
-            .await
-            .map_err(ErrorInternalServerError)?,
-    );
+    /*    // find all the projects in which user took part and his role in it
+        let projects_roles = to_projects_roles(
+            app_state
+                .repositories
+                .project_repository
+                .get_user_projects(user.id)
+                .await
+                .map_err(ErrorInternalServerError)?,
+        );*/
 
-    Ok(HttpResponse::Ok().json(UserProjectsSchema::from(user, projects_roles)))
-}
-#[inline(always)]
-fn to_projects_roles(p: ProjectsAndRoles) -> Vec<ProjectRole> {
-    let mut result: Vec<ProjectRole> = Vec::with_capacity(p.len());
-    for i in 0..p.len() {
-        result[i] = ProjectRole::new(
-            p[i].0.id,
-            p[i].0.name.clone(),
-            p[i].0.year,
-            p[i].1.name.clone(),
-            p[i].2 .0,
-            p[i].2 .1,
-        );
-    }
-    result
-}
-impl UserProjectsSchema {
-    #[inline(always)]
-    fn from(u: users::Model, p: Vec<ProjectRole>) -> Self {
-        Self {
-            id: u.id,
-            name: u.name,
-            surname: u.surname,
-            student_id: u.student_id,
-            email: u.email,
-            telegram_nick: u.telegram_nick,
-            projects: p,
-        }
-    }
+    Ok(HttpResponse::Ok().json(""))
 }

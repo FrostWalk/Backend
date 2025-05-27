@@ -1,4 +1,4 @@
-use crate::jwt::auth_middleware::AuthMiddleware;
+use crate::jwt::admin_auth_middleware::AdminAuthMiddleware;
 use crate::jwt::role::UserRole;
 use actix_web::dev::{Service, ServiceRequest, ServiceResponse, Transform};
 use futures_util::future::{ready, Ready};
@@ -28,13 +28,13 @@ where
 {
     type Response = ServiceResponse<actix_web::body::BoxBody>;
     type Error = actix_web::Error;
-    type Transform = AuthMiddleware<N, S>;
+    type Transform = AdminAuthMiddleware<N, S>;
     type InitError = ();
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
     /// Create a new `AuthMiddleware` using the provided service.
     fn new_transform(&self, service: S) -> Self::Future {
-        ready(Ok(AuthMiddleware {
+        ready(Ok(AdminAuthMiddleware {
             service: Rc::new(service),
             allowed_roles: self.allowed_roles.clone(),
         }))

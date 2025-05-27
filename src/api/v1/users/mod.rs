@@ -1,6 +1,5 @@
 use crate::api::v1::users::me::me_handler;
 use crate::jwt::auth_factory::RequireAuth;
-use crate::jwt::role::ALL;
 use actix_web::{web, Scope};
 
 pub(crate) mod me;

@@ -1,6 +1,6 @@
 use crate::app_state::AppState;
 use crate::common::json_error::{JsonError, ToJsonError};
-use crate::jwt::COOKIE_NAME;
+use crate::jwt::HEADER;
 use actix_web::cookie::Cookie;
 use actix_web::error::ErrorBadRequest;
 use actix_web::web::Data;
@@ -29,11 +29,11 @@ use actix_web::{Error, HttpRequest};
 pub(super) async fn logout_handler(
     req: HttpRequest, app_state: Data<AppState>,
 ) -> Result<HttpResponse, Error> {
-    if req.cookie(COOKIE_NAME).is_none() {
+    if req.cookie(HEADER).is_none() {
         return Err(ErrorBadRequest("cookie not found".to_json_error()));
     }
 
-    let mut remove_cookie = Cookie::build(COOKIE_NAME, "")
+    let mut remove_cookie = Cookie::build(HEADER, "")
         .path("/")
         .secure(app_state.config.secure_cookie())
         .http_only(true)

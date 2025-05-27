@@ -4,4 +4,3 @@ workers = 4
 db_url = "postgres://market:market@localhost/market"
 jwt_secret = "jwt_super_secret"
 jwt_validity_days = 7
-secure_cookie = false
