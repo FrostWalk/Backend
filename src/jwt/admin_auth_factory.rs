@@ -1,24 +1,25 @@
 use crate::jwt::admin_auth_middleware::AdminAuthMiddleware;
-use crate::jwt::role::UserRole;
 use actix_web::dev::{Service, ServiceRequest, ServiceResponse, Transform};
 use futures_util::future::{ready, Ready};
 use std::rc::Rc;
+use crate::database::repositories::admins_repository::AdminRole;
+
 
 /// Middleware requirement for authentication and authorization.
-pub(crate) struct RequireAuth<const N: usize> {
-    allowed_roles: Rc<[UserRole; N]>,
+pub(crate) struct RequireAdmin<const N: usize> {
+    allowed_roles: Rc<[AdminRole; N]>,
 }
 
-impl<const N: usize> RequireAuth<N> {
+impl<const N: usize> RequireAdmin<N> {
     /// Create a new instance of `RequireAuth` middleware.
-    pub(crate) fn allowed_roles(allowed_roles: [UserRole; N]) -> Self {
-        RequireAuth {
+    pub(crate) fn allowed_roles(allowed_roles: [AdminRole; N]) -> Self {
+        RequireAdmin {
             allowed_roles: Rc::new(allowed_roles),
         }
     }
 }
 
-impl<const N: usize, S> Transform<S, ServiceRequest> for RequireAuth<N>
+impl<const N: usize, S> Transform<S, ServiceRequest> for RequireAdmin<N>
 where
     S: Service<
             ServiceRequest,
