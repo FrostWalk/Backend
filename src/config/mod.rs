@@ -50,7 +50,7 @@ impl Config {
             .merge(Toml::file(CONFIG_FILE)) // config files overwrite env vars
             .extract();
 
-        // in case it fails, panic with message and specific error
+        // in case it fails, panic with a message and specific error
         res.unwrap_or_else(|e| panic!("Unable to load config: {:?}", e))
     }
 }

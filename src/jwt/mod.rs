@@ -1,5 +1,7 @@
-pub(super) mod auth_factory;
-mod admin_auth_middleware;
-pub(crate) mod token;
+use actix_web::dev::ServiceRequest;
+use crate::app_state::AppState;
 
-const HEADER: &str = "auth_token";
+pub(super) mod admin_auth_factory;
+mod admin_auth_middleware;
+mod student_auth_middleware;
+pub(crate) mod token;
