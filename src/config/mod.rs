@@ -11,9 +11,9 @@ const CONFIG_FILE: &str = "config.toml";
 /// Application configs
 #[derive(Deserialize, Getters, Clone)]
 pub(crate) struct Config {
-    /// Interface address on which the app is listening `127.0.0.1`, `0.0.0.0`
+    /// Interface address on which the app is listening to `127.0.0.1`, `0.0.0.0`
     address: String,
-    /// Local port on which the app is listening `8080`
+    /// Local port on which the app is listening to `8080`
     port: u16,
     /// Number of workers for the server, normally one per thread
     workers: usize,
@@ -21,17 +21,15 @@ pub(crate) struct Config {
     db_url: String,
     /// Key used to sign and crypt jwt tokens, should be random and long
     jwt_secret: String,
-    /// Seconds after which the token is considered expired and the cookie is deleted
+    /// Seconds after which the token is considered expired, and the cookie is deleted
     jwt_validity_days: i64,
-    /// Enable secure cookie only, set true in production
-    secure_cookie: bool,
 }
 impl Config {
     /// Loads and validates the application configuration from multiple sources.
     ///
     /// This function aggregates configuration values from environment variables and
     /// a TOML file, with the following precedence rules:
-    /// 1. TOML file values override environment variables
+    /// 1. TOML file values are override environment variables
     /// 2. Environment variables override default values (if any exist in `Config` struct)
     ///
     /// # Configuration Sources

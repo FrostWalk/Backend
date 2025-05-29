@@ -9,6 +9,4 @@ pub(crate) struct ProjectRepository {
     db_conn: DatabaseConnection,
 }
 
-
-impl ProjectRepository {
-}
+impl ProjectRepository {}
