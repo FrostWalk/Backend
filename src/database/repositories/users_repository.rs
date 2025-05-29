@@ -15,6 +15,7 @@ pub(crate) struct StudentsRepository {
 
 impl StudentsRepository {
     pub(crate) async fn get_from_mail(&self, mail: &String) -> Result<Option<Model>, DbErr> {
-        self.get_one_from_filter(students::Column::Email.eq(mail)).await
+        self.get_one_from_filter(students::Column::Email.eq(mail))
+            .await
     }
 }

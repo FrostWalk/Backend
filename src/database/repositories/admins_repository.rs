@@ -1,11 +1,13 @@
 use crate::database::repository_methods_trait::RepositoryMethods;
 use derive_new::new;
+use entity::admins;
 use entity::admins::ActiveModel;
 use entity::admins::Entity;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use password_auth::generate_hash;
 use repository_macro::RepositoryMethods;
-use sea_orm::{ActiveValue, DatabaseConnection};
+use sea_orm::ColumnTrait;
+use sea_orm::{ActiveValue, DatabaseConnection, DbErr};
 
 #[derive(new, RepositoryMethods, Clone)]
 pub(crate) struct AdminsRepository {
@@ -24,6 +26,13 @@ impl AdminsRepository {
         })
         .await
         .expect("Failed to create default admin");
+    }
+
+    pub(crate) async fn get_from_mail(
+        &self, mail: &String,
+    ) -> Result<Option<admins::Model>, DbErr> {
+        self.get_one_from_filter(admins::Column::Email.eq(mail))
+            .await
     }
 }
 #[derive(PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]

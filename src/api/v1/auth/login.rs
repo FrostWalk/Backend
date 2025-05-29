@@ -1,9 +1,7 @@
 use crate::app_state::AppState;
 use crate::common::json_error::{JsonError, ToJsonError};
-use crate::jwt::token::create_token;
-use crate::jwt::HEADER;
+use crate::jwt::token::create_student_token;
 use actix_web::cookie::time::Duration;
-use actix_web::cookie::Cookie;
 use actix_web::error::{ErrorInternalServerError, ErrorUnauthorized};
 use actix_web::web::Data;
 use actix_web::web::Json;
@@ -49,7 +47,7 @@ pub(crate) async fn login_handler(
     // find the user in the db
     let opt = app_state
         .repositories
-        .admins
+        .students
         .get_from_mail(&req.email)
         .await
         .map_err(|e| ErrorInternalServerError(e.to_json_error()))?;
@@ -66,36 +64,14 @@ pub(crate) async fn login_handler(
         return unauthorized;
     }
 
-    // get the user's role in the last project he/she participated in
-    let role_opt = app_state
-        .repositories
-        .admins
-        .get_current_role(user.id)
-        .await
-        .map_err(|e| ErrorInternalServerError(e.to_json_error()))?;
-
-    // if the user don't have a role in any project return error
-    let role = role_opt.ok_or(ErrorUnauthorized(
-        "User has no role in any project".to_json_error(),
-    ))?;
-
-    // create jwt from user data, if the creation fails return error 500
-    let token = create_token(
-        user.id,
-        role,
+    // create jwt from user data if the creation fails return error 500
+    let token = create_student_token(
+        user.student_id,
         app_state.config.jwt_secret().as_bytes(),
         Duration::days(app_state.config.jwt_validity_days()).whole_seconds(),
     )
     .map_err(|e| ErrorInternalServerError(e.to_json_error()))?;
 
-    // create cookie with token, in production change `secure_cookie` to true in `config.toml`
-    let jwt_cookie = Cookie::build(HEADER, token)
-        .path("/")
-        .secure(app_state.config.secure_cookie())
-        .http_only(true)
-        .max_age(Duration::days(app_state.config.jwt_validity_days()))
-        .finish();
-
     // return status code 200 with cookie
-    Ok(HttpResponse::Ok().cookie(jwt_cookie).finish())
+    Ok(HttpResponse::Ok().finish())
 }
