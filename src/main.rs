@@ -1,7 +1,7 @@
 extern crate core;
 
 use crate::api::configure_endpoints;
-use crate::app_state::AppState;
+use crate::app_data::AppData;
 use crate::config::Config;
 use crate::database::migrate_database;
 use actix_web::middleware::Logger;
@@ -10,7 +10,7 @@ use actix_web::{App, HttpServer};
 use env_logger::Env;
 
 mod api;
-mod app_state;
+mod app_data;
 mod common;
 mod config;
 mod database;
@@ -23,7 +23,7 @@ async fn main() -> std::io::Result<()> {
 
     // load config from env or file
     let app_config = Config::load();
-    let app_state = AppState::new(app_config.clone()).await;
+    let app_state = AppData::new(app_config.clone()).await;
 
     // migrate database to latest changes
     migrate_database(app_config.db_url()).await;

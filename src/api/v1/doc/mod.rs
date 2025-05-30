@@ -1,4 +1,4 @@
-use crate::api::v1::auth::login::LoginUserSchema;
+use crate::api::v1::auth::login::LoginStudentSchema;
 use crate::api::v1::auth::login::__path_login_handler;
 use crate::api::v1::users::me::__path_me_handler;
 use utoipa::openapi::Server;
@@ -13,7 +13,7 @@ use utoipa_swagger_ui::SwaggerUi;
     ),
     components(
         schemas(
-            LoginUserSchema,
+            LoginStudentSchema,
         )
     ),
     tags(

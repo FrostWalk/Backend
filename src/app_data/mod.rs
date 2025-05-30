@@ -10,7 +10,7 @@ use crate::database::repositories::users_repository::StudentsRepository;
 use sea_orm::Database;
 
 #[derive(Clone)]
-pub(crate) struct AppState {
+pub(crate) struct AppData {
     pub(crate) repositories: Repositories,
     pub(crate) config: Config,
 }
@@ -27,7 +27,7 @@ pub(crate) struct Repositories {
     // todo Missing repositories
 }
 
-impl AppState {
+impl AppData {
     pub(crate) async fn new(config: Config) -> Self {
         let db_conn = Database::connect(config.db_url()).await.unwrap();
         Self {

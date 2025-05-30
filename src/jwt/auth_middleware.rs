@@ -1,4 +1,4 @@
-use crate::app_state::AppState;
+use crate::app_data::AppData;
 use crate::common::json_error::ToJsonError;
 use crate::database::repositories::admins_repository::AdminRole;
 use crate::database::repository_methods_trait::RepositoryMethods;
@@ -26,10 +26,10 @@ pub(crate) struct AuthMiddleware<const N: usize, S> {
 impl<const N: usize, S> Service<ServiceRequest> for AuthMiddleware<N, S>
 where
     S: Service<
-            ServiceRequest,
-            Response = ServiceResponse<actix_web::body::BoxBody>,
-            Error = actix_web::Error,
-        > + 'static,
+        ServiceRequest,
+        Response=ServiceResponse<actix_web::body::BoxBody>,
+        Error=actix_web::Error,
+    > + 'static,
 {
     type Response = ServiceResponse<actix_web::body::BoxBody>;
     type Error = actix_web::Error;
@@ -59,7 +59,7 @@ where
             ))));
         }
 
-        let app_state = req.app_data::<web::Data<AppState>>().unwrap();
+        let app_state = req.app_data::<web::Data<AppData>>().unwrap();
 
         // Decode token and handle errors
         let token = match decode_token(token.unwrap(), app_state.config.jwt_secret().as_bytes()) {
@@ -145,6 +145,6 @@ where
             let res = srv.call(req).await?;
             Ok(res)
         }
-        .boxed_local()
+            .boxed_local()
     }
 }
