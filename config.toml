@@ -4,3 +4,5 @@ workers = 4
 db_url = "postgres://market:market@localhost/market"
 jwt_secret = "jwt_super_secret"
 jwt_validity_days = 7
+logs_mongo_uri="mongodb://localhost:27017"
+logs_db_name="market"

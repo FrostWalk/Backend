@@ -27,13 +27,6 @@ services:
       - mongodb_data:/data/db
     restart: unless-stopped
 
-  chartdb:
-    image: ghcr.io/chartdb/chartdb:latest
-    container_name: chartdb
-    ports:
-      - "8080:80"
-    restart: unless-stopped
-
 volumes:
   db_data:
   mongodb_data:

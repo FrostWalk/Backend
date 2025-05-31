@@ -23,6 +23,10 @@ pub(crate) struct Config {
     jwt_secret: String,
     /// Seconds after which the token is considered expired, and the cookie is deleted
     jwt_validity_days: i64,
+    /// Mongo's connection string for logs storage
+    logs_mongo_uri: String,
+    /// Mongo's database name for logs storage
+    logs_db_name: String,
 }
 impl Config {
     /// Loads and validates the application configuration from multiple sources.
