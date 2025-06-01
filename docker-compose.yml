@@ -2,24 +2,31 @@ services:
   postgres:
     image: postgres:alpine
     container_name: postgres
+    ports:
+      - "5432:5432"
     environment:
       - POSTGRES_USER=market
       - POSTGRES_PASSWORD=market
       - POSTGRES_DB=market
       - TZ=Europe/rome
-    ports:
-      - "5432:5432"
+
     volumes:
       - db_data:/var/lib/postgresql/data
     restart: unless-stopped
 
-
-  chartdb:
-    container_name: chartdb
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
     ports:
-      - "8080:80"
-    image: ghcr.io/chartdb/chartdb:latest
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=logs
+      - MONGO_INITDB_ROOT_PASSWORD=logs
+      - TZ=Europe/rome
+    volumes:
+      - mongodb_data:/data/db
     restart: unless-stopped
 
 volumes:
   db_data:
+  mongodb_data:
