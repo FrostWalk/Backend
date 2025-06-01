@@ -4,10 +4,10 @@ use crate::api::configure_endpoints;
 use crate::app_data::AppData;
 use crate::config::Config;
 use crate::database::migrate_database;
+use crate::logging::logger::init_mongo_logger;
 use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
-use env_logger::Env;
 
 mod api;
 mod app_data;
@@ -15,15 +15,19 @@ mod common;
 mod config;
 mod database;
 mod jwt;
+mod logging;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // print debug logs in console
-    env_logger::init_from_env(Env::default().default_filter_or("debug"));
-
     // load config from env or file
     let app_config = Config::load();
     let app_state = AppData::new(app_config.clone()).await;
+
+    if let Err(e) = init_mongo_logger(app_config.logs_mongo_uri(), app_config.logs_db_name()).await
+    {
+        eprintln!("Failed to initialize MongoDB logger: {}", e);
+        std::process::exit(1);
+    }
 
     // migrate database to latest changes
     migrate_database(app_config.db_url()).await;
