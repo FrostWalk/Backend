@@ -1,6 +1,6 @@
-use crate::api::v1::auth::login::LoginStudentSchema;
-use crate::api::v1::auth::login::__path_login_handler;
-use crate::api::v1::users::me::__path_me_handler;
+use crate::api::v1::students::auth::login::__path_students_login_handler;
+use crate::api::v1::students::users::me::__path_students_me_handler;
+use crate::api::v1::admins::users::me::__path_admins_me_handler;
 use utoipa::openapi::Server;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -8,19 +8,15 @@ use utoipa_swagger_ui::SwaggerUi;
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        login_handler,
-        me_handler,
-    ),
-    components(
-        schemas(
-            LoginStudentSchema,
-        )
+        students_login_handler,
+        students_me_handler,
+        admins_me_handler,
     ),
     tags(
         (name = "Auth", description = "Authentication endpoints")
     )
 )]
-pub(super) struct ApiDoc;
+pub(in crate::api) struct ApiDoc;
 
 pub(crate) fn open_api() -> SwaggerUi {
     let mut doc = ApiDoc::openapi();
