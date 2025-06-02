@@ -43,3 +43,4 @@ pub(crate) enum AdminRole {
     Tutor = 3,
     Coordinator = 4,
 }
+pub(crate) const ALL: [AdminRole; 4] = [AdminRole::Root, AdminRole::Professor, AdminRole::Tutor, AdminRole::Coordinator];
