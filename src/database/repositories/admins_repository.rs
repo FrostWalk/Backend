@@ -8,6 +8,7 @@ use password_auth::generate_hash;
 use repository_macro::RepositoryMethods;
 use sea_orm::ColumnTrait;
 use sea_orm::{ActiveValue, DatabaseConnection, DbErr};
+use std::ops::Deref;
 
 #[derive(new, RepositoryMethods, Clone)]
 pub(crate) struct AdminsRepository {
@@ -15,13 +16,13 @@ pub(crate) struct AdminsRepository {
 }
 
 impl AdminsRepository {
-    pub(crate) async fn create_default_admin(&self, email: String, password: String) {
+    pub(crate) async fn create_default_admin(&self, email: &String, password: &String) {
         self.create(ActiveModel {
             admin_id: ActiveValue::NotSet,
             first_name: ActiveValue::Set("admin".to_string()),
             last_name: ActiveValue::Set("".to_string()),
-            email: ActiveValue::Set(email),
-            password_hash: ActiveValue::Set(generate_hash(&password)),
+            email: ActiveValue::Set(email.deref().to_owned()),
+            password_hash: ActiveValue::Set(generate_hash(password)),
             admin_role_id: ActiveValue::Set(AdminRole::Root.into()),
         })
         .await
@@ -43,4 +44,9 @@ pub(crate) enum AdminRole {
     Tutor = 3,
     Coordinator = 4,
 }
-pub(crate) const ALL: [AdminRole; 4] = [AdminRole::Root, AdminRole::Professor, AdminRole::Tutor, AdminRole::Coordinator];
+pub(crate) const ALL: [AdminRole; 4] = [
+    AdminRole::Root,
+    AdminRole::Professor,
+    AdminRole::Tutor,
+    AdminRole::Coordinator,
+];

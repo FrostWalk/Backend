@@ -21,7 +21,7 @@ mod logging;
 async fn main() -> std::io::Result<()> {
     // load config from env or file
     let app_config = Config::load();
-    let app_state = AppData::new(app_config.clone()).await;
+    let app_data = AppData::new(app_config.clone()).await;
 
     if let Err(e) = init_mongo_logger(app_config.logs_mongo_uri(), app_config.logs_db_name()).await
     {
@@ -31,10 +31,19 @@ async fn main() -> std::io::Result<()> {
 
     // migrate database to latest changes
     migrate_database(app_config.db_url()).await;
+    app_data
+        .clone()
+        .repositories
+        .admins
+        .create_default_admin(
+            app_config.default_admin_email(),
+            app_config.default_admin_password(),
+        )
+        .await;
 
     HttpServer::new(move || {
         App::new()
-            .app_data(Data::new(app_state.clone())) //add application state with repositories and config
+            .app_data(Data::new(app_data.clone())) //add application state with repositories and config
             .wrap(Logger::default()) // add logging middleware
             .configure(configure_endpoints) // add scopes and routes
     })

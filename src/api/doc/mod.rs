@@ -1,6 +1,6 @@
+use crate::api::v1::admins::users::me::__path_admins_me_handler;
 use crate::api::v1::students::auth::login::__path_students_login_handler;
 use crate::api::v1::students::users::me::__path_students_me_handler;
-use crate::api::v1::admins::users::me::__path_admins_me_handler;
 use utoipa::openapi::Server;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;

@@ -1,6 +1,6 @@
+use crate::api::v1::students::users::me::students_me_handler;
 use crate::jwt::student_auth_factory::Student;
 use actix_web::{web, Scope};
-use crate::api::v1::students::users::me::students_me_handler;
 
 pub(crate) mod me;
 
