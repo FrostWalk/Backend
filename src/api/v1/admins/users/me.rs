@@ -5,7 +5,6 @@ use entity::admins;
 use serde::Serialize;
 use utoipa::ToSchema;
 
-
 #[derive(Debug, Serialize, ToSchema)]
 pub(crate) struct GetMeAdminResponse {
     #[schema(example = 1)]

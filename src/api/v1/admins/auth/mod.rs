@@ -1,5 +1,5 @@
-use actix_web::{web, Scope};
 use crate::api::v1::admins::auth::login::admins_login_handler;
+use actix_web::{web, Scope};
 
 pub(crate) mod login;
 
