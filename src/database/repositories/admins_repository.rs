@@ -1,8 +1,9 @@
 use crate::database::repository_methods_trait::RepositoryMethods;
 use derive_new::new;
 use entity::admins;
-use entity::admins::ActiveModel;
 use entity::admins::Entity;
+use entity::admins::ActiveModel;
+use log::error;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use password_auth::generate_hash;
 use repository_macro::RepositoryMethods;
@@ -17,9 +18,22 @@ pub(crate) struct AdminsRepository {
 
 impl AdminsRepository {
     pub(crate) async fn create_default_admin(&self, email: &String, password: &String) {
+        let found = match self.get_all().await {
+            Ok(f) => f.len(),
+            Err(e) => {
+                error!("unable to find admins {}", e);
+                0
+            }
+        };
+
+        // if admins already present, skip creation
+        if found > 0 {
+            return;
+        }
+
         self.create(ActiveModel {
             admin_id: ActiveValue::NotSet,
-            first_name: ActiveValue::Set("admin".to_string()),
+            first_name: ActiveValue::Set("root".to_string()),
             last_name: ActiveValue::Set("".to_string()),
             email: ActiveValue::Set(email.deref().to_owned()),
             password_hash: ActiveValue::Set(generate_hash(password)),

@@ -1,3 +1,5 @@
+use crate::api::v1::admins::auth::login::__path_admins_login_handler;
+use crate::api::v1::admins::users::create::__path_create_admin_handler;
 use crate::api::v1::admins::users::me::__path_admins_me_handler;
 use crate::api::v1::students::auth::login::__path_students_login_handler;
 use crate::api::v1::students::users::me::__path_students_me_handler;
@@ -9,11 +11,14 @@ use utoipa_swagger_ui::SwaggerUi;
 #[openapi(
     paths(
         students_login_handler,
+        admins_login_handler,
         students_me_handler,
         admins_me_handler,
+        create_admin_handler,
     ),
     tags(
-        (name = "Auth", description = "Authentication endpoints")
+        (name = "Auth", description = "Authentication endpoints"),
+        (name = "Users", description = "Users management")
     )
 )]
 pub(in crate::api) struct ApiDoc;
