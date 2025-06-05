@@ -2,13 +2,10 @@ use crate::app_data::AppData;
 use crate::common::json_error::{JsonError, ToJsonError};
 use crate::database::repositories::admins_repository::AdminRole;
 use crate::database::repository_methods_trait::RepositoryMethods;
-use actix_web::error::{
-    ErrorBadRequest, ErrorInternalServerError, ErrorNotFound, ErrorUnauthorized,
-};
+use actix_web::error::{ErrorBadRequest, ErrorInternalServerError, ErrorUnauthorized};
 use actix_web::web::{Data, Json};
 use actix_web::{Error, HttpMessage, HttpRequest, HttpResponse};
 use entity::admins;
-use entity::admins::Relation::AdminRoles;
 use log::{error, warn};
 use sea_orm::ActiveValue;
 use serde::{Deserialize, Serialize};
@@ -40,10 +37,14 @@ pub(crate) struct CreateAdminResponse {
     responses(
         (status = 200, description = "Admin created successfully", body = CreateAdminResponse),
         (status = 400, description = "Invalid data in request", body = JsonError),
+        (status = 401, description = "Authentication required", body = JsonError),
         (status = 500, description = "Internal server error occurred", body = JsonError)
     ),
     tag = "Users",
 )]
+/// Creates a new admin user.
+///
+/// This endpoint allows authenticated users to create new admin accounts. Only users with the root role can create other root users.
 pub(super) async fn create_admin_handler(
     req: HttpRequest, payload: Json<CreateAdminScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, Error> {
