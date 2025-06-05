@@ -30,7 +30,7 @@ pub(crate) struct LoginAdminsResponse {
     token: String,
 }
 
-/// Authenticates a user and returns a JWT.
+/// Authenticates an admin and returns a JWT.
 ///
 /// This endpoint validates user credentials and issues a JWT upon successful authentication.
 #[utoipa::path(

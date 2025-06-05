@@ -30,7 +30,7 @@ pub(crate) struct LoginStudentsResponse {
     token: String,
 }
 
-/// Authenticates a user and returns a JWT.
+/// Authenticates a student and returns a JWT.
 ///
 /// This endpoint validates user credentials and issues a JWT upon successful authentication.
 #[utoipa::path(

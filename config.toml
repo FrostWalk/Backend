@@ -7,4 +7,4 @@ jwt_validity_days = 7
 logs_mongo_uri="mongodb://localhost:27017"
 logs_db_name="market"
 default_admin_password = "password"
-default_admin_email = "federico"
+default_admin_email = "root"

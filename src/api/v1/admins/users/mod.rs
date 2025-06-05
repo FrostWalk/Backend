@@ -4,7 +4,7 @@ use crate::database::repositories::admins_repository::{AdminRole, ALL};
 use crate::jwt::admin_auth_factory::Admin;
 use actix_web::{web, Scope};
 
-mod create;
+pub(crate) mod create;
 pub(crate) mod me;
 
 pub(super) fn users_scope() -> Scope {
