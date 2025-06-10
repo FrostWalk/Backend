@@ -1,6 +1,6 @@
 use crate::api::v1::admins::users::create::create_admin_handler;
 use crate::api::v1::admins::users::me::admins_me_handler;
-use crate::api::v1::admins::users::read::admins_get_all_handler;
+use crate::api::v1::admins::users::read::{admins_get_all_handler, admins_get_one_handler};
 use crate::database::repositories::admins_repository::{AdminRole, ALL};
 use crate::jwt::admin_auth_factory::Admin;
 use actix_web::{web, Scope};
@@ -25,6 +25,16 @@ pub(super) fn users_scope() -> Scope {
                 ])),
         )
         .route(
+            "/{id}",
+            web::get()
+                .to(admins_get_one_handler)
+                .wrap(Admin::require_roles([
+                    AdminRole::Root,
+                    AdminRole::Professor,
+                    AdminRole::Tutor,
+                ])),
+        )
+        .route(
             "/me",
             web::get()
                 .to(admins_me_handler)
@@ -37,6 +47,7 @@ pub(super) fn users_scope() -> Scope {
                 .wrap(Admin::require_roles([
                     AdminRole::Root,
                     AdminRole::Professor,
+                    AdminRole::Tutor,  //todo il tutor può creare solo un coordinator
                 ])),
         )
 }
