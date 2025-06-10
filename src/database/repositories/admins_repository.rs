@@ -1,10 +1,10 @@
 use crate::database::repository_methods_trait::RepositoryMethods;
 use derive_new::new;
 use entity::admins;
-use entity::admins::Entity;
 use entity::admins::ActiveModel;
+use entity::admins::Entity;
 use log::error;
-use num_enum::{IntoPrimitive, TryFromPrimitive};
+use num_enum::{FromPrimitive, IntoPrimitive, TryFromPrimitive};
 use password_auth::generate_hash;
 use repository_macro::RepositoryMethods;
 use sea_orm::ColumnTrait;
