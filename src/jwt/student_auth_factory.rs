@@ -3,23 +3,21 @@ use actix_web::dev::{Service, ServiceRequest, ServiceResponse, Transform};
 use futures_util::future::{ready, Ready};
 use std::rc::Rc;
 
-/// Middleware requirement for authentication and authorization.
-pub(crate) struct RequireStudent {}
+pub(crate) struct Student {}
 
-impl RequireStudent {
-    /// Create a new instance of `RequireAuth` middleware.
+impl Student {
     pub(crate) fn require_auth() -> Self {
         Self {}
     }
 }
 
-impl<S> Transform<S, ServiceRequest> for RequireStudent
+impl<S> Transform<S, ServiceRequest> for Student
 where
     S: Service<
-        ServiceRequest,
-        Response=ServiceResponse<actix_web::body::BoxBody>,
-        Error=actix_web::Error,
-    > + 'static,
+            ServiceRequest,
+            Response = ServiceResponse<actix_web::body::BoxBody>,
+            Error = actix_web::Error,
+        > + 'static,
 {
     type Response = ServiceResponse<actix_web::body::BoxBody>;
     type Error = actix_web::Error;
@@ -27,7 +25,6 @@ where
     type InitError = ();
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
-    /// Create a new `AuthMiddleware` using the provided service.
     fn new_transform(&self, service: S) -> Self::Future {
         ready(Ok(AuthMiddleware {
             service: Rc::new(service),

@@ -15,6 +15,17 @@ impl MigrationTrait for Migration {
                     .col(string(StudentRoles::Name).not_null().unique_key())
                     .to_owned(),
             )
+            .await?;
+
+        manager
+            .exec_stmt(
+                Query::insert()
+                    .into_table(StudentRoles::Table)
+                    .columns([StudentRoles::StudentRoleId, StudentRoles::Name])
+                    .values_panic([1.into(), "Member".into()])
+                    .values_panic([2.into(), "Leader".into()])
+                    .to_owned(),
+            )
             .await
     }
 

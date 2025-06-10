@@ -20,8 +20,6 @@ services:
     ports:
       - "27017:27017"
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=logs
-      - MONGO_INITDB_ROOT_PASSWORD=logs
       - TZ=Europe/rome
     volumes:
       - mongodb_data:/data/db

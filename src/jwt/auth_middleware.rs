@@ -92,7 +92,7 @@ where
                     }
                 };
 
-                let students = match model {
+                let student = match model {
                     None => {
                         warn!("login attempt with non existing student",);
                         return Err(ErrorUnauthorized(INVALID_TOKEN.to_json_error()));
@@ -100,7 +100,7 @@ where
                     Some(u) => u,
                 };
 
-                req.extensions_mut().insert::<students::Model>(students);
+                req.extensions_mut().insert::<students::Model>(student);
             } else {
                 if !token.adm {
                     return Err(ErrorUnauthorized(INVALID_TOKEN.to_json_error()));

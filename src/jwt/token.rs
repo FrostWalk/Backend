@@ -1,4 +1,3 @@
-use crate::database::repositories::admins_repository::AdminRole;
 use actix_web::{error, Error};
 use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
@@ -39,9 +38,9 @@ fn create_token(
 }
 #[inline(always)]
 pub(crate) fn create_admin_token(
-    user_id: i32, admin_role: AdminRole, secret: &[u8], expires_in_seconds: i64,
+    user_id: i32, admin_role_id: i32, secret: &[u8], expires_in_seconds: i64,
 ) -> Result<String, jsonwebtoken::errors::Error> {
-    create_token(user_id, true, admin_role.into(), secret, expires_in_seconds)
+    create_token(user_id, true, admin_role_id, secret, expires_in_seconds)
 }
 #[inline(always)]
 pub(crate) fn create_student_token(

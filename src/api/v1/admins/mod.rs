@@ -1,0 +1,12 @@
+use crate::api::v1::admins::auth::auth_scope;
+use crate::api::v1::admins::users::users_scope;
+use actix_web::{web, Scope};
+
+pub(crate) mod auth;
+pub(crate) mod users;
+
+pub(super) fn admins_scope() -> Scope {
+    web::scope("/admins")
+        .service(auth_scope())
+        .service(users_scope())
+}
