@@ -1,6 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{JsonError, ToJsonError};
-use crate::jwt::token::create_student_token;
+use crate::jwt::token::create_admin_token;
 use actix_web::cookie::time::Duration;
 use actix_web::error::{ErrorInternalServerError, ErrorUnauthorized};
 use actix_web::web::Data;
@@ -14,7 +14,7 @@ const WRONG_CREDENTIALS: &str = "Incorrect email or password";
 
 /// Represents data needed for login
 #[derive(Deserialize, ToSchema)]
-pub(crate) struct LoginStudentSchema {
+pub(crate) struct LoginAdminsSchema {
     #[schema(example = "user@example.com")]
     email: String,
     #[schema(example = "password123")]
@@ -24,28 +24,28 @@ pub(crate) struct LoginStudentSchema {
 ///
 /// This struct includes a JWT token that can be used for later authenticated requests.
 #[derive(Serialize, ToSchema)]
-pub(crate) struct LoginStudentResponse {
+pub(crate) struct LoginAdminsResponse {
     /// JSON Web Token (JWT) to be used for authentication in later requests.
     #[schema(example = "eyJhbGc9...")]
     token: String,
 }
 
-/// Authenticates a user and returns a JWT.
+/// Authenticates an admin and returns a JWT.
 ///
 /// This endpoint validates user credentials and issues a JWT upon successful authentication.
 #[utoipa::path(
     post,
-    path = "/v1/auth/login",
-    request_body = LoginStudentSchema,
+    path = "/v1/admins/auth/login",
+    request_body = LoginAdminsSchema,
     responses(
-        (status = 200, description = "Login successful", body = LoginStudentResponse),
+        (status = 200, description = "Login successful", body = LoginAdminsResponse),
         (status = 401, description = "Wrong credentials", body = JsonError),
         (status = 500, description = "Internal server error", body = JsonError)
     ),
     tag = "Auth"
 )]
-pub(crate) async fn login_handler(
-    req: Json<LoginStudentSchema>, data: Data<AppData>,
+pub(crate) async fn admins_login_handler(
+    req: Json<LoginAdminsSchema>, data: Data<AppData>,
 ) -> Result<HttpResponse, Error> {
     // convenience variable storing error in case of wrong credentials or user not found
     let unauthorized = Err(ErrorUnauthorized(WRONG_CREDENTIALS.to_json_error()));
@@ -53,7 +53,7 @@ pub(crate) async fn login_handler(
     // find the user in the db
     let opt = data
         .repositories
-        .students
+        .admins
         .get_from_mail(&req.email)
         .await
         .map_err(|e| ErrorInternalServerError(e.to_json_error()))?;
@@ -71,13 +71,14 @@ pub(crate) async fn login_handler(
     }
 
     // create jwt from user data if the creation fails return error 500
-    let token = create_student_token(
-        user.student_id,
+    let token = create_admin_token(
+        user.admin_id,
+        user.admin_role_id,
         data.config.jwt_secret().as_bytes(),
         Duration::days(data.config.jwt_validity_days()).whole_seconds(),
     )
     .map_err(|e| ErrorInternalServerError(e.to_json_error()))?;
 
     // return status code 200 with cookie
-    Ok(HttpResponse::Ok().json(LoginStudentResponse { token }))
+    Ok(HttpResponse::Ok().json(LoginAdminsResponse { token }))
 }

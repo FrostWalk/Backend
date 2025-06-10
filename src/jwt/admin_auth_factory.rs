@@ -4,21 +4,19 @@ use actix_web::dev::{Service, ServiceRequest, ServiceResponse, Transform};
 use futures_util::future::{ready, Ready};
 use std::rc::Rc;
 
-/// Middleware requirement for authentication and authorization.
-pub(crate) struct RequireAdmin<const N: usize> {
+pub(crate) struct Admin<const N: usize> {
     allowed_roles: Rc<[AdminRole; N]>,
 }
 
-impl<const N: usize> RequireAdmin<N> {
-    /// Create a new instance of `RequireAuth` middleware.
-    pub(crate) fn allowed_roles(allowed_roles: [AdminRole; N]) -> Self {
+impl<const N: usize> Admin<N> {
+    pub(crate) fn require_roles(allowed_roles: [AdminRole; N]) -> Self {
         Self {
             allowed_roles: Rc::new(allowed_roles),
         }
     }
 }
 
-impl<const N: usize, S> Transform<S, ServiceRequest> for RequireAdmin<N>
+impl<const N: usize, S> Transform<S, ServiceRequest> for Admin<N>
 where
     S: Service<
             ServiceRequest,
@@ -32,7 +30,6 @@ where
     type InitError = ();
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
-    /// Create a new `AuthMiddleware` using the provided service.
     fn new_transform(&self, service: S) -> Self::Future {
         ready(Ok(AuthMiddleware {
             service: Rc::new(service),

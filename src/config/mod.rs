@@ -5,7 +5,6 @@ use figment::{
 };
 use serde::Deserialize;
 
-const ENV_PREFIX: &str = "APP_";
 const CONFIG_FILE: &str = "config.toml";
 
 /// Application configs
@@ -27,6 +26,10 @@ pub(crate) struct Config {
     logs_mongo_uri: String,
     /// Mongo's database name for logs storage
     logs_db_name: String,
+    /// Application default admin account password
+    default_admin_password: String,
+    /// Application default admin account email
+    default_admin_email: String,
 }
 impl Config {
     /// Loads and validates the application configuration from multiple sources.
@@ -37,7 +40,7 @@ impl Config {
     /// 2. Environment variables override default values (if any exist in `Config` struct)
     ///
     /// # Configuration Sources
-    /// - **Environment Variables**: Must be prefixed with `APP_` (e.g., `APP_DATABASE_URL`)
+    /// - **Environment Variables**: Read from environment variables
     /// - **TOML File**: Looks for `config.toml` in the current working directory
     ///
     /// # Panics
@@ -48,7 +51,7 @@ impl Config {
     /// - The TOML file contains syntax errors
     pub(crate) fn load() -> Self {
         let res: figment::Result<Config> = Figment::new()
-            .merge(Env::prefixed(ENV_PREFIX)) // each var must start with `APP_`
+            .merge(Env::raw())
             .merge(Toml::file(CONFIG_FILE)) // config files overwrite env vars
             .extract();
 
