@@ -2,9 +2,10 @@ use crate::app_data::AppData;
 use crate::common::json_error::{JsonError, ToJsonError};
 use crate::database::repositories::admins_repository::AdminRole;
 use crate::database::repository_methods_trait::RepositoryMethods;
-use actix_web::error::{ErrorBadRequest, ErrorInternalServerError, ErrorUnauthorized};
+use crate::jwt::get_user::LoggedUser;
+use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
-use actix_web::{Error, HttpMessage, HttpRequest, HttpResponse};
+use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use entity::admins;
 use log::{error, warn};
 use sea_orm::ActiveValue;
@@ -40,19 +41,22 @@ pub(crate) struct CreateAdminResponse {
         (status = 401, description = "Authentication required", body = JsonError),
         (status = 500, description = "Internal server error occurred", body = JsonError)
     ),
-    tag = "Users",
+    tag = "Admin users management",
 )]
 /// Creates a new admin user.
 ///
 /// This endpoint allows authenticated users to create new admin accounts. Only users with the root role can create other root users.
 pub(super) async fn create_admin_handler(
     req: HttpRequest, payload: Json<CreateAdminScheme>, data: Data<AppData>,
-) -> Result<HttpResponse, Error> {
+) -> Result<HttpResponse, JsonError> {
     let scheme = payload.into_inner();
 
-    let user = match req.extensions().get::<admins::Model>() {
-        None => return Err(ErrorUnauthorized("user not authenticated".to_json_error())),
-        Some(u) => u.clone(),
+    let user = match req.extensions().get_admin() {
+        Ok(user) => user,
+        Err(e) => {
+            error!("entered a protected route without a user loaded in the request");
+            return Err(e.to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
+        }
     };
 
     // only root can create root users
@@ -60,7 +64,7 @@ pub(super) async fn create_admin_handler(
         && (scheme.admin_role_id == AdminRole::Root as i32)
     {
         warn!("The user {} tried to create a root user", user.email);
-        return Err(ErrorBadRequest("invalid role".to_json_error()));
+        return Err("invalid role".to_json_error(StatusCode::FORBIDDEN));
     }
 
     let adm = admins::ActiveModel {
@@ -76,9 +80,9 @@ pub(super) async fn create_admin_handler(
         Ok(r) => r,
         Err(e) => {
             error!("Unable to create admin: {}", e);
-            return Err(ErrorInternalServerError(
-                "Unable to create admin scheme".to_json_error(),
-            ));
+            return Err(
+                "Unable to create admin scheme".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+            );
         }
     };
 
