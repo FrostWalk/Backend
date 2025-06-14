@@ -31,6 +31,7 @@ pub(crate) struct UpdateAdminScheme {
         (status = 401, description = "Authentication required", body = JsonError),
         (status = 500, description = "Internal server error occurred", body = JsonError)
     ),
+    security(("AdminAuth" = [])),
     tag = "Admin users management",
 )]
 /// Updates an existing admin user.

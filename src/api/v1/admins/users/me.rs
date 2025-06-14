@@ -13,6 +13,7 @@ use log::error;
         (status = 404, description = "User not found in request context", body = JsonError),
         (status = 500, description = "Internal server error during serialization or database query", body = JsonError)
     ),
+    security(("AdminAuth" = [])),
     tag = "Admin users management",
 )]
 /// Retrieves the profile information of the currently authenticated admin.
