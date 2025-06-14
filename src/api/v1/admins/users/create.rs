@@ -33,7 +33,7 @@ pub(crate) struct CreateAdminResponse {
 }
 #[utoipa::path(
     post,
-    path = "/v1/admins/users/create",
+    path = "/v1/admins/users",
     request_body = CreateAdminScheme,
     responses(
         (status = 200, description = "Admin created successfully", body = CreateAdminResponse),
@@ -64,7 +64,7 @@ pub(super) async fn create_admin_handler(
         && (scheme.admin_role_id == AdminRole::Root as i32)
     {
         warn!("The user {} tried to create a root user", user.email);
-        return Err("invalid role".to_json_error(StatusCode::FORBIDDEN));
+        return Err("operation not permitted".to_json_error(StatusCode::FORBIDDEN));
     }
 
     let adm = admins::ActiveModel {
