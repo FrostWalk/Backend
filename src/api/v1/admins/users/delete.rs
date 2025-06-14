@@ -16,6 +16,7 @@ use log::{error, warn};
         (status = 404, description = "Admin not found", body = JsonError),
         (status = 500, description = "Internal server error occurred", body = JsonError)
     ),
+    security(("AdminAuth" = [])),
     tag = "Admin users management",
 )]
 pub(super) async fn delete_admin_handler(

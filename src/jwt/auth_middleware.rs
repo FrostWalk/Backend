@@ -13,14 +13,14 @@ use log::{error, warn};
 use std::rc::Rc;
 use std::task::{Context, Poll};
 
-const ADMIN_HEADER_NAME: &str = "X-Admin-Auth";
-const STUDENT_HEADER_NAME: &str = "X-Student-Auth";
+pub(crate) const ADMIN_HEADER_NAME: &str = "X-Admin-Token";
+pub(crate) const STUDENT_HEADER_NAME: &str = "X-Student-Token";
 
 /// Middleware responsible for handling authentication and user information extraction.
 pub(crate) struct AuthMiddleware<const N: usize, S> {
-    pub(crate) service: Rc<S>,
-    pub(crate) require_admin: bool,
-    pub(crate) allowed_roles: Rc<[AdminRole; N]>,
+    pub(super) service: Rc<S>,
+    pub(super) require_admin: bool,
+    pub(super) allowed_roles: Rc<[AdminRole; N]>,
 }
 
 impl<const N: usize, S> Service<ServiceRequest> for AuthMiddleware<N, S>

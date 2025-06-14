@@ -37,6 +37,7 @@ pub(crate) struct GetAllAdminsResponse {
         (status = 200, description = "Found admins", body = GetAllAdminsResponse),
         (status = 500, description = "Internal server error occurred", body = JsonError)
     ),
+    security(("AdminAuth" = [])),
     tag = "Admin users management",
 )]
 /// Handler for retrieving a list of admin users
@@ -63,6 +64,7 @@ pub(super) async fn admins_get_all_handler(data: Data<AppData>) -> Result<HttpRe
         (status = 404, description = "Admin not found", body = JsonError),
         (status = 500, description = "Internal server error", body = JsonError)
     ),
+    security(("AdminAuth" = [])),
     tag = "Admin users management",
 )]
 /// Handler for retrieving a single admin user by ID
