@@ -4,23 +4,23 @@ use crate::database::repositories::admins_repository::AdminRole;
 use crate::database::repository_methods_trait::RepositoryMethods;
 use crate::jwt::token::decode_token;
 use actix_web::dev::{Service, ServiceRequest, ServiceResponse};
-use actix_web::error::{ErrorForbidden, ErrorInternalServerError, ErrorUnauthorized};
+use actix_web::http::StatusCode;
 use actix_web::{web, HttpMessage};
 use entity::{admins, students};
 use futures_util::future::{ready, LocalBoxFuture};
 use futures_util::FutureExt;
-use log::warn;
+use log::{error, warn};
 use std::rc::Rc;
 use std::task::{Context, Poll};
 
-const ADMIN_HEADER_NAME: &str = "X-Admin-Auth";
-const STUDENT_HEADER_NAME: &str = "X-Student-Auth";
+pub(crate) const ADMIN_HEADER_NAME: &str = "X-Admin-Token";
+pub(crate) const STUDENT_HEADER_NAME: &str = "X-Student-Token";
 
 /// Middleware responsible for handling authentication and user information extraction.
 pub(crate) struct AuthMiddleware<const N: usize, S> {
-    pub(crate) service: Rc<S>,
-    pub(crate) require_admin: bool,
-    pub(crate) allowed_roles: Rc<[AdminRole; N]>,
+    pub(super) service: Rc<S>,
+    pub(super) require_admin: bool,
+    pub(super) allowed_roles: Rc<[AdminRole; N]>,
 }
 
 impl<const N: usize, S> Service<ServiceRequest> for AuthMiddleware<N, S>
@@ -42,6 +42,8 @@ where
 
     /// Handles incoming requests.
     fn call(&self, req: ServiceRequest) -> Self::Future {
+        const INVALID_TOKEN: &str = "Invalid token";
+
         let token = if !self.require_admin {
             req.headers()
                 .get(STUDENT_HEADER_NAME)
@@ -54,18 +56,21 @@ where
 
         // If the token is missing, return unauthorized error
         if token.is_none() {
-            return Box::pin(ready(Err(ErrorUnauthorized(
-                "Token not provided".to_json_error(),
-            ))));
+            return Box::pin(ready(Err("jwt token not provided"
+                .to_json_error(StatusCode::UNAUTHORIZED)
+                .into())));
         }
 
         let app_state = req.app_data::<web::Data<AppData>>().unwrap();
 
         // Decode token and handle errors
         let token = match decode_token(token.unwrap(), app_state.config.jwt_secret().as_bytes()) {
-            Ok(id) => id,
+            Ok(t) => t,
             Err(e) => {
-                return Box::pin(ready(Err(ErrorUnauthorized(e.to_json_error()))));
+                warn!("unable to decode jwt token: {}", e);
+                return Box::pin(ready(Err(INVALID_TOKEN
+                    .to_json_error(StatusCode::UNAUTHORIZED)
+                    .into())));
             }
         };
 
@@ -76,8 +81,6 @@ where
 
         // Handle user extraction and request processing
         async move {
-            const INVALID_TOKEN: &str = "Invalid token";
-
             if !require_admin {
                 let db_record = cloned_app_state
                     .repositories
@@ -88,14 +91,19 @@ where
                 let model = match db_record {
                     Ok(m) => m,
                     Err(e) => {
-                        return Err(ErrorInternalServerError(e.to_json_error()));
+                        error!("unable to fetch student from database: {}", e);
+                        return Err("database error"
+                            .to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+                            .into());
                     }
                 };
 
                 let student = match model {
                     None => {
                         warn!("login attempt with non existing student",);
-                        return Err(ErrorUnauthorized(INVALID_TOKEN.to_json_error()));
+                        return Err(INVALID_TOKEN
+                            .to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+                            .into());
                     }
                     Some(u) => u,
                 };
@@ -103,18 +111,20 @@ where
                 req.extensions_mut().insert::<students::Model>(student);
             } else {
                 if !token.adm {
-                    return Err(ErrorUnauthorized(INVALID_TOKEN.to_json_error()));
+                    return Err(INVALID_TOKEN.to_json_error(StatusCode::UNAUTHORIZED).into());
                 }
 
                 let role: AdminRole = match token.rl.try_into() {
                     Ok(role) => role,
-                    Err(_) => return Err(ErrorUnauthorized(INVALID_TOKEN.to_json_error())),
+                    Err(_) => {
+                        return Err(INVALID_TOKEN.to_json_error(StatusCode::UNAUTHORIZED).into())
+                    }
                 };
 
                 if !allowed_admin_roles.contains(&role) {
-                    return Err(ErrorForbidden(
-                        "user does not have the necessary permissions".to_json_error(),
-                    ));
+                    return Err("user does not have the necessary permissions"
+                        .to_json_error(StatusCode::FORBIDDEN)
+                        .into());
                 };
 
                 let db_record = cloned_app_state
@@ -126,14 +136,17 @@ where
                 let model = match db_record {
                     Ok(m) => m,
                     Err(e) => {
-                        return Err(ErrorInternalServerError(e.to_json_error()));
+                        error!("unable to fetch admin from database: {}", e);
+                        return Err("unable to fetch admin from database"
+                            .to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+                            .into());
                     }
                 };
 
                 let admin = match model {
                     None => {
                         warn!("login attempt with non existing admin",);
-                        return Err(ErrorUnauthorized(INVALID_TOKEN.to_json_error()));
+                        return Err(INVALID_TOKEN.to_json_error(StatusCode::UNAUTHORIZED).into());
                     }
                     Some(u) => u,
                 };

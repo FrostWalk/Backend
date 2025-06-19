@@ -1,34 +1,67 @@
-use actix_web::web::Json;
+use actix_web::{http::StatusCode, HttpResponse, ResponseError};
 use serde::Serialize;
 use std::fmt::{Display, Formatter};
 use utoipa::ToSchema;
-/// Represents an error for JSON responses.
+
+/// Custom error type for generating JSON error responses
 ///
-/// This struct wraps an error message as a string, making it suitable for JSON serialization.
+/// - `error`: Human-readable error message
+/// - `status`: HTTP status code (not included in JSON response)
+///
+/// Used to standardize error responses across the API
 #[derive(Serialize, Debug, ToSchema)]
-pub(crate) struct JsonError {
-    #[schema(example = "Error message")]
+pub struct JsonError {
     error: String,
+    #[serde(skip)]
+    status: StatusCode,
+}
+
+impl JsonError {
+    /// Creates a new error instance with message and status code
+    ///
+    /// # Arguments
+    /// * `msg` - Error message that can be converted to String
+    /// * `status` - HTTP status code to associate with the error
+    pub fn new(msg: impl Into<String>, status: StatusCode) -> Self {
+        JsonError {
+            error: msg.into(),
+            status,
+        }
+    }
 }
 
 impl Display for JsonError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.error)
+        write!(f, "{} ({})", self.error, self.status)
     }
 }
 
-/// Trait that provides a helper method to convert a type implementing `ToString` into a JSON error.
-///
-/// The default implementation returns an Actix-Web JSON response wrapping a `JsonError` that contains
-/// the string representation of the error.
-pub trait ToJsonError: ToString {
-    /// Converts the value into a JSON error.
+impl ResponseError for JsonError {
+    /// Returns the HTTP status code associated with this error
+    fn status_code(&self) -> StatusCode {
+        self.status
+    }
+
+    /// Converts error into Actix Web HTTP response
     ///
-    /// This method wraps the error message produced by `to_string()` in a `JsonError`, then in Actix-Web's `Json` type.
-    fn to_json_error(&self) -> Json<JsonError> {
-        Json(JsonError {
-            error: self.to_string(),
-        })
+    /// Builds a JSON response containing the error message
+    /// with the appropriate status code
+    fn error_response(&self) -> HttpResponse {
+        HttpResponse::build(self.status).json(&self)
     }
 }
-impl<T: ToString> ToJsonError for T {}
+
+/// Convenience trait for converting Display types to JsonError
+pub(crate) trait ToJsonError {
+    /// Converts self into a JsonError with specified status code
+    ///
+    /// # Arguments
+    /// * `status` - HTTP status code to associate with the error
+    fn to_json_error(self, status: StatusCode) -> JsonError;
+}
+
+impl<T: Display> ToJsonError for T {
+    fn to_json_error(self, status: StatusCode) -> JsonError {
+        JsonError::new(self.to_string(), status)
+    }
+}

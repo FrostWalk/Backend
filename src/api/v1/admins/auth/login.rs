@@ -2,10 +2,11 @@ use crate::app_data::AppData;
 use crate::common::json_error::{JsonError, ToJsonError};
 use crate::jwt::token::create_admin_token;
 use actix_web::cookie::time::Duration;
-use actix_web::error::{ErrorInternalServerError, ErrorUnauthorized};
+use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::web::Json;
-use actix_web::{Error, HttpResponse};
+use actix_web::HttpResponse;
+use log::error;
 use password_auth::verify_password;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -42,21 +43,22 @@ pub(crate) struct LoginAdminsResponse {
         (status = 401, description = "Wrong credentials", body = JsonError),
         (status = 500, description = "Internal server error", body = JsonError)
     ),
-    tag = "Auth"
+    tag = "Admin authentication"
 )]
 pub(crate) async fn admins_login_handler(
     req: Json<LoginAdminsSchema>, data: Data<AppData>,
-) -> Result<HttpResponse, Error> {
+) -> Result<HttpResponse, JsonError> {
     // convenience variable storing error in case of wrong credentials or user not found
-    let unauthorized = Err(ErrorUnauthorized(WRONG_CREDENTIALS.to_json_error()));
+    let unauthorized = Err(WRONG_CREDENTIALS.to_json_error(StatusCode::UNAUTHORIZED));
 
     // find the user in the db
-    let opt = data
-        .repositories
-        .admins
-        .get_from_mail(&req.email)
-        .await
-        .map_err(|e| ErrorInternalServerError(e.to_json_error()))?;
+    let opt = match data.repositories.admins.get_from_mail(&req.email).await {
+        Ok(o) => o,
+        Err(e) => {
+            error!("unable to fetch admin from database: {}", e);
+            return Err("database error".to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
+        }
+    };
 
     // user is not found
     if opt.is_none() {
@@ -66,18 +68,25 @@ pub(crate) async fn admins_login_handler(
     let user = opt.unwrap();
 
     // password is incorrect
-    if verify_password(&user.password_hash, &req.password).is_err() {
+    if verify_password(&req.password, &user.password_hash).is_err() {
         return unauthorized;
     }
 
     // create jwt from user data if the creation fails return error 500
-    let token = create_admin_token(
+    let token = match create_admin_token(
         user.admin_id,
         user.admin_role_id,
         data.config.jwt_secret().as_bytes(),
         Duration::days(data.config.jwt_validity_days()).whole_seconds(),
-    )
-    .map_err(|e| ErrorInternalServerError(e.to_json_error()))?;
+    ) {
+        Ok(t) => t,
+        Err(e) => {
+            error!("unable to create admin jwt token: {}", e);
+            return Err(
+                "unable to create jwt token".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+            );
+        }
+    };
 
     // return status code 200 with cookie
     Ok(HttpResponse::Ok().json(LoginAdminsResponse { token }))

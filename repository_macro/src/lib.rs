@@ -38,7 +38,7 @@ pub fn check_field_type_derive(input: TokenStream) -> TokenStream {
         .find(|field| field.ident.as_ref().unwrap() == FIELD_NAME);
 
     match field {
-        // Field is not present
+        // The Field is not present
         None => {
             return syn::Error::new_spanned(
                 struct_name,

@@ -1,15 +1,11 @@
 use crate::api::v1::admins::users::AdminResponseScheme;
 use crate::app_data::AppData;
 use crate::common::json_error::{JsonError, ToJsonError};
-use crate::database::repositories::admins_repository::AdminRole;
 use crate::database::repository_methods_trait::RepositoryMethods;
-use crate::jwt::get_user::LoggedUser;
-use actix_web::error::{ErrorInternalServerError, ErrorUnauthorized};
+use actix_web::http::StatusCode;
 use actix_web::web::Data;
-use actix_web::{Error, HttpMessage, HttpRequest, HttpResponse};
-use entity::admins;
+use actix_web::{web, HttpResponse};
 use log::error;
-use sea_orm::ColumnTrait;
 use serde::Serialize;
 use serde_json::json;
 use utoipa::ToSchema;
@@ -39,61 +35,61 @@ pub(crate) struct GetAllAdminsResponse {
     path = "/v1/admins/users",
     responses(
         (status = 200, description = "Found admins", body = GetAllAdminsResponse),
-        (status = 401, description = "Unauthorized", body = JsonError),
         (status = 500, description = "Internal server error occurred", body = JsonError)
     ),
-    tag = "Users",
+    security(("AdminAuth" = [])),
+    tag = "Admin users management",
 )]
-/// Handler for retrieving a list of admin users based on the requester's role permissions.
+/// Handler for retrieving a list of admin users
 ///
-/// This endpoint implements role-based access control to filter which admin records are visible:
-/// - **Root admins** see all admins
-/// - **Professor admins** see admins with role <= their own
-/// - **Tutor admins** see admins with role < their own
-/// - **Coordinators** receive 401 Unauthorized (no access)
-pub(super) async fn admins_get_all_handler(
-    req: HttpRequest, data: Data<AppData>,
-) -> Result<HttpResponse, Error> {
-    let admin = match req.extensions().get_admin() {
-        Ok(u) => u,
-        Err(e) => return Err(e.into()),
-    };
-
-    let role = match AdminRole::try_from(admin.admin_role_id) {
-        Ok(r) => r,
-        Err(_) => return Err(ErrorInternalServerError("wrong admin role id".to_string())),
-    };
-
-    let found = match role {
-        AdminRole::Root => data.repositories.admins.get_all().await,
-        AdminRole::Professor => {
-            data.repositories
-                .admins
-                .get_all_from_filter(admins::Column::AdminRoleId.lte(admin.admin_role_id))
-                .await
-        }
-        AdminRole::Tutor => {
-            data.repositories
-                .admins
-                .get_all_from_filter(admins::Column::AdminRoleId.lt(admin.admin_role_id))
-                .await
-        }
-        AdminRole::Coordinator => {
-            return Err(ErrorUnauthorized(
-                "coordinators do not have permission to view admins".to_string(),
-            ))
-        }
-    };
+/// Returns array with all the data of the admins except passwords
+pub(super) async fn admins_get_all_handler(data: Data<AppData>) -> Result<HttpResponse, JsonError> {
+    let found = data.repositories.admins.get_all().await;
 
     let admins: Vec<AdminResponseScheme> = match found {
         Ok(a) => a.into_iter().map(AdminResponseScheme::from).collect(),
         Err(e) => {
             error!("Unable to retrieve admins from database: {}", e);
-            return Err(ErrorInternalServerError(
-                "unable to retrieve admins from database".to_json_error(),
-            ));
+            return Err("database error".to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
         }
     };
 
     Ok(HttpResponse::Ok().json(GetAllAdminsResponse { admins }))
+}
+#[utoipa::path(
+    get,
+    path = "/v1/admins/users/{id}",
+    responses(
+        (status = 200, description = "Found admin", body = AdminResponseScheme),
+        (status = 404, description = "Admin not found", body = JsonError),
+        (status = 500, description = "Internal server error", body = JsonError)
+    ),
+    security(("AdminAuth" = [])),
+    tag = "Admin users management",
+)]
+/// Handler for retrieving a single admin user by ID
+///
+/// Returns detailed information about a specific admin user
+/// without including sensitive fields like passwords.
+pub(super) async fn admins_get_one_handler(
+    path: web::Path<i32>, data: Data<AppData>,
+) -> Result<HttpResponse, JsonError> {
+    let id = path.into_inner();
+
+    let found = match data.repositories.admins.get_from_id(id).await {
+        Ok(a) => a,
+        Err(e) => {
+            error!("Unable to retrieve admin from database: {}", e);
+            return Err("database error".to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
+        }
+    };
+
+    let admin = match found {
+        None => {
+            return Err("admin not found".to_json_error(StatusCode::NOT_FOUND));
+        }
+        Some(u) => AdminResponseScheme::from(u),
+    };
+
+    Ok(HttpResponse::Ok().json(admin))
 }
