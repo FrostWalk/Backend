@@ -43,7 +43,7 @@ pub(crate) struct GetAllAdminsResponse {
 /// Handler for retrieving a list of admin users
 ///
 /// Returns array with all the data of the admins except passwords
-pub(super) async fn admins_get_all_handler(data: Data<AppData>) -> Result<HttpResponse, JsonError> {
+pub(super) async fn get_all_admins_handler(data: Data<AppData>) -> Result<HttpResponse, JsonError> {
     let found = data.repositories.admins.get_all().await;
 
     let admins: Vec<AdminResponseScheme> = match found {
@@ -71,7 +71,7 @@ pub(super) async fn admins_get_all_handler(data: Data<AppData>) -> Result<HttpRe
 ///
 /// Returns detailed information about a specific admin user
 /// without including sensitive fields like passwords.
-pub(super) async fn admins_get_one_handler(
+pub(super) async fn get_one_admin_handler(
     path: web::Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
