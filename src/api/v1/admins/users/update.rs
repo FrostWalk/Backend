@@ -3,7 +3,7 @@ use crate::common::json_error::{JsonError, ToJsonError};
 use crate::database::repository_methods_trait::RepositoryMethods;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
-use actix_web::HttpResponse;
+use actix_web::{web, HttpResponse};
 use entity::admins;
 use log::error;
 use sea_orm::ActiveValue;
@@ -23,7 +23,7 @@ pub(crate) struct UpdateAdminScheme {
 }
 #[utoipa::path(
     patch,
-    path = "/v1/admins/users",
+    path = "/v1/admins/users/",
     request_body = UpdateAdminScheme,
     responses(
         (status = 200, description = "Admin updated successfully"),
@@ -38,12 +38,13 @@ pub(crate) struct UpdateAdminScheme {
 ///
 /// This endpoint allows authenticated admins to update their own or other admin's details. Only root admins can modify roles.
 pub(super) async fn update_admin_handler(
-    payload: Json<UpdateAdminScheme>, data: Data<AppData>,
+    path: web::Path<i32>, payload: Json<UpdateAdminScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let scheme = payload.into_inner();
+    let id = path.into_inner();
 
     let admin_update = admins::ActiveModel {
-        admin_id: ActiveValue::NotSet,
+        admin_id: ActiveValue::Unchanged(id),
         first_name: scheme
             .first_name
             .map_or(ActiveValue::NotSet, ActiveValue::Set),
