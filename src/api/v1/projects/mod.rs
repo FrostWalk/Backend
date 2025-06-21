@@ -1,6 +1,7 @@
 use crate::api::v1::projects::create::create_project_handler;
 use crate::api::v1::projects::delete::delete_project_handler;
 use crate::api::v1::projects::read::{get_all_projects_handler, get_one_project_handler};
+use crate::api::v1::projects::update::update_project_handler;
 use crate::database::repositories::admins_repository::AdminRole;
 use crate::jwt::admin_auth_factory::Admin;
 use crate::jwt::just_auth_factory::User;
@@ -33,6 +34,15 @@ pub(super) fn projects_scope() -> Scope {
             web::get()
                 .to(get_one_project_handler)
                 .wrap(User::require_auth()),
+        )
+        .route(
+            "/{id}",
+            web::patch()
+                .to(update_project_handler)
+                .wrap(Admin::require_roles([
+                    AdminRole::Root,
+                    AdminRole::Professor,
+                ])),
         )
         .route(
             "/{id}",

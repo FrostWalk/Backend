@@ -38,7 +38,7 @@ pub(super) fn users_scope() -> Scope {
                 ])),
         )
         .route(
-            "",
+            "/{id}",
             web::patch()
                 .to(update_admin_handler)
                 .wrap(Admin::require_roles([
