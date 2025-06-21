@@ -49,7 +49,7 @@ pub(super) async fn get_all_admins_handler(data: Data<AppData>) -> Result<HttpRe
     let admins: Vec<AdminResponseScheme> = match found {
         Ok(a) => a.into_iter().map(AdminResponseScheme::from).collect(),
         Err(e) => {
-            error!("Unable to retrieve admins from database: {}", e);
+            error!("unable to retrieve admins from database: {}", e);
             return Err("database error".to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
         }
     };
@@ -79,7 +79,7 @@ pub(super) async fn get_one_admin_handler(
     let found = match data.repositories.admins.get_from_id(id).await {
         Ok(a) => a,
         Err(e) => {
-            error!("Unable to retrieve admin from database: {}", e);
+            error!("unable to retrieve admin from database: {}", e);
             return Err("database error".to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
         }
     };
