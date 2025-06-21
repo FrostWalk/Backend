@@ -7,7 +7,6 @@ use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
 use log::{error, warn};
-use sea_orm::{DbErr, DeleteResult};
 
 #[utoipa::path(
     delete,

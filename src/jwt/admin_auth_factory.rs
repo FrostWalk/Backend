@@ -32,9 +32,10 @@ where
 
     fn new_transform(&self, service: S) -> Self::Future {
         ready(Ok(AuthMiddleware {
-            service: Rc::new(service),
-            allowed_roles: self.allowed_roles.clone(),
             require_admin: true,
+            service: Rc::new(service),
+            authentication_only: false,
+            allowed_roles: self.allowed_roles.clone(),
         }))
     }
 }

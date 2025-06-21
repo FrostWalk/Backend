@@ -9,6 +9,6 @@ pub(super) fn users_scope() -> Scope {
         "/me",
         web::get()
             .to(students_me_handler)
-            .wrap(Student::require_auth()),
+            .wrap(Student::require_student()),
     )
 }

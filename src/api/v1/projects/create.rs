@@ -1,4 +1,3 @@
-use crate::api::v1::admins::users::create::CreateAdminResponse;
 use crate::app_data::AppData;
 use crate::common::json_error::{JsonError, ToJsonError};
 use crate::database::repository_methods_trait::RepositoryMethods;
@@ -63,7 +62,7 @@ pub(super) async fn create_project_handler(
         active: Set(scheme.active),
     };
 
-    let result = match data.repositories.project.create(project).await {
+    let result = match data.repositories.projects.create(project).await {
         Ok(r) => r,
         Err(e) => {
             error!("unable to create project: {}", e);

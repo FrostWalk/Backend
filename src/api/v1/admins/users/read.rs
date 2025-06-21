@@ -7,27 +7,10 @@ use actix_web::web::Data;
 use actix_web::{web, HttpResponse};
 use log::error;
 use serde::Serialize;
-use serde_json::json;
 use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, ToSchema)]
 pub(crate) struct GetAllAdminsResponse {
-    #[schema(example = json!(
-         [
-            {
-                "id": 1,
-                "name": "John Doe",
-                "email": "john.doe@example.com",
-                "admin_role_id": 1
-            },
-            {
-                "id": 2,
-                "name": "Jane Smith",
-                "email": "jane.smith@example.com",
-                "admin_role_id": 2
-            }
-        ]
-    ))]
     pub admins: Vec<AdminResponseScheme>,
 }
 #[utoipa::path(
