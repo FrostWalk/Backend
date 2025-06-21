@@ -22,7 +22,7 @@ pub(super) async fn delete_project_handler(
 ) -> Result<HttpResponse, JsonError> {
     let project_id = path.into_inner();
 
-    let deleted = match data.repositories.project.delete_from_id(project_id).await {
+    let deleted = match data.repositories.projects.delete_from_id(project_id).await {
         Ok(d) => d.rows_affected,
         Err(e) => {
             error!("unable to delete project from database {}", e);

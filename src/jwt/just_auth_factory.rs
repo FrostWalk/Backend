@@ -1,27 +1,29 @@
+use crate::database::repositories::admins_repository;
 use crate::jwt::auth_middleware::AuthMiddleware;
 use actix_web::dev::{Service, ServiceRequest, ServiceResponse, Transform};
 use futures_util::future::{ready, Ready};
 use std::rc::Rc;
 
-pub(crate) struct Student {}
+pub(crate) struct User {}
 
-impl Student {
-    pub(crate) fn require_student() -> Self {
+impl User {
+    pub(crate) fn require_auth() -> Self {
         Self {}
     }
 }
 
-impl<S> Transform<S, ServiceRequest> for Student
+// implement Transform *only* for the 4-case
+impl<S> Transform<S, ServiceRequest> for User
 where
     S: Service<
-            ServiceRequest,
-            Response = ServiceResponse<actix_web::body::BoxBody>,
-            Error = actix_web::Error,
-        > + 'static,
+        ServiceRequest,
+        Response=ServiceResponse<actix_web::body::BoxBody>,
+        Error=actix_web::Error,
+    > + 'static,
 {
     type Response = ServiceResponse<actix_web::body::BoxBody>;
     type Error = actix_web::Error;
-    type Transform = AuthMiddleware<0, S>;
+    type Transform = AuthMiddleware<4, S>;
     type InitError = ();
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
@@ -29,8 +31,8 @@ where
         ready(Ok(AuthMiddleware {
             require_admin: false,
             service: Rc::new(service),
-            authentication_only: false,
-            allowed_roles: Rc::new([]),
+            authentication_only: true,
+            allowed_roles: Rc::new(admins_repository::ALL),
         }))
     }
 }

@@ -1,6 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Generate entities" type="ShConfigurationType">
-    <option name="SCRIPT_TEXT" value="sea-orm-cli generate entity -o entity/src -l --with-serde both &amp;&amp; cargo fmt --all" />
+      <option name="SCRIPT_TEXT"
+              value="sea-orm-cli generate entity -o entity/src -l --with-serde both --model-extra-derives 'utoipa::ToSchema' &amp;&amp; cargo fmt --all"/>
     <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
     <option name="SCRIPT_PATH" value="" />
     <option name="SCRIPT_OPTIONS" value="" />
