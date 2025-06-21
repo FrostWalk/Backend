@@ -7,6 +7,7 @@ use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
 use log::{error, warn};
+use sea_orm::{DbErr, DeleteResult};
 
 #[utoipa::path(
     delete,
@@ -41,18 +42,26 @@ pub(super) async fn delete_admin_handler(
             Some(a) => a,
         },
         Err(e) => {
-            error!("Unable to retrieve admin from database {}", e);
+            error!("unable to retrieve admin from database {}", e);
             return Err("database error ".to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
         }
     };
 
-    // only root can create root users
+    // only root can delete root users
     if (user.admin_role_id != AdminRole::Root as i32)
         && (admin.admin_role_id == AdminRole::Root as i32)
     {
         warn!("The user {} tried to delete a root user", user.email);
         return Err("operation not permitted".to_json_error(StatusCode::FORBIDDEN));
     }
+
+    match data.repositories.admins.delete_from_id(admin_id).await {
+        Ok(_) => {}
+        Err(e) => {
+            error!("unable to delete admin from database {}", e);
+            return Err("database error ".to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
+        }
+    };
 
     Ok(HttpResponse::Ok().finish())
 }

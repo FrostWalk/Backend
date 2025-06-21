@@ -6,6 +6,7 @@ use crate::api::v1::admins::users::read::__path_get_all_admins_handler;
 use crate::api::v1::admins::users::read::__path_get_one_admin_handler;
 use crate::api::v1::admins::users::update::__path_update_admin_handler;
 use crate::api::v1::projects::create::__path_create_project_handler;
+use crate::api::v1::projects::delete::__path_delete_project_handler;
 use crate::api::v1::students::auth::login::__path_students_login_handler;
 use crate::api::v1::students::users::me::__path_students_me_handler;
 use crate::jwt::auth_middleware::{ADMIN_HEADER_NAME, STUDENT_HEADER_NAME};
@@ -28,6 +29,7 @@ use utoipa_swagger_ui::SwaggerUi;
         update_admin_handler,
         delete_admin_handler,
         create_project_handler,
+        delete_project_handler,
     ),
     tags(
         (name = "Admin authentication", description = "Admin authentication endpoint"),

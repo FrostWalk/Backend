@@ -56,6 +56,6 @@ impl Config {
             .extract();
 
         // in case it fails, panic with a message and specific error
-        res.unwrap_or_else(|e| panic!("Unable to load config: {:?}", e))
+        res.unwrap_or_else(|e| panic!("unable to load config: {:?}", e))
     }
 }

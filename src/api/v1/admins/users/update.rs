@@ -63,8 +63,8 @@ pub(super) async fn update_admin_handler(
         .update(admin_update)
         .await
         .map_err(|e| {
-            error!("Unable to update admin: {}", e);
-            "Unable to update admin scheme".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+            error!("unable to update admin: {}", e);
+            "unable to update admin scheme".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
         })?;
 
     Ok(HttpResponse::Ok().finish())

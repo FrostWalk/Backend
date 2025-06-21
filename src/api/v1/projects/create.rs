@@ -66,9 +66,9 @@ pub(super) async fn create_project_handler(
     let result = match data.repositories.project.create(project).await {
         Ok(r) => r,
         Err(e) => {
-            error!("Unable to create project: {}", e);
+            error!("unable to create project: {}", e);
             return Err(
-                "Unable to create project scheme".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+                "unable to create project scheme".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
             );
         }
     };
