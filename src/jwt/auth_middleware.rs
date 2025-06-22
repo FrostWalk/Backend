@@ -1,5 +1,5 @@
 use crate::app_data::AppData;
-use crate::common::json_error::ToJsonError;
+use crate::common::json_error::{database_error, ToJsonError};
 use crate::database::repositories::admins_repository::AdminRole;
 use crate::database::repository_methods_trait::RepositoryMethods;
 use crate::jwt::token::decode_token;
@@ -151,9 +151,7 @@ where
                     }
                     Err(e) => {
                         error!("unable to fetch student from database: {}", e);
-                        return Err("database error"
-                            .to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
-                            .into());
+                        return Err(database_error().into());
                     }
                 };
 
