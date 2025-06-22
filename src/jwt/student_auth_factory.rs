@@ -6,7 +6,7 @@ use std::rc::Rc;
 pub(crate) struct Student {}
 
 impl Student {
-    pub(crate) fn require_student() -> Self {
+    pub(crate) fn require_auth() -> Self {
         Self {}
     }
 }

@@ -1,5 +1,5 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{JsonError, ToJsonError};
+use crate::common::json_error::{database_error, JsonError, ToJsonError};
 use crate::database::repositories::admins_repository::AdminRole;
 use crate::database::repository_methods_trait::RepositoryMethods;
 use crate::jwt::get_user::LoggedUser;
@@ -42,7 +42,7 @@ pub(super) async fn delete_admin_handler(
         },
         Err(e) => {
             error!("unable to retrieve admin from database {}", e);
-            return Err("database error ".to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
+            return Err(database_error());
         }
     };
 
@@ -58,7 +58,7 @@ pub(super) async fn delete_admin_handler(
         Ok(_) => {}
         Err(e) => {
             error!("unable to delete admin from database {}", e);
-            return Err("database error ".to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
+            return Err(database_error());
         }
     };
 

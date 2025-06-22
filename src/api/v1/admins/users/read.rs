@@ -1,6 +1,6 @@
 use crate::api::v1::admins::users::AdminResponseScheme;
 use crate::app_data::AppData;
-use crate::common::json_error::{JsonError, ToJsonError};
+use crate::common::json_error::{database_error, JsonError, ToJsonError};
 use crate::database::repository_methods_trait::RepositoryMethods;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
@@ -33,7 +33,7 @@ pub(super) async fn get_all_admins_handler(data: Data<AppData>) -> Result<HttpRe
         Ok(a) => a.into_iter().map(AdminResponseScheme::from).collect(),
         Err(e) => {
             error!("unable to retrieve admins from database: {}", e);
-            return Err("database error".to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
+            return Err(database_error());
         }
     };
 
@@ -63,7 +63,7 @@ pub(super) async fn get_one_admin_handler(
         Ok(a) => a,
         Err(e) => {
             error!("unable to retrieve admin from database: {}", e);
-            return Err("database error".to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
+            return Err(database_error());
         }
     };
 
