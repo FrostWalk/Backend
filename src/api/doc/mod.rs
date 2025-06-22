@@ -11,6 +11,7 @@ use crate::api::v1::projects::read::__path_get_all_projects_handler;
 use crate::api::v1::projects::read::__path_get_one_project_handler;
 use crate::api::v1::projects::update::__path_update_project_handler;
 use crate::api::v1::students::auth::login::__path_students_login_handler;
+use crate::api::v1::students::projects::read::__path_get_student_projects;
 use crate::api::v1::students::users::me::__path_students_me_handler;
 use crate::jwt::auth_middleware::{ADMIN_HEADER_NAME, STUDENT_HEADER_NAME};
 use utoipa::openapi::security::SecurityScheme;
@@ -36,6 +37,7 @@ use utoipa_swagger_ui::SwaggerUi;
         update_project_handler,
         get_one_project_handler,
         delete_project_handler,
+        get_student_projects,
     ),
     tags(
         (name = "Admin authentication", description = "Admin authentication endpoint"),

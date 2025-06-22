@@ -13,15 +13,6 @@ use utoipa::ToSchema;
 pub(crate) struct GetStudentProjects {
     projects: Vec<Model>,
 }
-pub(crate) struct StudentProject {
-    project_id: i32,
-    name: String,
-    year: i32,
-    max_student_uploads: i32,
-    max_group_size: i32,
-    active: bool,
-    user_role: i32,
-}
 #[utoipa::path(
     get,
     path = "/v1/students/projects",
@@ -35,7 +26,9 @@ pub(crate) struct StudentProject {
 /// Get all the projects of student
 ///
 /// This endpoint allows authenticated students to retrieve all the projects in which has a role
-pub(super) async fn get_student_projects(req: HttpRequest, data: Data<AppData>) -> Result<HttpResponse, JsonError> {
+pub(super) async fn get_student_projects(
+    req: HttpRequest, data: Data<AppData>,
+) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_student() {
         Ok(user) => user,
         Err(e) => {
@@ -44,13 +37,18 @@ pub(super) async fn get_student_projects(req: HttpRequest, data: Data<AppData>) 
         }
     };
 
-    let found = match data.repositories.projects.find_projects_for_student(user.student_id).await {
-        Ok(p) => { p }
+    let projects = match data
+        .repositories
+        .projects
+        .find_projects_for_student(user.student_id)
+        .await
+    {
+        Ok(p) => p,
         Err(e) => {
             error!("unable to retrieve projects of user from database: {}", e);
             return Err(database_error());
         }
     };
 
-    Ok(HttpResponse::Ok().finish())
+    Ok(HttpResponse::Ok().json(GetStudentProjects { projects }))
 }

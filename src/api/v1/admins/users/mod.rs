@@ -19,6 +19,12 @@ pub(crate) mod update;
 pub(super) fn users_scope() -> Scope {
     web::scope("/users")
         .route(
+            "/me",
+            web::get()
+                .to(admins_me_handler)
+                .wrap(Admin::require_roles(ALL)),
+        )
+        .route(
             "",
             web::get()
                 .to(get_all_admins_handler)
@@ -65,12 +71,6 @@ pub(super) fn users_scope() -> Scope {
                     AdminRole::Professor,
                 ])),
         )
-        .route(
-            "/me",
-            web::get()
-                .to(admins_me_handler)
-                .wrap(Admin::require_roles(ALL)),
-        )
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -83,7 +83,7 @@ pub(crate) struct AdminResponseScheme {
     pub last_name: String,
     #[schema(format = "email", example = "jane.doe@admin.com")]
     pub email: String,
-    #[schema(example = 1)]
+    #[schema(example = 2)]
     pub role_id: i32,
 }
 
