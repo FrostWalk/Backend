@@ -1,5 +1,5 @@
 use crate::app_data::AppData;
-use crate::common::json_error::ToJsonError;
+use crate::common::json_error::{database_error, ToJsonError};
 use crate::database::repositories::admins_repository::AdminRole;
 use crate::database::repository_methods_trait::RepositoryMethods;
 use crate::jwt::token::decode_token;
@@ -20,6 +20,7 @@ pub(crate) const STUDENT_HEADER_NAME: &str = "X-Student-Token";
 pub(crate) struct AuthMiddleware<const N: usize, S> {
     pub(super) service: Rc<S>,
     pub(super) require_admin: bool,
+    pub(super) authentication_only: bool,
     pub(super) allowed_roles: Rc<[AdminRole; N]>,
 }
 
@@ -44,17 +45,24 @@ where
     fn call(&self, req: ServiceRequest) -> Self::Future {
         const INVALID_TOKEN: &str = "Invalid token";
 
-        let token = if !self.require_admin {
+        // Extract token based on authentication mode
+        let token = if self.authentication_only {
+            // Try both headers when authentication_only is true
             req.headers()
                 .get(STUDENT_HEADER_NAME)
+                .or_else(|| req.headers().get(ADMIN_HEADER_NAME))
                 .map(|h| h.to_str().unwrap().to_string())
-        } else {
+        } else if self.require_admin {
             req.headers()
                 .get(ADMIN_HEADER_NAME)
                 .map(|h| h.to_str().unwrap().to_string())
+        } else {
+            req.headers()
+                .get(STUDENT_HEADER_NAME)
+                .map(|h| h.to_str().unwrap().to_string())
         };
 
-        // If the token is missing, return unauthorized error
+        // Return early if no token found
         if token.is_none() {
             return Box::pin(ready(Err("jwt token not provided"
                 .to_json_error(StatusCode::UNAUTHORIZED)
@@ -63,7 +71,7 @@ where
 
         let app_state = req.app_data::<web::Data<AppData>>().unwrap();
 
-        // Decode token and handle errors
+        // Decode token
         let token = match decode_token(token.unwrap(), app_state.config.jwt_secret().as_bytes()) {
             Ok(t) => t,
             Err(e) => {
@@ -77,39 +85,19 @@ where
         let cloned_app_state = app_state.clone();
         let srv = Rc::clone(&self.service);
         let require_admin = self.require_admin;
+        let authentication_only = self.authentication_only;
         let allowed_admin_roles = self.allowed_roles.clone();
 
-        // Handle user extraction and request processing
         async move {
-            if !require_admin {
-                let db_record = cloned_app_state
-                    .repositories
-                    .students
-                    .get_from_id(token.sub)
-                    .await;
-
-                let model = match db_record {
-                    Ok(m) => m,
-                    Err(e) => {
-                        error!("unable to fetch student from database: {}", e);
-                        return Err("database error"
-                            .to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
-                            .into());
-                    }
-                };
-
-                let student = match model {
-                    None => {
-                        warn!("login attempt with non existing student",);
-                        return Err(INVALID_TOKEN
-                            .to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
-                            .into());
-                    }
-                    Some(u) => u,
-                };
-
-                req.extensions_mut().insert::<students::Model>(student);
+            // Determine if we should process as admin based on token and requirements
+            let process_as_admin = if authentication_only {
+                token.adm // Use whatever the token indicates
             } else {
+                require_admin // Use the middleware configuration
+            };
+
+            if process_as_admin {
+                // Admin processing
                 if !token.adm {
                     return Err(INVALID_TOKEN.to_json_error(StatusCode::UNAUTHORIZED).into());
                 }
@@ -121,20 +109,24 @@ where
                     }
                 };
 
-                if !allowed_admin_roles.contains(&role) {
+                // Only check roles if not in authentication_only mode
+                if !authentication_only && !allowed_admin_roles.contains(&role) {
                     return Err("user does not have the necessary permissions"
                         .to_json_error(StatusCode::FORBIDDEN)
                         .into());
-                };
+                }
 
-                let db_record = cloned_app_state
+                let admin = match cloned_app_state
                     .repositories
                     .admins
                     .get_from_id(token.sub)
-                    .await;
-
-                let model = match db_record {
-                    Ok(m) => m,
+                    .await
+                {
+                    Ok(Some(admin)) => admin,
+                    Ok(None) => {
+                        warn!("login attempt with non existing admin");
+                        return Err(INVALID_TOKEN.to_json_error(StatusCode::UNAUTHORIZED).into());
+                    }
                     Err(e) => {
                         error!("unable to fetch admin from database: {}", e);
                         return Err("unable to fetch admin from database"
@@ -143,20 +135,31 @@ where
                     }
                 };
 
-                let admin = match model {
-                    None => {
-                        warn!("login attempt with non existing admin",);
+                req.extensions_mut().insert::<admins::Model>(admin);
+            } else {
+                // Student processing
+                let student = match cloned_app_state
+                    .repositories
+                    .students
+                    .get_from_id(token.sub)
+                    .await
+                {
+                    Ok(Some(student)) => student,
+                    Ok(None) => {
+                        warn!("login attempt with non existing student");
                         return Err(INVALID_TOKEN.to_json_error(StatusCode::UNAUTHORIZED).into());
                     }
-                    Some(u) => u,
+                    Err(e) => {
+                        error!("unable to fetch student from database: {}", e);
+                        return Err(database_error().into());
+                    }
                 };
 
-                req.extensions_mut().insert::<admins::Model>(admin);
+                req.extensions_mut().insert::<students::Model>(student);
             }
 
-            // Call the wrapped service to handle the request
-            let res = srv.call(req).await?;
-            Ok(res)
+            // Call the wrapped service
+            srv.call(req).await
         }
             .boxed_local()
     }

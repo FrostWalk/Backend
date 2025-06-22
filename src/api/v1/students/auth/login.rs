@@ -1,5 +1,5 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{JsonError, ToJsonError};
+use crate::common::json_error::{database_error, JsonError, ToJsonError};
 use crate::jwt::token::create_student_token;
 use actix_web::cookie::time::Duration;
 use actix_web::http::StatusCode;
@@ -56,7 +56,7 @@ pub(crate) async fn students_login_handler(
         Ok(o) => o,
         Err(e) => {
             error!("unable to fetch student from database: {}", e);
-            return Err("database error".to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
+            return Err(database_error());
         }
     };
 
@@ -81,7 +81,7 @@ pub(crate) async fn students_login_handler(
         Ok(t) => t,
         Err(e) => {
             error!("unable to create student token: {}", e);
-            return Err("database error".to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
+            return Err(database_error());
         }
     };
 
