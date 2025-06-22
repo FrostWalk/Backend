@@ -1,7 +1,7 @@
 use crate::api::v1::admins::users::create::create_admin_handler;
 use crate::api::v1::admins::users::delete::delete_admin_handler;
 use crate::api::v1::admins::users::me::admins_me_handler;
-use crate::api::v1::admins::users::read::{admins_get_all_handler, admins_get_one_handler};
+use crate::api::v1::admins::users::read::{get_all_admins_handler, get_one_admin_handler};
 use crate::api::v1::admins::users::update::update_admin_handler;
 use crate::database::repositories::admins_repository::{AdminRole, ALL};
 use crate::jwt::admin_auth_factory::Admin;
@@ -19,9 +19,15 @@ pub(crate) mod update;
 pub(super) fn users_scope() -> Scope {
     web::scope("/users")
         .route(
+            "/me",
+            web::get()
+                .to(admins_me_handler)
+                .wrap(Admin::require_roles(ALL)),
+        )
+        .route(
             "",
             web::get()
-                .to(admins_get_all_handler)
+                .to(get_all_admins_handler)
                 .wrap(Admin::require_roles([
                     AdminRole::Root,
                     AdminRole::Professor,
@@ -38,7 +44,7 @@ pub(super) fn users_scope() -> Scope {
                 ])),
         )
         .route(
-            "",
+            "/{id}",
             web::patch()
                 .to(update_admin_handler)
                 .wrap(Admin::require_roles([
@@ -49,7 +55,7 @@ pub(super) fn users_scope() -> Scope {
         .route(
             "/{id}",
             web::get()
-                .to(admins_get_one_handler)
+                .to(get_one_admin_handler)
                 .wrap(Admin::require_roles([
                     AdminRole::Root,
                     AdminRole::Professor,
@@ -65,12 +71,6 @@ pub(super) fn users_scope() -> Scope {
                     AdminRole::Professor,
                 ])),
         )
-        .route(
-            "/me",
-            web::get()
-                .to(admins_me_handler)
-                .wrap(Admin::require_roles(ALL)),
-        )
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -83,7 +83,7 @@ pub(crate) struct AdminResponseScheme {
     pub last_name: String,
     #[schema(format = "email", example = "jane.doe@admin.com")]
     pub email: String,
-    #[schema(example = 1)]
+    #[schema(example = 2)]
     pub role_id: i32,
 }
 

@@ -80,9 +80,9 @@ pub(super) async fn create_admin_handler(
     let result = match data.repositories.admins.create(adm).await {
         Ok(r) => r,
         Err(e) => {
-            error!("Unable to create admin: {}", e);
+            error!("unable to create admin: {}", e);
             return Err(
-                "Unable to create admin scheme".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+                "unable to create admin scheme".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
             );
         }
     };

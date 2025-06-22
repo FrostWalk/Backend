@@ -1,5 +1,5 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{JsonError, ToJsonError};
+use crate::common::json_error::{database_error, JsonError, ToJsonError};
 use crate::database::repositories::admins_repository::AdminRole;
 use crate::database::repository_methods_trait::RepositoryMethods;
 use crate::jwt::get_user::LoggedUser;
@@ -41,18 +41,26 @@ pub(super) async fn delete_admin_handler(
             Some(a) => a,
         },
         Err(e) => {
-            error!("Unable to retrieve admin from database {}", e);
-            return Err("database error ".to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
+            error!("unable to retrieve admin from database {}", e);
+            return Err(database_error());
         }
     };
 
-    // only root can create root users
+    // only root can delete root users
     if (user.admin_role_id != AdminRole::Root as i32)
         && (admin.admin_role_id == AdminRole::Root as i32)
     {
         warn!("The user {} tried to delete a root user", user.email);
         return Err("operation not permitted".to_json_error(StatusCode::FORBIDDEN));
     }
+
+    match data.repositories.admins.delete_from_id(admin_id).await {
+        Ok(_) => {}
+        Err(e) => {
+            error!("unable to delete admin from database {}", e);
+            return Err(database_error());
+        }
+    };
 
     Ok(HttpResponse::Ok().finish())
 }

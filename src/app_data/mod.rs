@@ -17,7 +17,7 @@ pub(crate) struct AppData {
 #[derive(Clone)]
 pub(crate) struct Repositories {
     pub(crate) complaints: ComplaintsRepository,
-    pub(crate) project: ProjectRepository,
+    pub(crate) projects: ProjectRepository,
     pub(crate) blacklist: BlacklistRepository,
     pub(crate) fairs: FairsRepository,
     pub(crate) groups: GroupsRepository,
@@ -34,7 +34,7 @@ impl AppData {
             repositories: Repositories {
                 complaints: ComplaintsRepository::new(db_conn.clone()),
                 students: StudentsRepository::new(db_conn.clone()),
-                project: ProjectRepository::new(db_conn.clone()),
+                projects: ProjectRepository::new(db_conn.clone()),
                 blacklist: BlacklistRepository::new(db_conn.clone()),
                 fairs: FairsRepository::new(db_conn.clone()),
                 groups: GroupsRepository::new(db_conn.clone()),
