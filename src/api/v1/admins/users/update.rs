@@ -23,7 +23,7 @@ pub(crate) struct UpdateAdminScheme {
 }
 #[utoipa::path(
     patch,
-    path = "/v1/admins/users/",
+    path = "/v1/admins/users/{id}",
     request_body = UpdateAdminScheme,
     responses(
         (status = 200, description = "Admin updated successfully"),
