@@ -8,7 +8,7 @@ use log::error;
 
 #[utoipa::path(
     delete,
-    path = "/v1/projects/{id}",
+    path = "/v1/admins/projects/{id}",
     responses(
         (status = 200, description = "Project deleted successfully"),
         (status = 404, description = "Project not found", body = JsonError),
@@ -17,7 +17,8 @@ use log::error;
     security(("AdminAuth" = [])),
     tag = "Projects management",
 )]
-pub(super) async fn delete_project_handler(
+/// Delete a project by id
+pub(in crate::api::v1) async fn delete_project_handler(
     path: web::Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let project_id = path.into_inner();

@@ -1,15 +1,15 @@
 use crate::api::v1::admins::auth::login::__path_admins_login_handler;
+use crate::api::v1::admins::projects::create::__path_create_project_handler;
+use crate::api::v1::admins::projects::delete::__path_delete_project_handler;
+use crate::api::v1::admins::projects::read::__path_get_all_projects_handler;
+use crate::api::v1::admins::projects::read::__path_get_one_project_handler;
+use crate::api::v1::admins::projects::update::__path_update_project_handler;
 use crate::api::v1::admins::users::create::__path_create_admin_handler;
 use crate::api::v1::admins::users::delete::__path_delete_admin_handler;
 use crate::api::v1::admins::users::me::__path_admins_me_handler;
 use crate::api::v1::admins::users::read::__path_get_all_admins_handler;
 use crate::api::v1::admins::users::read::__path_get_one_admin_handler;
 use crate::api::v1::admins::users::update::__path_update_admin_handler;
-use crate::api::v1::projects::create::__path_create_project_handler;
-use crate::api::v1::projects::delete::__path_delete_project_handler;
-use crate::api::v1::projects::read::__path_get_all_projects_handler;
-use crate::api::v1::projects::read::__path_get_one_project_handler;
-use crate::api::v1::projects::update::__path_update_project_handler;
 use crate::api::v1::students::auth::login::__path_students_login_handler;
 use crate::api::v1::students::projects::read::__path_get_student_projects;
 use crate::api::v1::students::users::me::__path_students_me_handler;
@@ -46,7 +46,13 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "Student users management", description = "CRUD operations on students"),
         (name = "Projects management", description = "CRUD operations on projects"),
     ),
-    modifiers(&SecurityAddon)
+    modifiers(&SecurityAddon),
+    info(
+        title = "Ferris store API",
+        version = "0.1.0",
+        description = "Backend of Ferris store",
+        license(name = "MIT", identifier = "MIT")
+    ),
 )]
 pub(in crate::api) struct ApiDoc;
 
