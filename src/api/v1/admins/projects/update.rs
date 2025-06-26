@@ -19,7 +19,7 @@ pub struct UpdateProjectScheme {
 }
 #[utoipa::path(
     patch,
-    path = "/v1/projects/{id}",
+    path = "/v1/admins/projects/{id}",
     request_body = UpdateProjectScheme,
     responses(
         (status = 200, description = "Project updated successfully"),
@@ -30,7 +30,8 @@ pub struct UpdateProjectScheme {
     security(("AdminAuth" = [])),
     tag = "Projects management",
 )]
-pub(super) async fn update_project_handler(
+/// Update the project details
+pub(in crate::api::v1) async fn update_project_handler(
     path: web::Path<i32>, payload: Json<UpdateProjectScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let scheme = payload.into_inner();
