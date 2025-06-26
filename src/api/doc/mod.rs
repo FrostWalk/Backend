@@ -46,7 +46,13 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "Student users management", description = "CRUD operations on students"),
         (name = "Projects management", description = "CRUD operations on projects"),
     ),
-    modifiers(&SecurityAddon)
+    modifiers(&SecurityAddon),
+    info(
+        title = "Ferris store API",
+        version = "0.1.0",
+        description = "Backend of Ferris store",
+        license(name = "MIT", identifier = "MIT")
+    ),
 )]
 pub(in crate::api) struct ApiDoc;
 
