@@ -7,6 +7,7 @@ use std::rc::Rc;
 pub(crate) struct User {}
 
 impl User {
+    /// Define a middleware that checks if the user is authenticated regardless of whether it is admin or student
     pub(crate) fn require_auth() -> Self {
         Self {}
     }

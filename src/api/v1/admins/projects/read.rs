@@ -15,15 +15,16 @@ pub(crate) struct GetAllProjectsResponse {
 }
 #[utoipa::path(
     get,
-    path = "/v1/projects",
+    path = "/v1/admins/projects",
     responses(
         (status = 200, description = "Found projects", body = GetAllProjectsResponse),
         (status = 500, description = "Internal server error occurred", body = JsonError)
     ),
-    security(("AdminAuth" = []), ("UserAuth"=[])),
+    security(("AdminAuth" = [])),
     tag = "Projects management",
 )]
-pub(super) async fn get_all_projects_handler(
+/// Get all projects details
+pub(in crate::api::v1) async fn get_all_projects_handler(
     data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let projects = match data.repositories.projects.get_all().await {
@@ -39,16 +40,17 @@ pub(super) async fn get_all_projects_handler(
 
 #[utoipa::path(
     get,
-    path = "/v1/projects/{id}",
+    path = "/v1/admins/projects/{id}",
     responses(
         (status = 200, description = "Found project", body = Model),
         (status = 404, description = "project not found", body = JsonError),
         (status = 500, description = "Internal server error", body = JsonError)
     ),
-    security(("AdminAuth" = []), ("UserAuth"=[])),
+    security(("AdminAuth" = [])),
     tag = "Projects management",
 )]
-pub(super) async fn get_one_project_handler(
+/// Get project details by id
+pub(in crate::api::v1) async fn get_one_project_handler(
     path: web::Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
