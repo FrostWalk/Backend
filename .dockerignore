@@ -1,0 +1,8 @@
+/target
+.idea/
+.run/
+.env
+.gitignore
+config.toml
+rustfmt.toml
+docker-compose.yml

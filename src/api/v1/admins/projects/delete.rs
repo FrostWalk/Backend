@@ -18,7 +18,7 @@ use log::error;
     tag = "Projects management",
 )]
 /// Delete a project by id
-pub(in crate::api::v1) async fn delete_project_handler(
+pub(super) async fn delete_project_handler(
     path: web::Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let project_id = path.into_inner();

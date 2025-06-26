@@ -31,7 +31,7 @@ pub struct UpdateProjectScheme {
     tag = "Projects management",
 )]
 /// Update the project details
-pub(in crate::api::v1) async fn update_project_handler(
+pub(super) async fn update_project_handler(
     path: web::Path<i32>, payload: Json<UpdateProjectScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let scheme = payload.into_inner();

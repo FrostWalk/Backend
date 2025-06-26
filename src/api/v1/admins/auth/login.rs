@@ -25,7 +25,7 @@ pub(crate) struct LoginAdminsSchema {
 ///
 /// This struct includes a JWT token that can be used for later authenticated requests.
 #[derive(Serialize, ToSchema)]
-pub(crate) struct LoginAdminsResponse {
+pub(super) struct LoginAdminsResponse {
     /// JSON Web Token (JWT) to be used for authentication in later requests.
     #[schema(example = "eyJhbGc9...")]
     token: String,
@@ -45,7 +45,7 @@ pub(crate) struct LoginAdminsResponse {
     ),
     tag = "Admin authentication"
 )]
-pub(crate) async fn admins_login_handler(
+pub(super) async fn admins_login_handler(
     req: Json<LoginAdminsSchema>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // convenience variable storing error in case of wrong credentials or user not found

@@ -40,6 +40,7 @@ pub(crate) struct LoginStudentsResponse {
     request_body = LoginStudentsSchema,
     responses(
         (status = 200, description = "Login successful", body = LoginStudentsResponse),
+        (status = 202, description = "Pending email verification", body = JsonError),
         (status = 401, description = "Wrong credentials", body = JsonError),
         (status = 500, description = "Internal server error", body = JsonError)
     ),

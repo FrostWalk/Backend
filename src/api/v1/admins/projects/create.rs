@@ -28,7 +28,7 @@ pub(crate) struct CreateProjectResponse {
 }
 #[utoipa::path(
     post,
-    path = "/v1/admins/projects",
+    path = "/v1/users/projects",
     request_body = CreateProjectScheme,
     responses(
         (status = 200, description = "Project created successfully", body = CreateProjectResponse),
@@ -39,7 +39,7 @@ pub(crate) struct CreateProjectResponse {
     tag = "Projects management",
 )]
 /// Create a project
-pub(in crate::api::v1) async fn create_project_handler(
+pub(super) async fn create_project_handler(
     payload: Json<CreateProjectScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let scheme = payload.into_inner();

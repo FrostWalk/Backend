@@ -1,4 +1,3 @@
-use crate::m20250524_212554_students_roles::StudentRoles;
 use sea_orm_migration::{prelude::*, schema::*};
 
 #[derive(DeriveMigrationName)]
@@ -18,13 +17,7 @@ impl MigrationTrait for Migration {
                     .col(string(Students::Email).not_null().unique_key())
                     .col(integer(Students::UniversityId).not_null().unique_key())
                     .col(string(Students::PasswordHash).not_null())
-                    .col(integer(Students::StudentRoleId).not_null())
-                    .foreign_key(
-                        ForeignKey::create()
-                            .from(Students::Table, Students::StudentRoleId)
-                            .to(StudentRoles::Table, StudentRoles::StudentRoleId)
-                            .on_delete(ForeignKeyAction::Restrict),
-                    )
+                    .col(boolean(Students::IsPending).not_null().default(true))
                     .to_owned(),
             )
             .await
@@ -46,5 +39,5 @@ pub(crate) enum Students {
     LastName,
     PasswordHash,
     UniversityId,
-    StudentRoleId,
+    IsPending,
 }

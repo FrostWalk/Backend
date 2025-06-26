@@ -20,8 +20,6 @@ pub enum Relation {
     GroupMembers,
     #[sea_orm(has_many = "super::security_codes::Entity")]
     SecurityCodes,
-    #[sea_orm(has_many = "super::students::Entity")]
-    Students,
 }
 
 impl Related<super::group_members::Entity> for Entity {
@@ -33,12 +31,6 @@ impl Related<super::group_members::Entity> for Entity {
 impl Related<super::security_codes::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::SecurityCodes.def()
-    }
-}
-
-impl Related<super::students::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::Students.def()
     }
 }
 

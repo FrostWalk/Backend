@@ -10,7 +10,7 @@ use serde::Serialize;
 use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, ToSchema)]
-pub(crate) struct GetAllAdminsResponse {
+pub(super) struct GetAllAdminsResponse {
     pub admins: Vec<AdminResponseScheme>,
 }
 #[utoipa::path(

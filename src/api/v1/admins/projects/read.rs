@@ -24,7 +24,7 @@ pub(crate) struct GetAllProjectsResponse {
     tag = "Projects management",
 )]
 /// Get all projects details
-pub(in crate::api::v1) async fn get_all_projects_handler(
+pub(super) async fn get_all_projects_handler(
     data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let projects = match data.repositories.projects.get_all().await {
@@ -50,7 +50,7 @@ pub(in crate::api::v1) async fn get_all_projects_handler(
     tag = "Projects management",
 )]
 /// Get project details by id
-pub(in crate::api::v1) async fn get_one_project_handler(
+pub(super) async fn get_one_project_handler(
     path: web::Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
