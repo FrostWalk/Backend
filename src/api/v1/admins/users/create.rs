@@ -27,7 +27,7 @@ pub(crate) struct CreateAdminScheme {
 }
 
 #[derive(Debug, Serialize, ToSchema)]
-pub(crate) struct CreateAdminResponse {
+pub(super) struct CreateAdminResponse {
     #[schema(example = "12345")]
     pub admin_id: i32,
 }

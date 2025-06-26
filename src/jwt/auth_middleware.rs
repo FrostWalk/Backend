@@ -144,7 +144,15 @@ where
                     .get_from_id(token.sub)
                     .await
                 {
-                    Ok(Some(student)) => student,
+                    Ok(Some(student)) => {
+                        if student.is_pending {
+                            return Err("Student must confirm email"
+                                .to_json_error(StatusCode::ACCEPTED)
+                                .into());
+                        }
+
+                        student
+                    }
                     Ok(None) => {
                         warn!("login attempt with non existing student");
                         return Err(INVALID_TOKEN.to_json_error(StatusCode::UNAUTHORIZED).into());

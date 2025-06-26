@@ -17,7 +17,7 @@ pub struct Model {
     #[sea_orm(unique)]
     pub university_id: i32,
     pub password_hash: String,
-    pub student_role_id: i32,
+    pub is_pending: bool,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -26,14 +26,6 @@ pub enum Relation {
     GroupMembers,
     #[sea_orm(has_many = "super::student_part_selections::Entity")]
     StudentPartSelections,
-    #[sea_orm(
-        belongs_to = "super::student_roles::Entity",
-        from = "Column::StudentRoleId",
-        to = "super::student_roles::Column::StudentRoleId",
-        on_update = "NoAction",
-        on_delete = "Restrict"
-    )]
-    StudentRoles,
 }
 
 impl Related<super::group_members::Entity> for Entity {
@@ -45,12 +37,6 @@ impl Related<super::group_members::Entity> for Entity {
 impl Related<super::student_part_selections::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::StudentPartSelections.def()
-    }
-}
-
-impl Related<super::student_roles::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::StudentRoles.def()
     }
 }
 

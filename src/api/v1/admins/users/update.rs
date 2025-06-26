@@ -11,7 +11,7 @@ use serde::Deserialize;
 use utoipa::ToSchema;
 
 #[derive(Debug, Deserialize, ToSchema)]
-pub(crate) struct UpdateAdminScheme {
+pub(super) struct UpdateAdminScheme {
     #[schema(example = "John")]
     pub first_name: Option<String>,
     #[schema(example = "Doe")]
