@@ -17,10 +17,10 @@ impl User {
 impl<S> Transform<S, ServiceRequest> for User
 where
     S: Service<
-        ServiceRequest,
-        Response=ServiceResponse<actix_web::body::BoxBody>,
-        Error=actix_web::Error,
-    > + 'static,
+            ServiceRequest,
+            Response = ServiceResponse<actix_web::body::BoxBody>,
+            Error = actix_web::Error,
+        > + 'static,
 {
     type Response = ServiceResponse<actix_web::body::BoxBody>;
     type Error = actix_web::Error;

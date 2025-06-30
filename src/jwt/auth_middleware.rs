@@ -27,10 +27,10 @@ pub(crate) struct AuthMiddleware<const N: usize, S> {
 impl<const N: usize, S> Service<ServiceRequest> for AuthMiddleware<N, S>
 where
     S: Service<
-        ServiceRequest,
-        Response=ServiceResponse<actix_web::body::BoxBody>,
-        Error=actix_web::Error,
-    > + 'static,
+            ServiceRequest,
+            Response = ServiceResponse<actix_web::body::BoxBody>,
+            Error = actix_web::Error,
+        > + 'static,
 {
     type Response = ServiceResponse<actix_web::body::BoxBody>;
     type Error = actix_web::Error;
@@ -75,7 +75,7 @@ where
         let token = match decode_token(token.unwrap(), app_state.config.jwt_secret().as_bytes()) {
             Ok(t) => t,
             Err(e) => {
-                warn!("unable to decode jwt token: {}", e);
+                warn!("unable to decode jwt token: {e}");
                 return Box::pin(ready(Err(INVALID_TOKEN
                     .to_json_error(StatusCode::UNAUTHORIZED)
                     .into())));
@@ -128,7 +128,7 @@ where
                         return Err(INVALID_TOKEN.to_json_error(StatusCode::UNAUTHORIZED).into());
                     }
                     Err(e) => {
-                        error!("unable to fetch admin from database: {}", e);
+                        error!("unable to fetch admin from database: {e}");
                         return Err("unable to fetch admin from database"
                             .to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
                             .into());
@@ -158,7 +158,7 @@ where
                         return Err(INVALID_TOKEN.to_json_error(StatusCode::UNAUTHORIZED).into());
                     }
                     Err(e) => {
-                        error!("unable to fetch student from database: {}", e);
+                        error!("unable to fetch student from database: {e}");
                         return Err(database_error().into());
                     }
                 };
@@ -169,6 +169,6 @@ where
             // Call the wrapped service
             srv.call(req).await
         }
-            .boxed_local()
+        .boxed_local()
     }
 }
