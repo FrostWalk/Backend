@@ -30,6 +30,12 @@ pub(crate) struct Config {
     default_admin_password: String,
     /// Application default admin account email
     default_admin_email: String,
+    /// Domains allowed for student registration emails
+    allowed_domains: Vec<String>,
+    /// Base url of the application
+    base_url: String,
+    /// Secret key used to create email confirmation token
+    email_token_secret: String,
 }
 impl Config {
     /// Loads and validates the application configuration from multiple sources.
