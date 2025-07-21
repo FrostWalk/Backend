@@ -1,7 +1,7 @@
 use welds::WeldsModel;
 
 #[derive(Debug, Clone, WeldsModel)]
-#[welds(table = "group_components")]
+#[welds(schema = "public", table = "group_components")]
 pub struct GroupComponent {
     #[welds(primary_key)]
     pub group_component_id: i32,

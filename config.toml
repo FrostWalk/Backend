@@ -1,7 +1,7 @@
 address = "127.0.0.1"
 port = 8080
 workers = 4
-db_url = "postgres://market:market@localhost/market"
+db_url = "postgres://postgres:password@localhost"
 jwt_secret = "jwt_super_secret"
 jwt_validity_days = 7
 logs_mongo_uri="mongodb://localhost:27017"

@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use welds::WeldsModel;
 
 #[derive(Debug, Clone, WeldsModel)]
-#[welds(table = "blacklist")]
+#[welds(schema = "public", table = "blacklist")]
 pub struct Blacklist {
     #[welds(primary_key)]
     pub blacklist_id: i32,
