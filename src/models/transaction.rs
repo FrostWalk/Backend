@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use welds::WeldsModel;
 
 #[derive(Debug, Clone, WeldsModel)]
-#[welds(table = "transactions")]
+#[welds(schema = "public", table = "transactions")]
 pub struct Transaction {
     #[welds(primary_key)]
     pub transaction_id: i32,

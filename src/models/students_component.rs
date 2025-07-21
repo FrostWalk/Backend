@@ -1,7 +1,7 @@
 use welds::WeldsModel;
 
 #[derive(Debug, Clone, WeldsModel)]
-#[welds(table = "students_components")]
+#[welds(schema = "public", table = "students_components")]
 pub struct StudentsComponent {
     #[welds(primary_key)]
     pub students_component_id: i32,

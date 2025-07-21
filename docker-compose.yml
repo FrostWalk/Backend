@@ -5,25 +5,23 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=market
-      - POSTGRES_PASSWORD=market
-      - POSTGRES_DB=market
+      - POSTGRES_PASSWORD=password
       - TZ=Europe/rome
 
     volumes:
       - db_data:/var/lib/postgresql/data
     restart: unless-stopped
 
-  mongodb:
-    image: mongo:latest
-    container_name: mongodb
-    ports:
-      - "27017:27017"
-    environment:
-      - TZ=Europe/rome
-    volumes:
-      - mongodb_data:/data/db
-    restart: unless-stopped
+#  mongodb:
+#    image: mongo:latest
+#    container_name: mongodb
+#    ports:
+#      - "27017:27017"
+#    environment:
+#      - TZ=Europe/rome
+#    volumes:
+#      - mongodb_data:/data/db
+#    restart: unless-stopped
 
 volumes:
   db_data:
