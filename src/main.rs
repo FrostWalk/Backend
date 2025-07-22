@@ -1,13 +1,13 @@
-extern crate core;
-
 use crate::api::configure_endpoints;
 use crate::app_data::AppData;
 use crate::config::Config;
-use crate::database::migrate_database;
 use crate::logging::logger::init_mongo_logger;
 use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
+use log::error;
+use sqlx::migrate::Migrator;
+use welds::connections::postgres::connect;
 
 mod api;
 mod app_data;
@@ -17,31 +17,28 @@ mod database;
 mod jwt;
 mod logging;
 mod models;
-mod migrations;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // load config from env or file
     let app_config = Config::load();
-    let app_data = AppData::new(app_config.clone()).await;
 
     if let Err(e) = init_mongo_logger(app_config.logs_mongo_uri(), app_config.logs_db_name()).await
     {
         eprintln!("Failed to initialize MongoDB logger: {}", e);
         std::process::exit(1);
     }
+    let client = match connect(app_config.db_url()).await {
+        Ok(client) => client,
+        Err(e) => {
+            error!("Failed to connect to DB: {}", e);
+            std::process::exit(1);
+        }
+    };
 
-    // migrate database to latest changes
-    migrate_database(app_config.db_url()).await;
-    app_data
-        .clone()
-        .repositories
-        .admins
-        .create_default_admin(
-            app_config.default_admin_email(),
-            app_config.default_admin_password(),
-        )
-        .await;
+    let app_data = AppData::new(app_config.clone(), client.clone()).await;
+
+    sqlx::migrate!().run(client.as_sqlx_pool()).await.expect("");
 
     HttpServer::new(move || {
         App::new()

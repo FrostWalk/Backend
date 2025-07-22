@@ -1,26 +1,3 @@
-TRUNCATE TABLE _sqlx_migrations;
-DROP TABLE IF EXISTS student_uploads;
-DROP TABLE IF EXISTS transactions;
-DROP TABLE IF EXISTS group_part_selections;
-DROP TABLE IF EXISTS student_part_selections;
-DROP TABLE IF EXISTS student_parts_components;
-DROP TABLE IF EXISTS group_parts_components;
-DROP TABLE IF EXISTS complaints;
-DROP TABLE IF EXISTS group_members;
-DROP TABLE IF EXISTS security_codes;
-DROP TABLE IF EXISTS fairs;
-DROP TABLE IF EXISTS student_parts;
-DROP TABLE IF EXISTS students_components;
-DROP TABLE IF EXISTS group_components;
-DROP TABLE IF EXISTS group_parts;
-DROP TABLE IF EXISTS admins;
-DROP TABLE IF EXISTS students;
-DROP TABLE IF EXISTS groups;
-DROP TABLE IF EXISTS projects;
-DROP TABLE IF EXISTS admin_roles;
-DROP TABLE IF EXISTS student_roles;
-DROP TABLE IF EXISTS blacklist;
-
 create table projects (
     project_id serial primary key,
     name varchar not null,
