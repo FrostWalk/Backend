@@ -5,7 +5,7 @@ use crate::logging::logger::init_mongo_logger;
 use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
-use log::error;
+use log::{error, info};
 use sqlx::migrate::Migrator;
 use welds::connections::postgres::connect;
 
@@ -38,8 +38,10 @@ async fn main() -> std::io::Result<()> {
 
     let app_data = AppData::new(app_config.clone(), client.clone()).await;
 
+    info!("Migrating database schema");
     sqlx::migrate!().run(client.as_sqlx_pool()).await.expect("");
 
+    info!("Starting server");
     HttpServer::new(move || {
         App::new()
             .app_data(Data::new(app_data.clone())) //add application state with repositories and config
