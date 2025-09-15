@@ -1,16 +1,16 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{JsonError, ToJsonError};
 use crate::database::repositories::admins_repository::AdminRole;
-use crate::database::repository_methods_trait::RepositoryMethods;
 use crate::jwt::get_user::LoggedUser;
+use crate::models::admin::Admin;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
-use actix_web::{HttpMessage, HttpRequest, HttpResponse};
-use entity::admins;
+use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
 use log::{error, warn};
-use sea_orm::ActiveValue;
+use password_auth::generate_hash;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
+use welds::state::DbState;
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub(crate) struct CreateAdminScheme {
@@ -60,7 +60,6 @@ pub(super) async fn create_admin_handler(
         }
     };
 
-    // only root can create root users
     if (user.admin_role_id != AdminRole::Root as i32)
         && (scheme.admin_role_id == AdminRole::Root as i32)
     {
@@ -68,26 +67,23 @@ pub(super) async fn create_admin_handler(
         return Err("operation not permitted".to_json_error(StatusCode::FORBIDDEN));
     }
 
-    let adm = admins::ActiveModel {
-        admin_id: ActiveValue::NotSet,
-        first_name: ActiveValue::Set(scheme.first_name),
-        last_name: ActiveValue::Set(scheme.last_name),
-        email: ActiveValue::Set(scheme.email),
-        password_hash: ActiveValue::Set(password_auth::generate_hash(scheme.password)),
-        admin_role_id: ActiveValue::Set(scheme.admin_role_id),
-    };
+    let mut state = DbState::new_uncreated(Admin {
+        admin_id: 0,
+        first_name: scheme.first_name,
+        last_name: scheme.last_name,
+        email: scheme.email,
+        password_hash: generate_hash(scheme.password),
+        admin_role_id: scheme.admin_role_id,
+    });
 
-    let result = match data.repositories.admins.create(adm).await {
-        Ok(r) => r,
-        Err(e) => {
-            error!("unable to create admin: {}", e);
-            return Err(
-                "unable to create admin scheme".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
-            );
-        }
-    };
+    if let Err(e) = state.save(&data.db).await {
+        error!("unable to create admin: {}", e);
+        return Err(
+            "unable to create admin scheme".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+        );
+    }
 
     Ok(HttpResponse::Ok().json(CreateAdminResponse {
-        admin_id: result.last_insert_id,
+        admin_id: state.admin_id,
     }))
 }

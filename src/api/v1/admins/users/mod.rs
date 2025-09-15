@@ -5,8 +5,8 @@ use crate::api::v1::admins::users::read::{get_all_admins_handler, get_one_admin_
 use crate::api::v1::admins::users::update::update_admin_handler;
 use crate::database::repositories::admins_repository::{AdminRole, ALL};
 use crate::jwt::admin_auth_factory::Admin;
+use crate::models::admin;
 use actix_web::{web, Scope};
-use entity::admins;
 use serde::Serialize;
 use utoipa::ToSchema;
 
@@ -87,8 +87,8 @@ pub(crate) struct AdminResponseScheme {
     pub role_id: i32,
 }
 
-impl From<admins::Model> for AdminResponseScheme {
-    fn from(value: admins::Model) -> Self {
+impl From<admin::Admin> for AdminResponseScheme {
+    fn from(value: admin::Admin) -> Self {
         Self {
             id: value.admin_id,
             first_name: value.first_name,

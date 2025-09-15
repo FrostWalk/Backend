@@ -1,12 +1,11 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{JsonError, ToJsonError};
-use crate::database::repository_methods_trait::RepositoryMethods;
+use crate::models::admin::Admin;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
 use actix_web::{web, HttpResponse};
-use entity::admins;
 use log::error;
-use sea_orm::ActiveValue;
+use password_auth::generate_hash;
 use serde::Deserialize;
 use utoipa::ToSchema;
 
@@ -38,35 +37,42 @@ pub(crate) struct UpdateAdminScheme {
 ///
 /// This endpoint allows authenticated admins to update their own or other admin's details. Only root admins can modify roles.
 pub(super) async fn update_admin_handler(
-    path: web::Path<i32>, payload: Json<UpdateAdminScheme>, data: Data<AppData>,
+    path: web::Path<i32>, payload: Json<UpdateAdminScheme>, data: web::Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let scheme = payload.into_inner();
     let id = path.into_inner();
+    let scheme = payload.into_inner();
 
-    let admin_update = admins::ActiveModel {
-        admin_id: ActiveValue::Unchanged(id),
-        first_name: scheme
-            .first_name
-            .map_or(ActiveValue::NotSet, ActiveValue::Set),
-        last_name: scheme
-            .last_name
-            .map_or(ActiveValue::NotSet, ActiveValue::Set),
-        email: scheme.email.map_or(ActiveValue::NotSet, ActiveValue::Set),
-        password_hash: scheme.password.map_or(ActiveValue::NotSet, |v| {
-            let hashed = password_auth::generate_hash(v);
-            ActiveValue::Set(hashed)
-        }),
-        admin_role_id: ActiveValue::NotSet,
-    };
-
-    data.repositories
-        .admins
-        .update(admin_update)
+    let mut rows = Admin::where_col(|a| a.admin_id.equal(id))
+        .run(&data.db)
         .await
         .map_err(|e| {
-            error!("unable to update admin: {}", e);
+            error!("unable to load admin {}: {}", id, e);
             "unable to update admin scheme".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
         })?;
+
+    let mut admin_state = match rows.pop() {
+        Some(s) => s,
+        None => return Err("admin not found".to_json_error(StatusCode::NOT_FOUND)),
+    };
+
+    // Apply only provided fields
+    if let Some(v) = scheme.first_name {
+        admin_state.first_name = v;
+    }
+    if let Some(v) = scheme.last_name {
+        admin_state.last_name = v;
+    }
+    if let Some(v) = scheme.email {
+        admin_state.email = v;
+    }
+    if let Some(v) = scheme.password {
+        admin_state.password_hash = generate_hash(v);
+    }
+
+    admin_state.save(&data.db).await.map_err(|e| {
+        error!("unable to update admin {}: {}", id, e);
+        "unable to update admin scheme".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+    })?;
 
     Ok(HttpResponse::Ok().finish())
 }
