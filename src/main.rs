@@ -6,7 +6,6 @@ use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use log::{error, info};
-use sqlx::migrate::Migrator;
 use welds::connections::postgres::connect;
 
 mod api;

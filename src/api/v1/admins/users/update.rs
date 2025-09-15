@@ -2,7 +2,7 @@ use crate::app_data::AppData;
 use crate::common::json_error::{JsonError, ToJsonError};
 use crate::models::admin::Admin;
 use actix_web::http::StatusCode;
-use actix_web::web::{Data, Json};
+use actix_web::web::Json;
 use actix_web::{web, HttpResponse};
 use log::error;
 use password_auth::generate_hash;

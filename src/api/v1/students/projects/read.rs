@@ -1,17 +1,17 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{database_error, JsonError, ToJsonError};
 use crate::jwt::get_user::LoggedUser;
+use crate::models::project::Project;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
-use entity::projects::Model;
 use log::error;
 use serde::Serialize;
 use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, ToSchema)]
 pub(crate) struct GetStudentProjects {
-    projects: Vec<Model>,
+    projects: Vec<Project>,
 }
 #[utoipa::path(
     get,
