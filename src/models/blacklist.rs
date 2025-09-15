@@ -1,7 +1,9 @@
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use welds::WeldsModel;
 
-#[derive(Debug, Clone, WeldsModel)]
+#[derive(Debug, Clone, WeldsModel, Serialize, Deserialize, ToSchema)]
 #[welds(schema = "public", table = "blacklist")]
 pub struct Blacklist {
     #[welds(primary_key)]

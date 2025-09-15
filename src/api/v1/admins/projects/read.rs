@@ -1,17 +1,16 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{database_error, JsonError, ToJsonError};
-use crate::database::repository_methods_trait::RepositoryMethods;
+use crate::models::project::Project;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{web, HttpResponse};
-use entity::projects::Model;
 use log::error;
 use serde::Serialize;
 use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, ToSchema)]
 pub(crate) struct GetAllProjectsResponse {
-    projects: Vec<Model>,
+    projects: Vec<Project>,
 }
 #[utoipa::path(
     get,
@@ -27,13 +26,15 @@ pub(crate) struct GetAllProjectsResponse {
 pub(in crate::api::v1) async fn get_all_projects_handler(
     data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let projects = match data.repositories.projects.get_all().await {
-        Ok(p) => p,
-        Err(e) => {
-            error!("unable to retrieve projects from database: {}", e);
-            return Err(database_error());
-        }
-    };
+    let states = Project::all().run(&data.db).await.map_err(|e| {
+        log::error!("unable to retrieve projects from database: {}", e);
+        database_error()
+    })?;
+
+    let projects: Vec<Project> = states
+        .into_iter()
+        .map(welds::state::DbState::into_inner)
+        .collect();
 
     Ok(HttpResponse::Ok().json(GetAllProjectsResponse { projects }))
 }
@@ -42,7 +43,7 @@ pub(in crate::api::v1) async fn get_all_projects_handler(
     get,
     path = "/v1/admins/projects/{id}",
     responses(
-        (status = 200, description = "Found project", body = Model),
+        (status = 200, description = "Found project", body = Project),
         (status = 404, description = "project not found", body = JsonError),
         (status = 500, description = "Internal server error", body = JsonError)
     ),
@@ -55,14 +56,18 @@ pub(in crate::api::v1) async fn get_one_project_handler(
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 
-    match data.repositories.projects.get_from_id(id).await {
-        Ok(o) => match o {
-            None => Err("project not found".to_json_error(StatusCode::NOT_FOUND)),
-            Some(p) => Ok(HttpResponse::Ok().json(p)),
-        },
-        Err(e) => {
-            error!("unable to retrieve project from database: {}", e);
-            Err(database_error())
-        }
-    }
+    let mut rows = Project::where_col(|p| p.project_id.equal(id))
+        .run(&data.db)
+        .await
+        .map_err(|e| {
+            error!("db error: {e}");
+            database_error()
+        })?;
+
+    let proj = match rows.pop() {
+        Some(state) => welds::state::DbState::into_inner(state),
+        None => return Err("project not found".to_json_error(StatusCode::NOT_FOUND)),
+    };
+
+    Ok(HttpResponse::Ok().json(proj))
 }

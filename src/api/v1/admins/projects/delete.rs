@@ -1,6 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{database_error, JsonError, ToJsonError};
-use crate::database::repository_methods_trait::RepositoryMethods;
+use crate::models::project::Project;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{web, HttpResponse};
@@ -23,16 +23,26 @@ pub(in crate::api::v1) async fn delete_project_handler(
 ) -> Result<HttpResponse, JsonError> {
     let project_id = path.into_inner();
 
-    let deleted = match data.repositories.projects.delete_from_id(project_id).await {
-        Ok(d) => d.rows_affected,
+    let mut state = match Project::where_col(|p| p.project_id.equal(project_id))
+        .run(&data.db)
+        .await
+    {
+        Ok(rows) => {
+            if let Some(s) = rows.into_iter().next() {
+                s
+            } else {
+                return Err("project not found".to_json_error(StatusCode::NOT_FOUND));
+            }
+        }
         Err(e) => {
             error!("unable to delete project from database {}", e);
             return Err(database_error());
         }
     };
 
-    if deleted == 0 {
-        return Err("project not found".to_json_error(StatusCode::NOT_FOUND));
+    if let Err(e) = state.delete(&data.db).await {
+        error!("unable to delete project from database {}", e);
+        return Err(database_error());
     }
 
     Ok(HttpResponse::Ok().finish())

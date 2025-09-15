@@ -1,13 +1,11 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{JsonError, ToJsonError};
-use crate::database::repository_methods_trait::RepositoryMethods;
+use crate::common::json_error::{database_error, JsonError, ToJsonError};
+use crate::models::project::Project;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
 use chrono::{Datelike, Local};
-use entity::projects;
 use log::error;
-use sea_orm::{NotSet, Set};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -31,7 +29,7 @@ pub(crate) struct CreateProjectResponse {
     path = "/v1/admins/projects",
     request_body = CreateProjectScheme,
     responses(
-        (status = 200, description = "Project created successfully", body = CreateProjectResponse),
+        (status = 201, description = "Project created successfully", body = CreateProjectResponse),
         (status = 400, description = "Invalid data in request", body = JsonError),
         (status = 500, description = "Internal server error", body = JsonError)
     ),
@@ -54,26 +52,22 @@ pub(in crate::api::v1) async fn create_project_handler(
         return Err("Max group size must be greater than 1".to_json_error(StatusCode::BAD_REQUEST));
     }
 
-    let project = projects::ActiveModel {
-        project_id: NotSet,
-        name: Set(scheme.name),
-        year: Set(Local::now().year()),
-        max_student_uploads: Set(scheme.max_student_uploads),
-        max_group_size: Set(scheme.max_group_size),
-        active: Set(scheme.active),
-    };
+    let mut p = Project::new();
+    p.name = scheme.name;
+    p.year = Local::now().year();
+    p.max_student_uploads = scheme.max_student_uploads;
+    p.max_group_size = scheme.max_group_size;
+    p.active = scheme.active;
 
-    let result = match data.repositories.projects.create(project).await {
-        Ok(r) => r,
+    match p.save(&data.db).await {
+        Ok(_) => {}
         Err(e) => {
-            error!("unable to create project: {}", e);
-            return Err(
-                "unable to create project scheme".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
-            );
+            error!("unable to insert project {:?} in database. Error: {e}", p);
+            return Err(database_error());
         }
-    };
+    }
 
-    Ok(HttpResponse::Ok().json(CreateProjectResponse {
-        project_id: result.last_insert_id,
+    Ok(HttpResponse::Created().json(CreateProjectResponse {
+        project_id: p.project_id,
     }))
 }

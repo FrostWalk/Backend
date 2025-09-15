@@ -1,53 +1,54 @@
-use crate::database::repository_methods_trait::RepositoryMethods;
+use crate::models::admin::Admin;
 use derive_new::new;
-use entity::admins;
-use entity::admins::ActiveModel;
-use entity::admins::Entity;
-use log::error;
+use log::{error, info};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use password_auth::generate_hash;
-use repository_macro::RepositoryMethods;
-use sea_orm::ColumnTrait;
-use sea_orm::{ActiveValue, DatabaseConnection, DbErr};
-use std::ops::Deref;
+use welds::connections::postgres::PostgresClient;
+use welds::state::DbState;
 
-#[derive(new, RepositoryMethods, Clone)]
+#[derive(new, Clone)]
 pub(crate) struct AdminsRepository {
-    db_conn: DatabaseConnection,
+    db_conn: PostgresClient,
 }
 
 impl AdminsRepository {
-    pub(crate) async fn create_default_admin(&self, email: &String, password: &String) {
+    pub(crate) async fn get_all(&self) -> welds::errors::Result<Vec<DbState<Admin>>> {
+        Admin::all().run(&self.db_conn).await
+    }
+    pub(crate) async fn get_from_mail(
+        &self, mail: &String,
+    ) -> welds::errors::Result<DbState<Admin>> {
+        Admin::where_col(|p| p.email.like(mail))
+            .fetch_one(&self.db_conn)
+            .await
+    }
+
+    pub(crate) async fn create_default_admin(&self, email: String, password: &String) {
         let found = match self.get_all().await {
-            Ok(f) => f.len(),
+            Ok(v) => v.len(),
             Err(e) => {
-                error!("unable to find admins {}", e);
+                error!("unable to find admins {e}");
                 0
             }
         };
-
-        // if admins already present, skip creation
         if found > 0 {
             return;
         }
 
-        self.create(ActiveModel {
-            admin_id: ActiveValue::NotSet,
-            first_name: ActiveValue::Set("root".to_string()),
-            last_name: ActiveValue::Set("".to_string()),
-            email: ActiveValue::Set(email.deref().to_owned()),
-            password_hash: ActiveValue::Set(generate_hash(password)),
-            admin_role_id: ActiveValue::Set(AdminRole::Root.into()),
-        })
-        .await
-        .expect("Failed to create default admin");
-    }
+        let mut admin = Admin::new();
+        admin.admin_role_id = AdminRole::Root.into();
+        admin.email = email.clone();
+        admin.password_hash = generate_hash(password);
+        admin.first_name = "root".to_string();
+        admin.last_name = String::new();
 
-    pub(crate) async fn get_from_mail(
-        &self, mail: &String,
-    ) -> Result<Option<admins::Model>, DbErr> {
-        self.get_one_from_filter(admins::Column::Email.eq(mail))
-            .await
+        info!("Creating default admin");
+        match admin.save(&self.db_conn).await {
+            Ok(_) => {}
+            Err(e) => {
+                panic!("Unable to create default admin {:?} error: {e}", admin)
+            }
+        }
     }
 }
 #[derive(PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]

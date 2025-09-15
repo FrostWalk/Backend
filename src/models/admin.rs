@@ -1,6 +1,8 @@
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use welds::WeldsModel;
 
-#[derive(Debug, Clone, WeldsModel)]
+#[derive(Debug, Clone, WeldsModel, Serialize, Deserialize, ToSchema)]
 #[welds(schema = "public", table = "admins")]
 pub struct Admin {
     #[welds(primary_key)]
