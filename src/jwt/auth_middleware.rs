@@ -1,17 +1,18 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{database_error, ToJsonError};
 use crate::database::repositories::admins_repository::AdminRole;
-use crate::database::repository_methods_trait::RepositoryMethods;
 use crate::jwt::token::decode_token;
+use crate::models::admin::Admin;
+use crate::models::student::Student;
 use actix_web::dev::{Service, ServiceRequest, ServiceResponse};
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpMessage};
-use entity::{admins, students};
 use futures_util::future::{ready, LocalBoxFuture};
 use futures_util::FutureExt;
 use log::{error, warn};
 use std::rc::Rc;
 use std::task::{Context, Poll};
+use welds::state::DbState;
 
 pub(crate) const ADMIN_HEADER_NAME: &str = "X-Admin-Token";
 pub(crate) const STUDENT_HEADER_NAME: &str = "X-Student-Token";
@@ -116,17 +117,19 @@ where
                         .into());
                 }
 
-                let admin = match cloned_app_state
-                    .repositories
-                    .admins
-                    .get_from_id(token.sub)
+                let admin = match Admin::where_col(|a| a.admin_id.equal(token.sub))
+                    .run(&cloned_app_state.db)
                     .await
                 {
-                    Ok(Some(admin)) => admin,
-                    Ok(None) => {
-                        warn!("login attempt with non existing admin");
-                        return Err(INVALID_TOKEN.to_json_error(StatusCode::UNAUTHORIZED).into());
-                    }
+                    Ok(mut rows) => match rows.pop() {
+                        Some(state) => DbState::into_inner(state),
+                        None => {
+                            warn!("login attempt with non existing admin");
+                            return Err(INVALID_TOKEN
+                                .to_json_error(StatusCode::UNAUTHORIZED)
+                                .into());
+                        }
+                    },
                     Err(e) => {
                         error!("unable to fetch admin from database: {}", e);
                         return Err("unable to fetch admin from database"
@@ -135,27 +138,29 @@ where
                     }
                 };
 
-                req.extensions_mut().insert::<admins::Model>(admin);
+                req.extensions_mut().insert::<Admin>(admin);
             } else {
                 // Student processing
-                let student = match cloned_app_state
-                    .repositories
-                    .students
-                    .get_from_id(token.sub)
+                let student = match Student::where_col(|s| s.student_id.equal(token.sub))
+                    .run(&cloned_app_state.db)
                     .await
                 {
-                    Ok(Some(student)) => student,
-                    Ok(None) => {
-                        warn!("login attempt with non existing student");
-                        return Err(INVALID_TOKEN.to_json_error(StatusCode::UNAUTHORIZED).into());
-                    }
+                    Ok(mut rows) => match rows.pop() {
+                        Some(state) => DbState::into_inner(state),
+                        None => {
+                            warn!("login attempt with non existing student");
+                            return Err(INVALID_TOKEN
+                                .to_json_error(StatusCode::UNAUTHORIZED)
+                                .into());
+                        }
+                    },
                     Err(e) => {
                         error!("unable to fetch student from database: {}", e);
                         return Err(database_error().into());
                     }
                 };
 
-                req.extensions_mut().insert::<students::Model>(student);
+                req.extensions_mut().insert::<Student>(student);
             }
 
             // Call the wrapped service

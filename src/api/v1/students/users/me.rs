@@ -1,8 +1,8 @@
 use crate::common::json_error::{JsonError, ToJsonError};
 use crate::jwt::get_user::LoggedUser;
+use crate::models::student::Student;
 use actix_web::http::StatusCode;
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
-use entity::students;
 use log::error;
 use serde::Serialize;
 use utoipa::ToSchema;
@@ -50,8 +50,8 @@ pub(super) async fn students_me_handler(req: HttpRequest) -> Result<HttpResponse
     Ok(HttpResponse::Ok().json(response))
 }
 
-impl From<students::Model> for GetMeStudentResponse {
-    fn from(value: students::Model) -> Self {
+impl From<Student> for GetMeStudentResponse {
+    fn from(value: Student) -> Self {
         Self {
             id: value.student_id,
             first_name: value.first_name,

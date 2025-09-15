@@ -5,7 +5,7 @@ use crate::jwt::get_user::LoggedUser;
 use crate::models::admin::Admin;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
-use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
+use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use log::{error, warn};
 use password_auth::generate_hash;
 use serde::{Deserialize, Serialize};

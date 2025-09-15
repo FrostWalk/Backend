@@ -1,6 +1,7 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{database_error, JsonError, ToJsonError};
 use crate::jwt::token::create_student_token;
+use crate::models::student::Student;
 use actix_web::cookie::time::Duration;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
@@ -10,6 +11,7 @@ use log::error;
 use password_auth::verify_password;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
+use welds::state::DbState;
 
 const WRONG_CREDENTIALS: &str = "Incorrect email or password";
 
@@ -48,43 +50,41 @@ pub(crate) struct LoginStudentsResponse {
 pub(crate) async fn students_login_handler(
     req: Json<LoginStudentsSchema>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    // convenience variable storing error in case of wrong credentials or user not found
+    // common unauthorized response
     let unauthorized = Err(WRONG_CREDENTIALS.to_json_error(StatusCode::UNAUTHORIZED));
 
-    // find the user in the db
-    let opt = match data.repositories.students.get_from_mail(&req.email).await {
-        Ok(o) => o,
-        Err(e) => {
-            error!("unable to fetch student from database: {}", e);
-            return Err(database_error());
-        }
+    // look up student by email
+    let mut rows = Student::where_col(|s| s.email.equal(&req.email))
+        .run(&data.db)
+        .await
+        .map_err(|e| {
+            error!("unable to fetch student from database: {e}");
+            database_error()
+        })?;
+
+    // 2) not found
+    let state = match rows.pop() {
+        Some(s) => s, // DbState<Student>
+        None => return unauthorized,
     };
 
-    // user is not found
-    if opt.is_none() {
-        return unauthorized;
-    }
+    let user: Student = DbState::into_inner(state);
 
-    let user = opt.unwrap();
-
-    // password is incorrect
+    // 3) wrong password
     if verify_password(&req.password, &user.password_hash).is_err() {
         return unauthorized;
     }
 
-    // create jwt from user data if the creation fails return error 500
-    let token = match create_student_token(
+    // create JWT
+    let token = create_student_token(
         user.student_id,
         data.config.jwt_secret().as_bytes(),
         Duration::days(data.config.jwt_validity_days()).whole_seconds(),
-    ) {
-        Ok(t) => t,
-        Err(e) => {
-            error!("unable to create student token: {}", e);
-            return Err(database_error());
-        }
-    };
+    )
+        .map_err(|e| {
+            error!("unable to create student token: {e}");
+            database_error()
+        })?;
 
-    // return status code 200 with cookie
     Ok(HttpResponse::Ok().json(LoginStudentsResponse { token }))
 }
