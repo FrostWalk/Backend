@@ -1,8 +1,8 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{database_error, JsonError, ToJsonError};
 use crate::database::repositories::admins_repository::AdminRole;
-use crate::database::repository_methods_trait::RepositoryMethods;
 use crate::jwt::get_user::LoggedUser;
+use crate::models::admin::Admin;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
@@ -24,6 +24,7 @@ pub(super) async fn delete_admin_handler(
 ) -> Result<HttpResponse, JsonError> {
     let admin_id = path.into_inner();
 
+    // current user from request
     let user = match req.extensions().get_admin() {
         Ok(user) => user,
         Err(e) => {
@@ -32,35 +33,32 @@ pub(super) async fn delete_admin_handler(
         }
     };
 
-    // Check if admin exists
-    let admin = match data.repositories.admins.get_from_id(admin_id).await {
-        Ok(a) => match a {
-            None => {
-                return Err("admin not found".to_json_error(StatusCode::NOT_FOUND));
-            }
-            Some(a) => a,
-        },
-        Err(e) => {
-            error!("unable to retrieve admin from database {}", e);
-            return Err(database_error());
-        }
+    // Load the admin to delete
+    let mut rows = Admin::where_col(|a| a.admin_id.equal(admin_id))
+        .run(&data.db)
+        .await
+        .map_err(|e| {
+            error!("unable to retrieve admin from database: {}", e);
+            database_error()
+        })?;
+
+    let mut admin_state = match rows.pop() {
+        Some(s) => s,
+        None => return Err("admin not found".to_json_error(StatusCode::NOT_FOUND)),
     };
 
-    // only root can delete root users
+    // Only root can delete root users
     if (user.admin_role_id != AdminRole::Root as i32)
-        && (admin.admin_role_id == AdminRole::Root as i32)
+        && (admin_state.admin_role_id == AdminRole::Root as i32)
     {
         warn!("The user {} tried to delete a root user", user.email);
         return Err("operation not permitted".to_json_error(StatusCode::FORBIDDEN));
     }
 
-    match data.repositories.admins.delete_from_id(admin_id).await {
-        Ok(_) => {}
-        Err(e) => {
-            error!("unable to delete admin from database {}", e);
-            return Err(database_error());
-        }
-    };
+    admin_state.delete(&data.db).await.map_err(|e| {
+        error!("unable to delete admin from database: {}", e);
+        database_error()
+    })?;
 
     Ok(HttpResponse::Ok().finish())
 }
