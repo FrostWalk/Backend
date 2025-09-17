@@ -1,7 +1,11 @@
+use crate::models::group::Group;
+use crate::models::student::Student;
 use welds::WeldsModel;
 
 #[derive(Debug, Clone, WeldsModel)]
 #[welds(schema = "public", table = "group_members")]
+#[welds(BelongsTo(group, Group, "group_id"))]
+#[welds(BelongsTo(student, Student, "student_id"))]
 pub struct GroupMember {
     #[welds(primary_key)]
     pub group_member_id: i32,
