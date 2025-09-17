@@ -7,7 +7,7 @@ authors = ["Federico Frigerio"]
 [dependencies]
 actix-web = "4.11.0"
 figment = { version = "0.10.19", features = ["env", "toml"] }
-serde = { version = "1.0.224", features = ["derive"] }
+serde = { version = "1.0.225", features = ["derive"] }
 serde_json = "1.0.145"
 derive-new = "0.7.0"
 jsonwebtoken = "9.3.1"
