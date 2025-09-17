@@ -1,6 +1,7 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{database_error, JsonError, ToJsonError};
 use crate::jwt::get_user::LoggedUser;
+use crate::models::group_member::GroupMember;
 use crate::models::project::Project;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
@@ -8,6 +9,7 @@ use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use log::error;
 use serde::Serialize;
 use utoipa::ToSchema;
+use welds::state::DbState;
 
 #[derive(Debug, Serialize, ToSchema)]
 pub(crate) struct GetStudentProjects {
@@ -37,18 +39,23 @@ pub(super) async fn get_student_projects(
         }
     };
 
-    let projects = match data
-        .repositories
-        .projects
-        .find_projects_for_student(user.student_id)
+    let project_states = GroupMember::where_col(|gm| gm.student_id.equal(user.student_id))
+        .map_query(|gm| gm.group)
+        .map_query(|g| g.project)
+        .run(&data.db)
         .await
-    {
-        Ok(p) => p,
-        Err(e) => {
-            error!("unable to retrieve projects of user from database: {}", e);
-            return Err(database_error());
-        }
-    };
+        .map_err(|e| {
+            error!(
+                "unable to fetch student projects from database {}: {e}",
+                user.student_id
+            );
+            database_error()
+        })?;
+
+    let projects: Vec<Project> = project_states
+        .into_iter()
+        .map(DbState::into_inner)
+        .collect();
 
     Ok(HttpResponse::Ok().json(GetStudentProjects { projects }))
 }
