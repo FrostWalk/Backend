@@ -7,7 +7,6 @@ services:
     environment:
       - POSTGRES_PASSWORD=password
       - TZ=Europe/rome
-
     volumes:
       - db_data:/var/lib/postgresql/data
     restart: unless-stopped
