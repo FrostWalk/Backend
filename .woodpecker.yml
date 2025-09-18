@@ -4,17 +4,14 @@ clone:
     image: woodpeckerci/plugin-git
     settings:
       depth: 0
-      tags: true   # needed to discover the "last tag" on manual runs
+      tags: true
 
-steps:
-  # ---------- DEV IMAGE (ferris-store:dev) ----------
+steps: # ---------- DEV IMAGE (ferris-store:dev) ----------
   docker-build-dev:
     image: woodpeckerci/plugin-docker-buildx
-    privileged: true
-    settings:
-      # Publish to GHCR
+    settings: # Publish to GHCR
       registry: ghcr.io
-      repo: ghcr.io/${CI_REPO_OWNER}/Ferris-Store
+      repo: ghcr.io/frostwalk/ferris-store
       tags: dev
       dockerfile: Dockerfile
       # Build in dev profile, Alpine final image
@@ -22,7 +19,8 @@ steps:
         PROFILE: dev
       # Link image to the source repository (OCI label)
       labels:
-        - org.opencontainers.image.source=https://github.com/${CI_REPO}
+        - org.opencontainers.image.source=https://github.com/FrostWalk/Ferris-Store
+        - org.opencontainers.image.licenses=MIT
       # Also add the plugin's default git-derived labels (version, revision, etc.)
       default_labels: true
       # GHCR auth
@@ -30,8 +28,7 @@ steps:
         from_secret: GHCR_USERNAME
       password:
         from_secret: GHCR_TOKEN
-    when:
-      # Build on pushes to the development branch…
+    when: # Build on pushes to the development branch…
       - event: push
         branch: development
       # …and also when run manually.
@@ -39,38 +36,51 @@ steps:
 
   # ---------- DISCOVER RELEASE TAG ----------
   compute-release-tag:
-    image: alpine:latest
+    image: alpine/git:latest
     commands:
       - set -e
-      # If this is a tag event, use that tag; otherwise, grab the latest tag.
       - |
+        # Skip unless it's a tag event or a manual run explicitly asking for a release
+        if [ "$CI_PIPELINE_EVENT" = "manual" ] && [ "${RUN_RELEASE:-}" != "true" ]; then
+          echo "Skipping release: RUN_RELEASE!=true on manual run."
+          exit 0
+        fi
+
         if [ "$CI_PIPELINE_EVENT" = "tag" ] && [ -n "$CI_COMMIT_TAG" ]; then
           TAG="$CI_COMMIT_TAG"
+        elif [ -n "${OVERRIDE_TAG:-}" ]; then
+          TAG="$OVERRIDE_TAG"
         else
-          git fetch --tags --force
-          TAG="$(git describe --tags --abbrev=0)"
+          # Use the newest existing tag from the clone (no network)
+          TAG="$(git describe --tags --abbrev=0 2>/dev/null || git tag --sort=-creatordate | head -n1 || true)"
+          if [ -z "$TAG" ]; then
+            echo "No git tags found. On manual runs set RUN_RELEASE=true and provide OVERRIDE_TAG (e.g., v1.0.0)." >&2
+            exit 1
+          fi
         fi
-        echo "$TAG" > .release_tag
-        # Let the docker-buildx plugin read tags from a file
+
         printf "%s\n%s\n" "$TAG" "latest" > .tags
+        echo "Release tags:"
+        cat .tags
     when:
       - event: tag
       - event: manual
+        branch: main
 
   # ---------- RELEASE IMAGE (ferris-store:<tag> and :latest) ----------
   docker-build-release:
     image: woodpeckerci/plugin-docker-buildx
-    privileged: true
-    depends_on: [compute-release-tag]
+    depends_on: [ compute-release-tag ]
     settings:
       registry: ghcr.io
-      repo: ghcr.io/${CI_REPO_OWNER}/ferris-store
+      repo: ghcr.io/frostwalk/ferris-store
       tags_file: .tags
       dockerfile: Dockerfile
       build_args:
         PROFILE: release
       labels:
-        - org.opencontainers.image.source=https://github.com/${CI_REPO}
+        - org.opencontainers.image.source=https://github.com/FrostWalk/Ferris-Store
+        - org.opencontainers.image.licenses=MIT
       default_labels: true
       username:
         from_secret: GHCR_USERNAME
@@ -79,3 +89,4 @@ steps:
     when:
       - event: tag
       - event: manual
+        branch: main
