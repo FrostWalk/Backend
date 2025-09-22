@@ -1,6 +1,7 @@
 use crate::api::configure_endpoints;
 use crate::app_data::AppData;
 use crate::config::Config;
+use crate::database::repositories::admins_repository::create_default_admin;
 use crate::logging::logger::init_mongo_logger;
 use actix_web::middleware::Logger;
 use actix_web::web::Data;
@@ -39,6 +40,13 @@ async fn main() -> std::io::Result<()> {
 
     info!("Migrating database schema");
     sqlx::migrate!().run(client.as_sqlx_pool()).await.expect("");
+
+    create_default_admin(
+        &client,
+        app_config.default_admin_email().clone(),
+        app_config.default_admin_password().clone(),
+    )
+        .await;
 
     info!("Starting server");
     HttpServer::new(move || {
