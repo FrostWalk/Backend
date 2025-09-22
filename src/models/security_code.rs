@@ -1,8 +1,12 @@
+use crate::models::project::Project;
+use crate::models::student_role::StudentRole;
 use chrono::{DateTime, Utc};
 use welds::WeldsModel;
 
 #[derive(Debug, Clone, WeldsModel)]
 #[welds(schema = "public", table = "security_codes")]
+#[welds(BelongsTo(project, Project, "project_id"))]
+#[welds(BelongsTo(student_role, StudentRole, "student_role_id"))]
 pub struct SecurityCode {
     #[welds(primary_key)]
     pub security_code_id: i32,
