@@ -29,6 +29,7 @@ pub struct UpdateProjectScheme {
     security(("AdminAuth" = [])),
     tag = "Projects management",
 )]
+/// Update a project details
 pub(in crate::api::v1) async fn update_project_handler(
     path: web::Path<i32>, payload: Json<UpdateProjectScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
