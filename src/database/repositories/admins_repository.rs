@@ -1,5 +1,4 @@
 use crate::models::admin::Admin;
-use derive_new::new;
 use log::{error, info};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use password_auth::generate_hash;
