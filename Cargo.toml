@@ -23,3 +23,4 @@ tokio = "1.47.1"
 mongodb = "3.3.0"
 welds = { version = "0.4.18", features = ["postgres"] }
 sqlx = { version = "0.8.6", features = ["runtime-tokio", "tls-rustls", "chrono"] }
+rand = "0.9.2"

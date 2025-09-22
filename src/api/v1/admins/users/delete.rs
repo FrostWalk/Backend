@@ -19,6 +19,7 @@ use log::{error, warn};
     security(("AdminAuth" = [])),
     tag = "Admin users management",
 )]
+/// Delete an admin
 pub(super) async fn delete_admin_handler(
     req: HttpRequest, path: web::Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
