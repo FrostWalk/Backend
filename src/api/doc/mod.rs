@@ -5,6 +5,7 @@ use crate::api::v1::admins::projects::read::__path_get_all_projects_handler;
 use crate::api::v1::admins::projects::read::__path_get_one_project_handler;
 use crate::api::v1::admins::projects::update::__path_update_project_handler;
 use crate::api::v1::admins::security_codes::create::__path_create_code_handler;
+use crate::api::v1::admins::security_codes::read::__path_get_all_codes_handler;
 use crate::api::v1::admins::users::create::__path_create_admin_handler;
 use crate::api::v1::admins::users::delete::__path_delete_admin_handler;
 use crate::api::v1::admins::users::me::__path_admins_me_handler;
@@ -40,6 +41,7 @@ use utoipa_swagger_ui::SwaggerUi;
         delete_project_handler,
         get_student_projects,
         create_code_handler,
+        get_all_codes_handler,
     ),
     tags(
         (name = "Admin authentication", description = "Admin authentication endpoint"),
