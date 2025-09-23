@@ -8,3 +8,11 @@ logs_mongo_uri="mongodb://localhost:27017"
 logs_db_name="logs"
 default_admin_password = "password"
 default_admin_email = "root"
+
+smtp_host = ""
+smtp_port = ""
+smtp_username = ""
+smtp_password = ""
+email_from = ""
+
+app_url = ""
