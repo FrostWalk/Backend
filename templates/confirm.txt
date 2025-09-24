@@ -1,0 +1,6 @@
+Hi {{ user_name }}!
+
+Please confirm your account by opening the link below:
+{{ url }}
+
+If you did not create an account, please contact the professor.

@@ -17,6 +17,7 @@ mod database;
 mod jwt;
 mod logging;
 mod models;
+mod mail;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
