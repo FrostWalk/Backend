@@ -1,6 +1,6 @@
-Hi {{ name }}!
+Hi {{ user_name }}!
 
 Please confirm your account by opening the link below:
 {{ url }}
 
-If you did not create an account, report this to the professor.
+If you did not create an account, please contact the professor.

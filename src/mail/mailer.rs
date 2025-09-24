@@ -83,10 +83,10 @@ impl Mailer {
         &self, to_email: &str, to_name: Option<&str>, token: &str,
     ) -> Result<()> {
         let confirm_url = self.confirmation_link(token)?;
-        let maybe_name = to_name.map(|n| format!(" {n}")).unwrap_or_default();
+        let user_name = to_name.map(|n| format!(" {n}")).unwrap_or_default();
 
         let ctx = minijinja::context! {
-            maybe_name => maybe_name,
+            user_name => user_name,
             url => confirm_url.as_str(),
         };
 
@@ -104,9 +104,9 @@ impl Mailer {
     pub async fn send_password_reset(
         &self, to_email: &str, to_name: Option<&str>, reset_url: &str,
     ) -> Result<()> {
-        let maybe_name = to_name.map(|n| format!(" {n}")).unwrap_or_default();
+        let user_name = to_name.map(|n| format!(" {n}")).unwrap_or_default();
         let ctx = minijinja::context! {
-            maybe_name => maybe_name,
+            user_name => user_name,
             url => reset_url,
         };
 
