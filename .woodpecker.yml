@@ -5,6 +5,11 @@ clone:
     settings:
       depth: 0
       tags: true
+    when:
+      - event: manual
+      - event: tag
+      - event: push
+        branch: [ development, main ]
 
 steps: # ---------- DEV IMAGE (ferris-store:dev) ----------
   docker-build-dev:
