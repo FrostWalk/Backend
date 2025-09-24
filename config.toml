@@ -13,6 +13,4 @@ smtp_host = ""
 smtp_port = ""
 smtp_username = ""
 smtp_password = ""
-email_from = ""
-
-app_url = ""
+app_base_url = ""

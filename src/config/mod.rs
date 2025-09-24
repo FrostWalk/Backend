@@ -30,6 +30,16 @@ pub(crate) struct Config {
     default_admin_password: String,
     /// Application default admin account email
     default_admin_email: String,
+    /// Host of smtp server
+    smtp_host: String,
+    /// Port of smtp server
+    smtp_port: u16,
+    /// Username of the smtp server
+    smtp_username: String,
+    /// Password of the smtp server
+    smtp_password: String,
+    /// Application base url
+    app_base_url: String,
 }
 impl Config {
     /// Loads and validates the application configuration from multiple sources.
