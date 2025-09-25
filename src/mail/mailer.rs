@@ -49,10 +49,10 @@ impl Mailer {
     }
 
     async fn send_templated(
-        &self, to_email: &str, to_name: Option<&str>, subject: &str, html_template_name: &str,
+        &self, to_email: &str, to_name: String, subject: &str, html_template_name: &str,
         text_template_name: &str, ctx: JinjaValue,
     ) -> Result<()> {
-        let to = Mailbox::new(to_name.map(|s| s.to_owned()), to_email.parse()?);
+        let to = Mailbox::new(Some(to_name), to_email.parse()?);
 
         let html_body = self.templates.render(html_template_name, ctx.clone())?;
         let text_body = self.templates.render(text_template_name, ctx)?;
@@ -80,13 +80,12 @@ impl Mailer {
     }
 
     pub async fn send_account_confirmation(
-        &self, to_email: &str, to_name: Option<&str>, token: &str,
+        &self, to_email: &str, to_name: String, token: &str,
     ) -> Result<()> {
         let confirm_url = self.confirmation_link(token)?;
-        let user_name = to_name.map(|n| format!(" {n}")).unwrap_or_default();
 
         let ctx = minijinja::context! {
-            user_name => user_name,
+            user_name => to_name,
             url => confirm_url.as_str(),
         };
 
@@ -102,11 +101,10 @@ impl Mailer {
     }
 
     pub async fn send_password_reset(
-        &self, to_email: &str, to_name: Option<&str>, reset_url: &str,
+        &self, to_email: &str, to_name: String, reset_url: &str,
     ) -> Result<()> {
-        let user_name = to_name.map(|n| format!(" {n}")).unwrap_or_default();
         let ctx = minijinja::context! {
-            user_name => user_name,
+            user_name => to_name,
             url => reset_url,
         };
 
