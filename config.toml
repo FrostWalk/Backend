@@ -4,13 +4,14 @@ workers = 4
 db_url = "postgres://postgres:password@localhost"
 jwt_secret = "jwt_super_secret"
 jwt_validity_days = 7
-logs_mongo_uri="mongodb://localhost:27017"
-logs_db_name="logs"
+logs_mongo_uri = "mongodb://localhost:27017"
+logs_db_name = "logs"
 default_admin_password = "password"
 default_admin_email = "root"
+allowed_signup_domains = ["studenti.unitn.it", "unitn.it"]
 
 smtp_host = ""
-smtp_port = ""
+smtp_port = 567
 smtp_username = ""
 smtp_password = ""
 app_base_url = ""

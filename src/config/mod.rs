@@ -40,6 +40,8 @@ pub(crate) struct Config {
     smtp_password: String,
     /// Application base url
     app_base_url: String,
+    /// email domains with which you can create an account
+    allowed_signup_domains: Vec<String>
 }
 impl Config {
     /// Loads and validates the application configuration from multiple sources.
@@ -66,6 +68,6 @@ impl Config {
             .extract();
 
         // in case it fails, panic with a message and specific error
-        res.unwrap_or_else(|e| panic!("unable to load config: {:?}", e))
+        res.unwrap_or_else(|e| panic!("unable to load config:\n{:?}", e))
     }
 }

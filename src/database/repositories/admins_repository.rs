@@ -26,6 +26,8 @@ pub(crate) async fn create_default_admin(db: &PostgresClient, email: String, pas
         return;
     }
 
+    //todo create admin's roles and student's roles
+
     let mut admin = Admin::new();
     admin.admin_role_id = AdminRole::Root.into();
     admin.email = email.clone();
