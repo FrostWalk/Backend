@@ -30,13 +30,10 @@ pub(crate) struct GetAllAdminsResponse {
 pub(super) async fn get_all_admins_handler(
     data: web::Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let states = Admin::all()
-        .run(&data.db)
-        .await
-        .map_err(|e| {
-            error!("unable to retrieve admins from database: {}", e);
-            database_error()
-        })?;
+    let states = Admin::all().run(&data.db).await.map_err(|e| {
+        error!("unable to retrieve admins from database: {}", e);
+        database_error()
+    })?;
 
     let admins: Vec<AdminResponseScheme> = states
         .into_iter()
@@ -62,8 +59,7 @@ pub(super) async fn get_all_admins_handler(
 /// Returns detailed information about a specific admin user
 /// without including sensitive fields like passwords.
 pub(super) async fn get_one_admin_handler(
-    path: web::Path<i32>,
-    data: Data<AppData>,
+    path: web::Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 

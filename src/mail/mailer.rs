@@ -1,3 +1,4 @@
+use confirm_email::generate_token;
 use lettre::message::{header::ContentType, Mailbox, Message, MultiPart, SinglePart};
 use lettre::{
     transport::smtp::authentication::Credentials, AsyncSmtpTransport, AsyncTransport,
@@ -5,12 +6,14 @@ use lettre::{
 };
 use url::Url;
 
-use minijinja::Value as JinjaValue;
-
 use super::template::TemplateEngine;
+use crate::config::Config;
+use minijinja::Value as JinjaValue;
 
 type DynError = Box<dyn std::error::Error + Send + Sync + 'static>;
 type Result<T> = std::result::Result<T, DynError>;
+
+const CONFIRMATION_URL: &str = "/v1/students/auth/confirm";
 
 pub struct Mailer {
     transport: AsyncSmtpTransport<Tokio1Executor>,
@@ -20,6 +23,17 @@ pub struct Mailer {
 }
 
 impl Mailer {
+    pub fn from_config(config: &Config) -> Result<Self> {
+        Self::new(
+            config.smtp_host(),
+            config.smtp_port(),
+            config.smtp_username(),
+            config.smtp_password(),
+            config.email_from(),
+            config.app_base_url(),
+        )
+    }
+
     pub fn new(
         smtp_host: &str, port: u16, username: &str, password: &str, from_name: &str,
         app_base_url: &str,
@@ -42,14 +56,16 @@ impl Mailer {
         })
     }
 
-    fn confirmation_link(&self, token: &str) -> Result<Url> {
-        let mut url = self.base_url.join("/auth/confirm")?;
-        url.query_pairs_mut().append_pair("token", token);
+    fn confirmation_link(&self, email: String, key: String) -> Result<Url> {
+        let token = generate_token(email, key)?;
+
+        let mut url = self.base_url.join(CONFIRMATION_URL)?;
+        url.query_pairs_mut().append_pair("t", token.as_str());
         Ok(url)
     }
 
     async fn send_templated(
-        &self, to_email: &str, to_name: String, subject: &str, html_template_name: &str,
+        &self, to_email: String, to_name: String, subject: &str, html_template_name: &str,
         text_template_name: &str, ctx: JinjaValue,
     ) -> Result<()> {
         let to = Mailbox::new(Some(to_name), to_email.parse()?);
@@ -80,9 +96,9 @@ impl Mailer {
     }
 
     pub async fn send_account_confirmation(
-        &self, to_email: &str, to_name: String, token: &str,
+        &self, to_email: String, to_name: String, key: String,
     ) -> Result<()> {
-        let confirm_url = self.confirmation_link(token)?;
+        let confirm_url = self.confirmation_link(to_email.clone(), key)?;
 
         let ctx = minijinja::context! {
             user_name => to_name,
@@ -101,7 +117,7 @@ impl Mailer {
     }
 
     pub async fn send_password_reset(
-        &self, to_email: &str, to_name: String, reset_url: &str,
+        &self, to_email: String, to_name: String, reset_url: &str,
     ) -> Result<()> {
         let ctx = minijinja::context! {
             user_name => to_name,

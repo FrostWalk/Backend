@@ -4,7 +4,7 @@ use crate::mail::Mailer;
 use crate::models::student::Student;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::HttpResponse;
 use log::{error, info};
 use password_auth::generate_hash;
 use serde::{Deserialize, Serialize};
@@ -38,14 +38,16 @@ pub(crate) struct StudentSignupResponse {
     responses(
         (status = 202, description = "Account created successfully", body = StudentSignupResponse),
         (status = 400, description = "Invalid data in request", body = JsonError),
-        (status = 500, description = "Internal server error occurred", body = JsonError)
+        (status = 500, description = "Internal server error occurred", body = JsonError),
+        (status = 503, description = "Account created email was not sent", body = JsonError)
     ),
     tag = "Student users management",
 )]
 /// Creates a new student account
 ///
 /// This endpoint allows students to register to the app.
-pub(super) async fn student_signup_handler(payload: Json<StudentSignupScheme>, data: Data<AppData>,
+pub(super) async fn student_signup_handler(
+    payload: Json<StudentSignupScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let scheme = payload.into_inner();
 
@@ -73,7 +75,7 @@ pub(super) async fn student_signup_handler(payload: Json<StudentSignupScheme>, d
         return Err("invalid email format".to_json_error(StatusCode::BAD_REQUEST));
     }
 
-    let mut state = DbState::new_uncreated(Student {
+    let mut result = DbState::new_uncreated(Student {
         student_id: 0,
         first_name: scheme.first_name,
         last_name: scheme.last_name,
@@ -83,25 +85,41 @@ pub(super) async fn student_signup_handler(payload: Json<StudentSignupScheme>, d
         is_pending: false,
     });
 
-    if let Err(e) = state.save(&data.db).await {
+    if let Err(e) = result.save(&data.db).await {
         error!("unable to create student's account: {}", e);
         return Err(database_error());
     }
 
-    // todo finishing email sending
-    // let mailer = Mailer::new();
-    //
-    // if let Err(e) = Mailer::send_account_confirmation(
-    //     &scheme.email,
-    //     scheme.first_name,
-    //     &format!("student_{}_confirmation", state.student_id),
-    // ).await {
-    //     error!("failed to send confirmation email: {}", e);
-    // }
+    let mailer = match Mailer::from_config(&data.config) {
+        Ok(m) => m,
+        Err(e) => {
+            error!("unable to create instance of Mailer: {}", e);
+            return Err(
+                "error sending confirmation email".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+            );
+        }
+    };
 
-    info!("New student's account created: {:?}", state);
+    let name = format!("{} {}", &result.first_name, &result.last_name);
+    if let Err(e) = mailer
+        .send_account_confirmation(
+            result.email.clone(),
+            name,
+            data.config.email_token_secret().clone(),
+        )
+        .await
+    {
+        error!("failed to send confirmation email: {}", e);
+        return Err(
+            "The account has been created but the confirmation email could not be sent; \
+        ask your coordinator to approve you manually."
+                .to_json_error(StatusCode::SERVICE_UNAVAILABLE),
+        );
+    }
+
+    info!("New student's account created: {:?}", result);
 
     Ok(HttpResponse::Ok().json(StudentSignupResponse {
-        student_id: state.student_id,
+        student_id: result.student_id,
     }))
 }

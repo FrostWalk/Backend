@@ -12,8 +12,7 @@ pub(crate) async fn security_code_exists(
 }
 
 pub(crate) async fn get_student_role_id_from_security_code(
-    db: &PostgresClient,
-    code: &str,
+    db: &PostgresClient, code: &str,
 ) -> welds::errors::Result<Option<i32>> {
     let rows = SecurityCode::where_col(|sc| sc.code.equal(code))
         .limit(1)

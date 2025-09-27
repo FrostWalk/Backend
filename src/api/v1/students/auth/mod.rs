@@ -1,3 +1,4 @@
+mod confirm;
 pub(crate) mod login;
 
 use crate::api::v1::students::auth::login::students_login_handler;
