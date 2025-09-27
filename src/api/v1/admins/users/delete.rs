@@ -1,8 +1,8 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{database_error, JsonError, ToJsonError};
-use crate::database::repositories::admins_repository::AdminRole;
 use crate::jwt::get_user::LoggedUser;
 use crate::models::admin::Admin;
+use crate::models::admin_role::AvailableAdminRole;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
@@ -49,8 +49,8 @@ pub(super) async fn delete_admin_handler(
     };
 
     // Only root can delete root users
-    if (user.admin_role_id != AdminRole::Root as i32)
-        && (admin_state.admin_role_id == AdminRole::Root as i32)
+    if (user.admin_role_id != AvailableAdminRole::Root as i32)
+        && (admin_state.admin_role_id == AvailableAdminRole::Root as i32)
     {
         warn!("The user {} tried to delete a root user", user.email);
         return Err("operation not permitted".to_json_error(StatusCode::FORBIDDEN));

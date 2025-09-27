@@ -1,6 +1,6 @@
 use crate::models::admin::Admin;
+use crate::models::admin_role::{AdminRole, AvailableAdminRole};
 use log::{error, info};
-use num_enum::{IntoPrimitive, TryFromPrimitive};
 use password_auth::generate_hash;
 use welds::connections::postgres::PostgresClient;
 use welds::state::DbState;
@@ -26,10 +26,15 @@ pub(crate) async fn create_default_admin(db: &PostgresClient, email: String, pas
         return;
     }
 
-    //todo create admin's roles and student's roles
+    match seed_admin_roles(db).await {
+        Ok(_) => {}
+        Err(e) => {
+            panic!("unable to create admin roles {e}");
+        }
+    };
 
     let mut admin = Admin::new();
-    admin.admin_role_id = AdminRole::Root.into();
+    admin.admin_role_id = AvailableAdminRole::Root.into();
     admin.email = email.clone();
     admin.password_hash = generate_hash(password);
     admin.first_name = "root".to_string();
@@ -44,17 +49,34 @@ pub(crate) async fn create_default_admin(db: &PostgresClient, email: String, pas
     }
 }
 
-#[derive(PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
-#[repr(i32)]
-pub(crate) enum AdminRole {
-    Root = 1,
-    Professor = 2,
-    Tutor = 3,
-    Coordinator = 4,
+async fn seed_admin_roles(db: &impl welds::Client) -> welds::errors::Result<()> {
+    let roles: &[(i32, &str)] = &[
+        (AvailableAdminRole::Root as i32, "Root"),
+        (AvailableAdminRole::Professor as i32, "Professor"),
+        (AvailableAdminRole::Tutor as i32, "Tutor"),
+        (AvailableAdminRole::Coordinator as i32, "Coordinator"),
+    ];
+
+    for (id, name) in roles {
+        let mut rows = AdminRole::where_col(|r| r.admin_role_id.equal(*id))
+            .limit(1)
+            .run(db)
+            .await?;
+
+        if let Some(mut state) = rows.pop() {
+            if state.name != *name {
+                state.name = (*name).to_string();
+                state.save(db).await?;
+            }
+        } else {
+            // not exists: insert
+            let mut state = DbState::new_uncreated(AdminRole {
+                admin_role_id: *id,
+                name: (*name).to_string(),
+            });
+            state.save(db).await?;
+        }
+    }
+
+    Ok(())
 }
-pub(crate) const ALL: [AdminRole; 4] = [
-    AdminRole::Root,
-    AdminRole::Professor,
-    AdminRole::Tutor,
-    AdminRole::Coordinator,
-];

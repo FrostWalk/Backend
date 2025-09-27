@@ -112,7 +112,7 @@ pub(super) async fn student_signup_handler(
         error!("failed to send confirmation email: {}", e);
         return Err(
             "The account has been created but the confirmation email could not be sent; \
-        ask your coordinator to approve you manually."
+        ask the coordinator to approve you manually."
                 .to_json_error(StatusCode::SERVICE_UNAVAILABLE),
         );
     }
