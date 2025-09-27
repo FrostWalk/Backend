@@ -14,4 +14,6 @@ smtp_host = ""
 smtp_port = 567
 smtp_username = ""
 smtp_password = ""
+email_from = "Advanced Programming"
+email_token_secret = "secret_token"
 app_base_url = ""
