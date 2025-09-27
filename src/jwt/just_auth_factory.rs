@@ -1,5 +1,5 @@
-use crate::database::repositories::admins_repository;
 use crate::jwt::auth_middleware::AuthMiddleware;
+use crate::models::admin_role::ALL;
 use actix_web::dev::{Service, ServiceRequest, ServiceResponse, Transform};
 use futures_util::future::{ready, Ready};
 use std::rc::Rc;
@@ -17,10 +17,10 @@ impl User {
 impl<S> Transform<S, ServiceRequest> for User
 where
     S: Service<
-        ServiceRequest,
-        Response=ServiceResponse<actix_web::body::BoxBody>,
-        Error=actix_web::Error,
-    > + 'static,
+            ServiceRequest,
+            Response = ServiceResponse<actix_web::body::BoxBody>,
+            Error = actix_web::Error,
+        > + 'static,
 {
     type Response = ServiceResponse<actix_web::body::BoxBody>;
     type Error = actix_web::Error;
@@ -33,7 +33,7 @@ where
             require_admin: false,
             service: Rc::new(service),
             authentication_only: true,
-            allowed_roles: Rc::new(admins_repository::ALL),
+            allowed_roles: Rc::new(ALL),
         }))
     }
 }

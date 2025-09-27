@@ -47,7 +47,7 @@ async fn main() -> std::io::Result<()> {
         app_config.default_admin_email().clone(),
         app_config.default_admin_password().clone(),
     )
-        .await;
+    .await;
 
     info!("Starting server");
     HttpServer::new(move || {

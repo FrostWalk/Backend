@@ -4,12 +4,12 @@ type DynError = Box<dyn std::error::Error + Send + Sync + 'static>;
 type Result<T> = std::result::Result<T, DynError>;
 
 const CONFIRM_HTML_TMPL: &str = include_str!(concat!(
-env!("CARGO_MANIFEST_DIR"),
-"/templates/confirm.html"
+    env!("CARGO_MANIFEST_DIR"),
+    "/templates/confirm.html"
 ));
 const CONFIRM_TEXT_TMPL: &str = include_str!(concat!(
-env!("CARGO_MANIFEST_DIR"),
-"/templates/confirm.txt"
+    env!("CARGO_MANIFEST_DIR"),
+    "/templates/confirm.txt"
 ));
 
 const RESET_HTML_TMPL: &str =

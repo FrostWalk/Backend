@@ -3,9 +3,9 @@ use crate::api::v1::admins::users::delete::delete_admin_handler;
 use crate::api::v1::admins::users::me::admins_me_handler;
 use crate::api::v1::admins::users::read::{get_all_admins_handler, get_one_admin_handler};
 use crate::api::v1::admins::users::update::update_admin_handler;
-use crate::database::repositories::admins_repository::{AdminRole, ALL};
 use crate::jwt::admin_auth_factory::Admin;
 use crate::models::admin;
+use crate::models::admin_role::{AvailableAdminRole, ALL};
 use actix_web::{web, Scope};
 use serde::Serialize;
 use utoipa::ToSchema;
@@ -29,9 +29,9 @@ pub(super) fn users_scope() -> Scope {
             web::get()
                 .to(get_all_admins_handler)
                 .wrap(Admin::require_roles([
-                    AdminRole::Root,
-                    AdminRole::Professor,
-                    AdminRole::Tutor,
+                    AvailableAdminRole::Root,
+                    AvailableAdminRole::Professor,
+                    AvailableAdminRole::Tutor,
                 ])),
         )
         .route(
@@ -39,8 +39,8 @@ pub(super) fn users_scope() -> Scope {
             web::post()
                 .to(create_admin_handler)
                 .wrap(Admin::require_roles([
-                    AdminRole::Root,
-                    AdminRole::Professor,
+                    AvailableAdminRole::Root,
+                    AvailableAdminRole::Professor,
                 ])),
         )
         .route(
@@ -48,8 +48,8 @@ pub(super) fn users_scope() -> Scope {
             web::patch()
                 .to(update_admin_handler)
                 .wrap(Admin::require_roles([
-                    AdminRole::Root,
-                    AdminRole::Professor,
+                    AvailableAdminRole::Root,
+                    AvailableAdminRole::Professor,
                 ])),
         )
         .route(
@@ -57,9 +57,9 @@ pub(super) fn users_scope() -> Scope {
             web::get()
                 .to(get_one_admin_handler)
                 .wrap(Admin::require_roles([
-                    AdminRole::Root,
-                    AdminRole::Professor,
-                    AdminRole::Tutor,
+                    AvailableAdminRole::Root,
+                    AvailableAdminRole::Professor,
+                    AvailableAdminRole::Tutor,
                 ])),
         )
         .route(
@@ -67,8 +67,8 @@ pub(super) fn users_scope() -> Scope {
             web::delete()
                 .to(delete_admin_handler)
                 .wrap(Admin::require_roles([
-                    AdminRole::Root,
-                    AdminRole::Professor,
+                    AvailableAdminRole::Root,
+                    AvailableAdminRole::Professor,
                 ])),
         )
 }

@@ -113,7 +113,7 @@ impl Mailer {
             "confirm.txt",
             ctx,
         )
-            .await
+        .await
     }
 
     pub async fn send_password_reset(
@@ -132,6 +132,6 @@ impl Mailer {
             "reset.txt",
             ctx,
         )
-            .await
+        .await
     }
 }
