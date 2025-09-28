@@ -1,12 +1,12 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{database_error, JsonError, ToJsonError};
+use crate::common::json_error::{error_with_log_id, JsonError, ToJsonError};
 use crate::jwt::get_user::LoggedUser;
 use crate::models::admin::Admin;
 use crate::models::admin_role::AvailableAdminRole;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
-use log::{error, warn};
+use log::warn;
 
 #[utoipa::path(
     delete,
@@ -28,9 +28,13 @@ pub(super) async fn delete_admin_handler(
     // current user from request
     let user = match req.extensions().get_admin() {
         Ok(user) => user,
-        Err(e) => {
-            error!("entered a protected route without a user loaded in the request");
-            return Err(e.to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
+        Err(_) => {
+            return Err(error_with_log_id(
+                "entered a protected route without a user loaded in the request",
+                "Authentication error",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            ));
         }
     };
 
@@ -39,8 +43,12 @@ pub(super) async fn delete_admin_handler(
         .run(&data.db)
         .await
         .map_err(|e| {
-            error!("unable to retrieve admin from database: {}", e);
-            database_error()
+            error_with_log_id(
+                format!("unable to retrieve admin from database: {}", e),
+                "Failed to delete user",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
         })?;
 
     let mut admin_state = match rows.pop() {
@@ -57,8 +65,12 @@ pub(super) async fn delete_admin_handler(
     }
 
     admin_state.delete(&data.db).await.map_err(|e| {
-        error!("unable to delete admin from database: {}", e);
-        database_error()
+        error_with_log_id(
+            format!("unable to delete admin from database: {}", e),
+            "Failed to delete user",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+        )
     })?;
 
     Ok(HttpResponse::Ok().finish())

@@ -1,10 +1,9 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{database_error, JsonError, ToJsonError};
+use crate::common::json_error::{error_with_log_id, JsonError, ToJsonError};
 use crate::models::project::Project;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{web, HttpResponse};
-use log::error;
 use serde::Serialize;
 use utoipa::ToSchema;
 
@@ -27,8 +26,12 @@ pub(in crate::api::v1) async fn get_all_projects_handler(
     data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let states = Project::all().run(&data.db).await.map_err(|e| {
-        log::error!("unable to retrieve projects from database: {}", e);
-        database_error()
+        error_with_log_id(
+            format!("unable to retrieve projects from database: {}", e),
+            "Failed to retrieve projects",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+        )
     })?;
 
     let projects: Vec<Project> = states
@@ -60,8 +63,12 @@ pub(in crate::api::v1) async fn get_one_project_handler(
         .run(&data.db)
         .await
         .map_err(|e| {
-            error!("database error: {}", e);
-            database_error()
+            error_with_log_id(
+                format!("database error: {}", e),
+                "Failed to retrieve projects",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
         })?;
 
     let proj = match rows.pop() {

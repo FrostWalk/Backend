@@ -1,13 +1,13 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{database_error, JsonError, ToJsonError};
+use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
 use crate::jwt::token::create_student_token;
+use crate::logging::payload_capture::capture_response_status;
 use crate::models::student::Student;
 use actix_web::cookie::time::Duration;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::web::Json;
 use actix_web::HttpResponse;
-use log::error;
 use password_auth::verify_password;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -16,7 +16,7 @@ use welds::state::DbState;
 const WRONG_CREDENTIALS: &str = "Incorrect email or password";
 
 /// Represents data needed for login
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub(crate) struct LoginStudentsSchema {
     #[schema(example = "user@example.com")]
     email: String,
@@ -58,8 +58,13 @@ pub(crate) async fn students_login_handler(
         .run(&data.db)
         .await
         .map_err(|e| {
-            error!("unable to fetch student from database: {e}");
-            database_error()
+            error_with_log_id_and_payload(
+                format!("unable to fetch student from database: {}", e),
+                "Authentication failed",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &req,
+            )
         })?;
 
     // 2) not found
@@ -82,9 +87,17 @@ pub(crate) async fn students_login_handler(
         Duration::days(data.config.jwt_validity_days()).whole_seconds(),
     )
     .map_err(|e| {
-        error!("unable to create student token: {e}");
-        database_error()
+        error_with_log_id_and_payload(
+            format!("unable to create student token: {}", e),
+            "Authentication failed",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+            &req,
+        )
     })?;
+
+    // Capture successful response status
+    capture_response_status(200);
 
     Ok(HttpResponse::Ok().json(LoginStudentsResponse { token }))
 }
