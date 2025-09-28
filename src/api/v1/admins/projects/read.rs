@@ -60,13 +60,13 @@ pub(in crate::api::v1) async fn get_one_project_handler(
         .run(&data.db)
         .await
         .map_err(|e| {
-            error!("db error: {e}");
+            error!("database error: {}", e);
             database_error()
         })?;
 
     let proj = match rows.pop() {
         Some(state) => welds::state::DbState::into_inner(state),
-        None => return Err("project not found".to_json_error(StatusCode::NOT_FOUND)),
+        None => return Err("Project not found".to_json_error(StatusCode::NOT_FOUND)),
     };
 
     Ok(HttpResponse::Ok().json(proj))

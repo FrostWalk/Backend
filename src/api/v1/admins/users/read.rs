@@ -73,7 +73,7 @@ pub(super) async fn get_one_admin_handler(
 
     let state = match rows.pop() {
         Some(a) => a,
-        None => return Err("admin not found".to_json_error(StatusCode::NOT_FOUND)),
+        None => return Err("Admin not found".to_json_error(StatusCode::NOT_FOUND)),
     };
 
     let admin = AdminResponseScheme::from(DbState::into_inner(state));

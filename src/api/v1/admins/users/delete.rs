@@ -45,15 +45,15 @@ pub(super) async fn delete_admin_handler(
 
     let mut admin_state = match rows.pop() {
         Some(s) => s,
-        None => return Err("admin not found".to_json_error(StatusCode::NOT_FOUND)),
+        None => return Err("Admin not found".to_json_error(StatusCode::NOT_FOUND)),
     };
 
     // Only root can delete root users
     if (user.admin_role_id != AvailableAdminRole::Root as i32)
         && (admin_state.admin_role_id == AvailableAdminRole::Root as i32)
     {
-        warn!("The user {} tried to delete a root user", user.email);
-        return Err("operation not permitted".to_json_error(StatusCode::FORBIDDEN));
+        warn!("user {} tried to delete a root user", user.email);
+        return Err("Operation not permitted".to_json_error(StatusCode::FORBIDDEN));
     }
 
     admin_state.delete(&data.db).await.map_err(|e| {

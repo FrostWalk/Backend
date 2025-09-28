@@ -41,12 +41,12 @@ pub(in crate::api::v1) async fn update_project_handler(
         .await
         .map_err(|e| {
             error!("unable to load project {}: {}", id, e);
-            "database error".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+            "Database error".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
         })?;
 
     let mut state = match rows.pop() {
         Some(s) => s,
-        None => return Err("project not found".to_json_error(StatusCode::NOT_FOUND)),
+        None => return Err("Project not found".to_json_error(StatusCode::NOT_FOUND)),
     };
 
     // 2) Apply only provided fields
@@ -65,7 +65,7 @@ pub(in crate::api::v1) async fn update_project_handler(
 
     state.save(&data.db).await.map_err(|e| {
         error!("unable to update project {}: {}", id, e);
-        "unable to update project scheme".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+        "Unable to update project".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
     })?;
 
     Ok(HttpResponse::Ok().json((*state).clone()))
