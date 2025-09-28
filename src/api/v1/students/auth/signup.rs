@@ -33,7 +33,7 @@ pub(crate) struct StudentSignupResponse {
 
 #[utoipa::path(
     post,
-    path = "/v1/students/signup",
+    path = "/v1/students/auth/signup",
     request_body = StudentSignupScheme,
     responses(
         (status = 202, description = "Account created successfully", body = StudentSignupResponse),
@@ -41,7 +41,7 @@ pub(crate) struct StudentSignupResponse {
         (status = 500, description = "Internal server error occurred", body = JsonError),
         (status = 503, description = "Account created email was not sent", body = JsonError)
     ),
-    tag = "Student users management",
+    tag = "Student authentication",
 )]
 /// Creates a new student account
 ///
@@ -53,13 +53,13 @@ pub(super) async fn student_signup_handler(
 
     // Validate that all fields are not empty or default values
     if scheme.first_name.trim().is_empty() {
-        return Err("first name cannot be empty".to_json_error(StatusCode::BAD_REQUEST));
+        return Err("First name cannot be empty".to_json_error(StatusCode::BAD_REQUEST));
     } else if scheme.last_name.trim().is_empty() {
-        return Err("last name cannot be empty".to_json_error(StatusCode::BAD_REQUEST));
+        return Err("Last name cannot be empty".to_json_error(StatusCode::BAD_REQUEST));
     } else if scheme.email.trim().is_empty() {
-        return Err("email cannot be empty".to_json_error(StatusCode::BAD_REQUEST));
+        return Err("Email cannot be empty".to_json_error(StatusCode::BAD_REQUEST));
     } else if scheme.password.trim().is_empty() {
-        return Err("password cannot be empty".to_json_error(StatusCode::BAD_REQUEST));
+        return Err("Password cannot be empty".to_json_error(StatusCode::BAD_REQUEST));
     }
 
     // check that email domain is valid
@@ -68,11 +68,11 @@ pub(super) async fn student_signup_handler(
         let allowed_domains = data.config.allowed_signup_domains();
         if !allowed_domains.contains(&domain.to_string()) {
             return Err(
-                "email domain not allowed for signup".to_json_error(StatusCode::BAD_REQUEST)
+                "Email domain not allowed for signup".to_json_error(StatusCode::BAD_REQUEST)
             );
         }
     } else {
-        return Err("invalid email format".to_json_error(StatusCode::BAD_REQUEST));
+        return Err("Invalid email format".to_json_error(StatusCode::BAD_REQUEST));
     }
 
     let mut result = DbState::new_uncreated(Student {
@@ -82,7 +82,7 @@ pub(super) async fn student_signup_handler(
         email: scheme.email,
         university_id: scheme.university_id,
         password_hash: generate_hash(scheme.password),
-        is_pending: false,
+        is_pending: true,
     });
 
     if let Err(e) = result.save(&data.db).await {
@@ -95,7 +95,7 @@ pub(super) async fn student_signup_handler(
         Err(e) => {
             error!("unable to create instance of Mailer: {}", e);
             return Err(
-                "error sending confirmation email".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+                "Error sending confirmation email".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
             );
         }
     };
@@ -117,7 +117,7 @@ pub(super) async fn student_signup_handler(
         );
     }
 
-    info!("New student's account created: {:?}", result);
+    info!("new student account created: {:?}", result);
 
     Ok(HttpResponse::Ok().json(StudentSignupResponse {
         student_id: result.student_id,
