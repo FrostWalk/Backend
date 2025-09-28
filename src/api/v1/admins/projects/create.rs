@@ -62,7 +62,7 @@ pub(in crate::api::v1) async fn create_project_handler(
     match p.save(&data.db).await {
         Ok(_) => {}
         Err(e) => {
-            error!("unable to insert project {:?} in database. Error: {e}", p);
+            error!("unable to insert project {:?} in database: {}", p, e);
             return Err(database_error());
         }
     }

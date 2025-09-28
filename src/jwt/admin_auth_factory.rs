@@ -1,15 +1,15 @@
-use crate::database::repositories::admins_repository::AdminRole;
 use crate::jwt::auth_middleware::AuthMiddleware;
+use crate::models::admin_role::AvailableAdminRole;
 use actix_web::dev::{Service, ServiceRequest, ServiceResponse, Transform};
 use futures_util::future::{ready, Ready};
 use std::rc::Rc;
 
 pub(crate) struct Admin<const N: usize> {
-    allowed_roles: Rc<[AdminRole; N]>,
+    allowed_roles: Rc<[AvailableAdminRole; N]>,
 }
 
 impl<const N: usize> Admin<N> {
-    pub(crate) fn require_roles(allowed_roles: [AdminRole; N]) -> Self {
+    pub(crate) fn require_roles(allowed_roles: [AvailableAdminRole; N]) -> Self {
         Self {
             allowed_roles: Rc::new(allowed_roles),
         }

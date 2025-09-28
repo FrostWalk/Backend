@@ -12,7 +12,10 @@ use crate::api::v1::admins::users::me::__path_admins_me_handler;
 use crate::api::v1::admins::users::read::__path_get_all_admins_handler;
 use crate::api::v1::admins::users::read::__path_get_one_admin_handler;
 use crate::api::v1::admins::users::update::__path_update_admin_handler;
-use crate::api::v1::students::auth::login::__path_students_login_handler;
+use crate::api::v1::students::auth::{
+    confirm::__path_confirm_student_handler, login::__path_students_login_handler,
+    signup::__path_student_signup_handler,
+};
 use crate::api::v1::students::projects::read::__path_get_student_projects;
 use crate::api::v1::students::users::me::__path_students_me_handler;
 use crate::jwt::auth_middleware::{ADMIN_HEADER_NAME, STUDENT_HEADER_NAME};
@@ -26,6 +29,8 @@ use utoipa_swagger_ui::SwaggerUi;
 #[openapi(
     paths(
         students_login_handler,
+        confirm_student_handler,
+        student_signup_handler,
         students_me_handler,
         admins_login_handler,
         get_one_admin_handler,
