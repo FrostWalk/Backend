@@ -1,11 +1,10 @@
 use crate::api::v1::admins::users::AdminResponseScheme;
 use crate::app_data::AppData;
-use crate::common::json_error::{database_error, JsonError, ToJsonError};
+use crate::common::json_error::{error_with_log_id, JsonError, ToJsonError};
 use crate::models::admin::Admin;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{web, HttpResponse};
-use log::error;
 use serde::Serialize;
 use utoipa::ToSchema;
 use welds::state::DbState;
@@ -31,8 +30,12 @@ pub(super) async fn get_all_admins_handler(
     data: web::Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let states = Admin::all().run(&data.db).await.map_err(|e| {
-        error!("unable to retrieve admins from database: {}", e);
-        database_error()
+        error_with_log_id(
+            format!("unable to retrieve admins from database: {}", e),
+            "Failed to retrieve users",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+        )
     })?;
 
     let admins: Vec<AdminResponseScheme> = states
@@ -67,8 +70,12 @@ pub(super) async fn get_one_admin_handler(
         .run(&data.db)
         .await
         .map_err(|e| {
-            error!("unable to retrieve admin from database: {}", e);
-            database_error()
+            error_with_log_id(
+                format!("unable to retrieve admin from database: {}", e),
+                "Failed to retrieve users",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
         })?;
 
     let state = match rows.pop() {

@@ -1,10 +1,10 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{database_error, JsonError};
+use crate::common::json_error::{error_with_log_id, JsonError};
 use crate::models::security_code::SecurityCode;
+use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::HttpResponse;
 use chrono::{DateTime, Utc};
-use log::error;
 use serde::Serialize;
 use utoipa::ToSchema;
 use welds::prelude::DbState;
@@ -46,8 +46,15 @@ pub(in crate::api::v1) async fn get_all_codes_handler(
         // Weelds currently does not support filtering rows using datetime operators like less_than
         Ok(c) => c.into_iter().filter(|code| code.expiration > now).collect(),
         Err(e) => {
-            error!("unable to retrieve security codes from database. Error: {e}");
-            return Err(database_error());
+            return Err(error_with_log_id(
+                format!(
+                    "unable to retrieve security codes from database. Error: {}",
+                    e
+                ),
+                "Failed to retrieve security codes",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            ));
         }
     };
 
@@ -59,8 +66,12 @@ pub(in crate::api::v1) async fn get_all_codes_handler(
     {
         Ok(p) => p,
         Err(e) => {
-            error!("unable to retrieve projects from database. Error: {e}");
-            return Err(database_error());
+            return Err(error_with_log_id(
+                format!("unable to retrieve projects from database. Error: {}", e),
+                "Failed to retrieve security codes",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            ));
         }
     };
 
@@ -72,8 +83,12 @@ pub(in crate::api::v1) async fn get_all_codes_handler(
     {
         Ok(r) => r,
         Err(e) => {
-            error!("unable to retrieve user roles from database. Error: {e}");
-            return Err(database_error());
+            return Err(error_with_log_id(
+                format!("unable to retrieve user roles from database. Error: {}", e),
+                "Failed to retrieve security codes",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            ));
         }
     };
 

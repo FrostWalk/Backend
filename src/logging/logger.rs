@@ -1,8 +1,10 @@
+use crate::logging::context::{get_request_context, init_request_context_storage};
 use crate::logging::model::LogEntry;
 use chrono::Utc;
 use log::{Level, LevelFilter, Metadata, Record};
 use mongodb::{Client, Collection, Database};
 use tokio::sync::mpsc;
+use uuid::Uuid;
 
 pub struct MongoLogger {
     sender: mpsc::UnboundedSender<LogEntry>,
@@ -35,6 +37,7 @@ impl log::Log for MongoLogger {
 
             // Create entry for MongoDB
             let entry = LogEntry {
+                id: Uuid::new_v4(),
                 timestamp: Utc::now(),
                 level: record.level().to_string(),
                 message: record.args().to_string(),
@@ -42,6 +45,7 @@ impl log::Log for MongoLogger {
                 module_path: record.module_path().map(String::from),
                 file: record.file().map(String::from),
                 line: record.line(),
+                request_context: get_request_context(),
             };
 
             let _ = self.sender.send(entry);
@@ -64,6 +68,9 @@ async fn log_writer_task(
 pub async fn init_mongo_logger(
     mongodb_uri: &str, db_name: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize request context storage
+    init_request_context_storage();
+
     let client = Client::with_uri_str(mongodb_uri).await?;
     let db: Database = client.database(db_name);
     let collection: Collection<LogEntry> = db.collection("logs");

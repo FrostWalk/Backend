@@ -1,14 +1,13 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{JsonError, ToJsonError};
+use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
 use crate::models::project::Project;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
 use actix_web::{web, HttpResponse};
-use log::error;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub struct UpdateProjectScheme {
     pub name: Option<String>,
     pub max_student_uploads: Option<i32>,
@@ -35,13 +34,24 @@ pub(in crate::api::v1) async fn update_project_handler(
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
     let scheme = payload.into_inner();
+    let original_payload = Json(UpdateProjectScheme {
+        name: scheme.name.clone(),
+        max_student_uploads: scheme.max_student_uploads,
+        max_group_size: scheme.max_group_size,
+        active: scheme.active,
+    });
 
     let mut rows = Project::where_col(|p| p.project_id.equal(id))
         .run(&data.db)
         .await
         .map_err(|e| {
-            error!("unable to load project {}: {}", id, e);
-            "Database error".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+            error_with_log_id_and_payload(
+                format!("unable to load project {}: {}", id, e),
+                "Failed to update project",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &original_payload,
+            )
         })?;
 
     let mut state = match rows.pop() {
@@ -64,8 +74,13 @@ pub(in crate::api::v1) async fn update_project_handler(
     }
 
     state.save(&data.db).await.map_err(|e| {
-        error!("unable to update project {}: {}", id, e);
-        "Unable to update project".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+        error_with_log_id_and_payload(
+            format!("unable to update project {}: {}", id, e),
+            "Failed to update project",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+            &original_payload,
+        )
     })?;
 
     Ok(HttpResponse::Ok().json((*state).clone()))
