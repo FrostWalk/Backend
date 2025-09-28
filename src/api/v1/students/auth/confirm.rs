@@ -1,5 +1,5 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{database_error, JsonError, ToJsonError};
+use crate::common::json_error::{error_with_log_id, JsonError, ToJsonError};
 use crate::models::student::Student;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Query};
@@ -52,8 +52,12 @@ pub(super) async fn confirm_student_handler(
         .run(&data.db)
         .await
         .map_err(|e| {
-            error!("unable to fetch student from database: {}", e);
-            database_error()
+            error_with_log_id(
+                format!("unable to fetch student from database: {}", e),
+                "Account confirmation failed",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
         })?;
 
     let student_state = match students.pop() {
@@ -68,8 +72,12 @@ pub(super) async fn confirm_student_handler(
     student_state.is_pending = false;
 
     if let Err(e) = student_state.save(&data.db).await {
-        error!("unable to update student confirmation status: {}", e);
-        return Err(database_error());
+        return Err(error_with_log_id(
+            format!("unable to update student confirmation status: {}", e),
+            "Account confirmation failed",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+        ));
     }
 
     info!("student account confirmed successfully: {}", email);
