@@ -1,15 +1,14 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{JsonError, ToJsonError};
+use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
 use crate::models::admin::Admin;
 use actix_web::http::StatusCode;
 use actix_web::web::Json;
 use actix_web::{web, HttpResponse};
-use log::error;
 use password_auth::generate_hash;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub(crate) struct UpdateAdminScheme {
     #[schema(example = "John")]
     pub first_name: Option<String>,
@@ -41,13 +40,24 @@ pub(super) async fn update_admin_handler(
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
     let scheme = payload.into_inner();
+    let original_payload = Json(UpdateAdminScheme {
+        first_name: scheme.first_name.clone(),
+        last_name: scheme.last_name.clone(),
+        email: scheme.email.clone(),
+        password: scheme.password.clone(),
+    });
 
     let mut rows = Admin::where_col(|a| a.admin_id.equal(id))
         .run(&data.db)
         .await
         .map_err(|e| {
-            error!("unable to load admin {}: {}", id, e);
-            "Unable to load admin".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+            error_with_log_id_and_payload(
+                format!("unable to load admin {}: {}", id, e),
+                "Failed to update user",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &original_payload,
+            )
         })?;
 
     let mut admin_state = match rows.pop() {
@@ -70,8 +80,13 @@ pub(super) async fn update_admin_handler(
     }
 
     admin_state.save(&data.db).await.map_err(|e| {
-        error!("unable to update admin {}: {}", id, e);
-        "Unable to update admin".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+        error_with_log_id_and_payload(
+            format!("unable to update admin {}: {}", id, e),
+            "Failed to update user",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+            &original_payload,
+        )
     })?;
 
     Ok(HttpResponse::Ok().finish())

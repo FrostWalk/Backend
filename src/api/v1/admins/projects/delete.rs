@@ -1,10 +1,9 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{database_error, JsonError, ToJsonError};
+use crate::common::json_error::{error_with_log_id, JsonError, ToJsonError};
 use crate::models::project::Project;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{web, HttpResponse};
-use log::error;
 
 #[utoipa::path(
     delete,
@@ -35,14 +34,22 @@ pub(in crate::api::v1) async fn delete_project_handler(
             }
         }
         Err(e) => {
-            error!("unable to delete project from database: {}", e);
-            return Err(database_error());
+            return Err(error_with_log_id(
+                format!("unable to delete project from database: {}", e),
+                "Failed to delete project",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            ));
         }
     };
 
     if let Err(e) = state.delete(&data.db).await {
-        error!("unable to delete project from database: {}", e);
-        return Err(database_error());
+        return Err(error_with_log_id(
+            format!("unable to delete project from database: {}", e),
+            "Failed to delete project",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+        ));
     }
 
     Ok(HttpResponse::Ok().finish())

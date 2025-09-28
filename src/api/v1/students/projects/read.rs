@@ -1,12 +1,11 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{database_error, JsonError, ToJsonError};
+use crate::common::json_error::{error_with_log_id, JsonError};
 use crate::jwt::get_user::LoggedUser;
 use crate::models::group_member::GroupMember;
 use crate::models::project::Project;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
-use log::error;
 use serde::Serialize;
 use utoipa::ToSchema;
 use welds::state::DbState;
@@ -33,9 +32,13 @@ pub(super) async fn get_student_projects(
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_student() {
         Ok(user) => user,
-        Err(e) => {
-            error!("entered a protected route without a user loaded in the request");
-            return Err(e.to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
+        Err(_) => {
+            return Err(error_with_log_id(
+                "entered a protected route without a user loaded in the request",
+                "Authentication error",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            ));
         }
     };
 
@@ -45,11 +48,15 @@ pub(super) async fn get_student_projects(
         .run(&data.db)
         .await
         .map_err(|e| {
-            error!(
-                "unable to fetch student projects from database {}: {e}",
-                user.student_id
-            );
-            database_error()
+            error_with_log_id(
+                format!(
+                    "unable to fetch student projects from database {}: {}",
+                    user.student_id, e
+                ),
+                "Failed to retrieve projects",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
         })?;
 
     let projects: Vec<Project> = project_states

@@ -1,11 +1,10 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{database_error, JsonError, ToJsonError};
+use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
 use crate::database::repositories::security_codes::security_code_exists;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
 use chrono::{DateTime, Duration, Utc};
-use log::error;
 use serde::{Deserialize, Serialize};
 use utoipa::{schema, ToSchema};
 
@@ -27,7 +26,7 @@ fn generate_random_code() -> String {
     s
 }
 
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub(crate) struct CreateCodeScheme {
     #[schema(example = 10)]
     pub project_id: i32,
@@ -59,16 +58,21 @@ pub(crate) struct CreateCodeResponse {
 pub(in crate::api::v1) async fn create_code_handler(
     payload: Json<CreateCodeScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let payload = payload.into_inner();
+    let scheme = payload.into_inner();
+    let original_payload = Json(CreateCodeScheme {
+        project_id: scheme.project_id,
+        user_role_id: scheme.user_role_id,
+        expiration: scheme.expiration,
+    });
 
     let skew = Duration::days(1);
     let now = Utc::now() - skew;
 
-    if payload.project_id <= 0 {
+    if scheme.project_id <= 0 {
         return Err("Project id field is mandatory".to_json_error(StatusCode::BAD_REQUEST));
-    } else if payload.user_role_id <= 0 {
+    } else if scheme.user_role_id <= 0 {
         return Err("User role id field is mandatory".to_json_error(StatusCode::BAD_REQUEST));
-    } else if payload.expiration <= now {
+    } else if scheme.expiration <= now {
         return Err("Expiration must be grater than one day".to_json_error(StatusCode::BAD_REQUEST));
     }
 
@@ -79,11 +83,16 @@ pub(in crate::api::v1) async fn create_code_handler(
         match security_code_exists(&data.db, code.as_str()).await {
             Ok(b) => done = b,
             Err(e) => {
-                error!(
-                    "unable to check if security code {:?} exists in database. Error: {e}",
-                    code
-                );
-                return Err(database_error());
+                return Err(error_with_log_id_and_payload(
+                    format!(
+                        "unable to check if security code {:?} exists in database. Error: {}",
+                        code, e
+                    ),
+                    "Failed to create security code",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                    &original_payload,
+                ));
             }
         }
     }

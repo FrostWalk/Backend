@@ -1,12 +1,12 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{database_error, JsonError, ToJsonError};
+use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
 use crate::jwt::token::create_admin_token;
+use crate::logging::payload_capture::capture_response_status;
 use crate::models::admin::Admin;
 use actix_web::cookie::time::Duration;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{web, HttpResponse};
-use log::error;
 use password_auth::verify_password;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -15,7 +15,7 @@ use welds::state::DbState;
 const WRONG_CREDENTIALS: &str = "Incorrect email or password";
 
 /// Represents data needed for login
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub(crate) struct LoginAdminsSchema {
     #[schema(example = "user@example.com")]
     email: String,
@@ -57,8 +57,13 @@ pub(crate) async fn admins_login_handler(
         .run(&data.db)
         .await
         .map_err(|e| {
-            error!("unable to fetch admin from database: {}", e);
-            database_error()
+            error_with_log_id_and_payload(
+                format!("unable to fetch admin from database: {}", e),
+                "Authentication failed",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &req,
+            )
         })?;
 
     // 2) not found -> unauthorized
@@ -82,9 +87,17 @@ pub(crate) async fn admins_login_handler(
         Duration::days(data.config.jwt_validity_days()).whole_seconds(),
     )
     .map_err(|e| {
-        error!("unable to create admin jwt token: {}", e);
-        "Unable to create JWT token".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+        error_with_log_id_and_payload(
+            format!("unable to create admin jwt token: {}", e),
+            "Authentication failed",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+            &req,
+        )
     })?;
+
+    // Capture successful response status
+    capture_response_status(200);
 
     Ok(HttpResponse::Ok().json(LoginAdminsResponse { token }))
 }

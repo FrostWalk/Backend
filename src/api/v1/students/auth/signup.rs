@@ -1,17 +1,18 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{database_error, JsonError, ToJsonError};
+use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
+use crate::logging::payload_capture::capture_response_status;
 use crate::mail::Mailer;
 use crate::models::student::Student;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
-use log::{error, info};
+use log::info;
 use password_auth::generate_hash;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use welds::state::DbState;
 
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub(crate) struct StudentSignupScheme {
     #[schema(example = "John")]
     pub first_name: String,
@@ -50,6 +51,13 @@ pub(super) async fn student_signup_handler(
     payload: Json<StudentSignupScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let scheme = payload.into_inner();
+    let original_payload = Json(StudentSignupScheme {
+        first_name: scheme.first_name.clone(),
+        last_name: scheme.last_name.clone(),
+        email: scheme.email.clone(),
+        password: scheme.password.clone(),
+        university_id: scheme.university_id,
+    });
 
     // Validate that all fields are not empty or default values
     if scheme.first_name.trim().is_empty() {
@@ -86,17 +94,25 @@ pub(super) async fn student_signup_handler(
     });
 
     if let Err(e) = result.save(&data.db).await {
-        error!("unable to create student's account: {}", e);
-        return Err(database_error());
+        return Err(error_with_log_id_and_payload(
+            format!("unable to create student's account: {}", e),
+            "Account creation failed",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+            &original_payload,
+        ));
     }
 
     let mailer = match Mailer::from_config(&data.config) {
         Ok(m) => m,
         Err(e) => {
-            error!("unable to create instance of Mailer: {}", e);
-            return Err(
-                "Error sending confirmation email".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
-            );
+            return Err(error_with_log_id_and_payload(
+                format!("unable to create instance of Mailer: {}", e),
+                "Account creation failed",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &original_payload,
+            ));
         }
     };
 
@@ -109,15 +125,19 @@ pub(super) async fn student_signup_handler(
         )
         .await
     {
-        error!("failed to send confirmation email: {}", e);
-        return Err(
-            "The account has been created but the confirmation email could not be sent; \
-        ask the coordinator to approve you manually."
-                .to_json_error(StatusCode::SERVICE_UNAVAILABLE),
-        );
+        return Err(error_with_log_id_and_payload(
+            format!("failed to send confirmation email: {}", e),
+            "Account created but confirmation email could not be sent",
+            StatusCode::SERVICE_UNAVAILABLE,
+            log::Level::Error,
+            &original_payload,
+        ));
     }
 
     info!("new student account created: {:?}", result);
+
+    // Capture successful response status
+    capture_response_status(200);
 
     Ok(HttpResponse::Ok().json(StudentSignupResponse {
         student_id: result.student_id,

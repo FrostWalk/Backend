@@ -1,5 +1,5 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{JsonError, ToJsonError};
+use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
 use crate::jwt::get_user::LoggedUser;
 use crate::models::admin::Admin;
 use crate::models::admin_role::AvailableAdminRole;
@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use welds::state::DbState;
 
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub(crate) struct CreateAdminScheme {
     #[schema(example = "John")]
     pub first_name: String,
@@ -51,6 +51,13 @@ pub(super) async fn create_admin_handler(
     req: HttpRequest, payload: Json<CreateAdminScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let scheme = payload.into_inner();
+    let original_payload = Json(CreateAdminScheme {
+        first_name: scheme.first_name.clone(),
+        last_name: scheme.last_name.clone(),
+        email: scheme.email.clone(),
+        password: scheme.password.clone(),
+        admin_role_id: scheme.admin_role_id,
+    });
 
     let user = match req.extensions().get_admin() {
         Ok(user) => user,
@@ -77,8 +84,13 @@ pub(super) async fn create_admin_handler(
     });
 
     if let Err(e) = state.save(&data.db).await {
-        error!("unable to create admin: {}", e);
-        return Err("Unable to create admin".to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
+        return Err(error_with_log_id_and_payload(
+            format!("unable to create admin: {}", e),
+            "Failed to create user",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+            &original_payload,
+        ));
     }
 
     Ok(HttpResponse::Ok().json(CreateAdminResponse {
