@@ -31,17 +31,17 @@ pub(in crate::api::v1) async fn delete_project_handler(
             if let Some(s) = rows.into_iter().next() {
                 s
             } else {
-                return Err("project not found".to_json_error(StatusCode::NOT_FOUND));
+                return Err("Project not found".to_json_error(StatusCode::NOT_FOUND));
             }
         }
         Err(e) => {
-            error!("unable to delete project from database {}", e);
+            error!("unable to delete project from database: {}", e);
             return Err(database_error());
         }
     };
 
     if let Err(e) = state.delete(&data.db).await {
-        error!("unable to delete project from database {}", e);
+        error!("unable to delete project from database: {}", e);
         return Err(database_error());
     }
 

@@ -1,7 +1,7 @@
 use crate::api::v1::admins::security_codes::create::create_code_handler;
 use crate::api::v1::admins::security_codes::read::get_all_codes_handler;
-use crate::database::repositories::admins_repository::AdminRole;
 use crate::jwt::admin_auth_factory::Admin;
+use crate::models::admin_role::AvailableAdminRole;
 use actix_web::{web, Scope};
 
 pub(crate) mod create;
@@ -14,8 +14,8 @@ pub(super) fn security_codes_scope() -> Scope {
             web::post()
                 .to(create_code_handler)
                 .wrap(Admin::require_roles([
-                    AdminRole::Root,
-                    AdminRole::Professor,
+                    AvailableAdminRole::Root,
+                    AvailableAdminRole::Professor,
                 ])),
         )
         .route(
@@ -23,8 +23,8 @@ pub(super) fn security_codes_scope() -> Scope {
             web::get()
                 .to(get_all_codes_handler)
                 .wrap(Admin::require_roles([
-                    AdminRole::Root,
-                    AdminRole::Professor,
+                    AvailableAdminRole::Root,
+                    AvailableAdminRole::Professor,
                 ])),
         )
 }

@@ -2,8 +2,8 @@ use crate::api::v1::admins::projects::create::create_project_handler;
 use crate::api::v1::admins::projects::delete::delete_project_handler;
 use crate::api::v1::admins::projects::read::{get_all_projects_handler, get_one_project_handler};
 use crate::api::v1::admins::projects::update::update_project_handler;
-use crate::database::repositories::admins_repository::{AdminRole, ALL};
 use crate::jwt::admin_auth_factory::Admin;
+use crate::models::admin_role::{AvailableAdminRole, ALL};
 use actix_web::{web, Scope};
 
 pub(crate) mod create;
@@ -18,8 +18,8 @@ pub(super) fn projects_scope() -> Scope {
             web::post()
                 .to(create_project_handler)
                 .wrap(Admin::require_roles([
-                    AdminRole::Root,
-                    AdminRole::Professor,
+                    AvailableAdminRole::Root,
+                    AvailableAdminRole::Professor,
                 ])),
         )
         .route(
@@ -39,8 +39,8 @@ pub(super) fn projects_scope() -> Scope {
             web::patch()
                 .to(update_project_handler)
                 .wrap(Admin::require_roles([
-                    AdminRole::Root,
-                    AdminRole::Professor,
+                    AvailableAdminRole::Root,
+                    AvailableAdminRole::Professor,
                 ])),
         )
         .route(
@@ -48,8 +48,8 @@ pub(super) fn projects_scope() -> Scope {
             web::delete()
                 .to(delete_project_handler)
                 .wrap(Admin::require_roles([
-                    AdminRole::Root,
-                    AdminRole::Professor,
+                    AvailableAdminRole::Root,
+                    AvailableAdminRole::Professor,
                 ])),
         )
 }

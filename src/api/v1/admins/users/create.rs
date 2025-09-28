@@ -1,8 +1,8 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{JsonError, ToJsonError};
-use crate::database::repositories::admins_repository::AdminRole;
 use crate::jwt::get_user::LoggedUser;
 use crate::models::admin::Admin;
+use crate::models::admin_role::AvailableAdminRole;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
@@ -60,11 +60,11 @@ pub(super) async fn create_admin_handler(
         }
     };
 
-    if (user.admin_role_id != AdminRole::Root as i32)
-        && (scheme.admin_role_id == AdminRole::Root as i32)
+    if (user.admin_role_id != AvailableAdminRole::Root as i32)
+        && (scheme.admin_role_id == AvailableAdminRole::Root as i32)
     {
-        warn!("The user {} tried to create a root user", user.email);
-        return Err("operation not permitted".to_json_error(StatusCode::FORBIDDEN));
+        warn!("user {} tried to create a root user", user.email);
+        return Err("Operation not permitted".to_json_error(StatusCode::FORBIDDEN));
     }
 
     let mut state = DbState::new_uncreated(Admin {
@@ -78,9 +78,7 @@ pub(super) async fn create_admin_handler(
 
     if let Err(e) = state.save(&data.db).await {
         error!("unable to create admin: {}", e);
-        return Err(
-            "unable to create admin scheme".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
-        );
+        return Err("Unable to create admin".to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
     }
 
     Ok(HttpResponse::Ok().json(CreateAdminResponse {

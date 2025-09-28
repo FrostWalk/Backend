@@ -81,10 +81,10 @@ pub(crate) async fn students_login_handler(
         data.config.jwt_secret().as_bytes(),
         Duration::days(data.config.jwt_validity_days()).whole_seconds(),
     )
-        .map_err(|e| {
-            error!("unable to create student token: {e}");
-            database_error()
-        })?;
+    .map_err(|e| {
+        error!("unable to create student token: {e}");
+        database_error()
+    })?;
 
     Ok(HttpResponse::Ok().json(LoginStudentsResponse { token }))
 }

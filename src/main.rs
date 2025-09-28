@@ -16,8 +16,8 @@ mod config;
 mod database;
 mod jwt;
 mod logging;
-mod models;
 mod mail;
+mod models;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -26,20 +26,20 @@ async fn main() -> std::io::Result<()> {
 
     if let Err(e) = init_mongo_logger(app_config.logs_mongo_uri(), app_config.logs_db_name()).await
     {
-        eprintln!("Failed to initialize MongoDB logger: {}", e);
+        eprintln!("failed to initialize MongoDB logger: {}", e);
         std::process::exit(1);
     }
     let client = match connect(app_config.db_url()).await {
         Ok(client) => client,
         Err(e) => {
-            error!("Failed to connect to DB: {}", e);
+            error!("failed to connect to DB: {}", e);
             std::process::exit(1);
         }
     };
 
     let app_data = AppData::new(app_config.clone(), client.clone()).await;
 
-    info!("Migrating database schema");
+    info!("migrating database schema");
     sqlx::migrate!().run(client.as_sqlx_pool()).await.expect("");
 
     create_default_admin(
@@ -47,9 +47,9 @@ async fn main() -> std::io::Result<()> {
         app_config.default_admin_email().clone(),
         app_config.default_admin_password().clone(),
     )
-        .await;
+    .await;
 
-    info!("Starting server");
+    info!("starting server");
     HttpServer::new(move || {
         App::new()
             .app_data(Data::new(app_data.clone())) //add application state with repositories and config
