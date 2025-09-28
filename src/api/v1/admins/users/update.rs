@@ -47,12 +47,12 @@ pub(super) async fn update_admin_handler(
         .await
         .map_err(|e| {
             error!("unable to load admin {}: {}", id, e);
-            "unable to update admin scheme".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+            "Unable to load admin".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
         })?;
 
     let mut admin_state = match rows.pop() {
         Some(s) => s,
-        None => return Err("admin not found".to_json_error(StatusCode::NOT_FOUND)),
+        None => return Err("Admin not found".to_json_error(StatusCode::NOT_FOUND)),
     };
 
     // Apply only provided fields
@@ -71,7 +71,7 @@ pub(super) async fn update_admin_handler(
 
     admin_state.save(&data.db).await.map_err(|e| {
         error!("unable to update admin {}: {}", id, e);
-        "unable to update admin scheme".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+        "Unable to update admin".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
     })?;
 
     Ok(HttpResponse::Ok().finish())

@@ -68,5 +68,5 @@ impl<T: Display> ToJsonError for T {
 
 /// Creates a `JsonError` response standard for database errors with internal server error status code (500)
 pub(crate) fn database_error() -> JsonError {
-    "database error".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+    "Database error".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
 }

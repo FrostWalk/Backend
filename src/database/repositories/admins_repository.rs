@@ -18,7 +18,7 @@ pub(crate) async fn create_default_admin(db: &PostgresClient, email: String, pas
     let found = match get_all(db).await {
         Ok(v) => v.len(),
         Err(e) => {
-            error!("unable to find admins {e}");
+            error!("unable to find admins: {}", e);
             0
         }
     };
@@ -40,11 +40,11 @@ pub(crate) async fn create_default_admin(db: &PostgresClient, email: String, pas
     admin.first_name = "root".to_string();
     admin.last_name = String::new();
 
-    info!("Creating default admin");
+    info!("creating default admin");
     match admin.save(db).await {
         Ok(_) => {}
         Err(e) => {
-            panic!("Unable to create default admin {:?} error: {e}", admin)
+            panic!("unable to create default admin {:?} error: {}", admin, e)
         }
     }
 }

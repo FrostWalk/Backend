@@ -124,7 +124,7 @@ where
                     Ok(mut rows) => match rows.pop() {
                         Some(state) => DbState::into_inner(state),
                         None => {
-                            warn!("login attempt with non existing admin");
+                            warn!("login attempt with non-existing admin");
                             return Err(INVALID_TOKEN
                                 .to_json_error(StatusCode::UNAUTHORIZED)
                                 .into());
@@ -148,7 +148,7 @@ where
                     Ok(mut rows) => match rows.pop() {
                         Some(state) => DbState::into_inner(state),
                         None => {
-                            warn!("login attempt with non existing student");
+                            warn!("login attempt with non-existing student");
                             return Err(INVALID_TOKEN
                                 .to_json_error(StatusCode::UNAUTHORIZED)
                                 .into());

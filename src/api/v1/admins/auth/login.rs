@@ -83,7 +83,7 @@ pub(crate) async fn admins_login_handler(
     )
     .map_err(|e| {
         error!("unable to create admin jwt token: {}", e);
-        "unable to create jwt token".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+        "Unable to create JWT token".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
     })?;
 
     Ok(HttpResponse::Ok().json(LoginAdminsResponse { token }))
