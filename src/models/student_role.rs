@@ -15,8 +15,3 @@ pub(crate) enum AvailableStudentRole {
     GroupLeader = 1,
     Member = 2,
 }
-
-pub(crate) const ALL: [AvailableStudentRole; 2] = [
-    AvailableStudentRole::GroupLeader,
-    AvailableStudentRole::Member,
-];

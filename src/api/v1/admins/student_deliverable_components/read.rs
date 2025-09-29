@@ -252,7 +252,7 @@ pub(super) async fn get_deliverables_for_student_component_handler(
     for relationship in relationships {
         let relationship_data = DbState::into_inner(relationship);
 
-        // Get part details
+        // Get deliverable details
         let mut deliverable_rows = StudentDeliverable::where_col(|sp| {
             sp.student_deliverable_id
                 .equal(relationship_data.student_deliverable_id)
@@ -261,7 +261,7 @@ pub(super) async fn get_deliverables_for_student_component_handler(
         .await
         .map_err(|e| {
             error_with_log_id(
-                format!("unable to retrieve part details: {}", e),
+                format!("unable to retrieve deliverable details: {}", e),
                 "Failed to retrieve deliverables",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
@@ -270,7 +270,7 @@ pub(super) async fn get_deliverables_for_student_component_handler(
 
         let deliverable = match deliverable_rows.pop() {
             Some(p) => DbState::into_inner(p),
-            None => continue, // Skip if part not found
+            None => continue, // Skip if deliverable not found
         };
 
         deliverables.push(StudentComponentDeliverableResponse {

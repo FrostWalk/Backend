@@ -52,7 +52,7 @@ pub(super) async fn create_student_deliverable_handler(
         name: scheme.name.clone(),
     });
 
-    // Check if part with this name already exists for the project
+    // Check if deliverable with this name already exists for the project
     let existing = StudentDeliverable::where_col(|sp| sp.project_id.equal(scheme.project_id))
         .where_col(|sp| sp.name.equal(&scheme.name))
         .run(&data.db)
@@ -60,7 +60,7 @@ pub(super) async fn create_student_deliverable_handler(
         .map_err(|e| {
             error_with_log_id_and_payload(
                 format!("unable to check existing student deliverable: {}", e),
-                "Failed to create part",
+                "Failed to create deliverable",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
                 &original_payload,
@@ -68,7 +68,7 @@ pub(super) async fn create_student_deliverable_handler(
         })?;
 
     if !existing.is_empty() {
-        return Err("Part with this name already exists for the project"
+        return Err("Deliverable with this name already exists for the project"
             .to_json_error(StatusCode::CONFLICT));
     }
 
@@ -81,7 +81,7 @@ pub(super) async fn create_student_deliverable_handler(
     if let Err(e) = state.save(&data.db).await {
         return Err(error_with_log_id_and_payload(
             format!("unable to create student deliverable: {}", e),
-            "Failed to create part",
+            "Failed to create deliverable",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
             &original_payload,

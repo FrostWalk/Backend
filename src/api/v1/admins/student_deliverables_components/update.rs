@@ -18,7 +18,7 @@ pub(crate) struct UpdateStudentDeliverableComponentScheme {
     path = "/v1/admins/student-deliverables-components/{id}",
     request_body = UpdateStudentDeliverableComponentScheme,
     responses(
-        (status = 200, description = "Student part component relationship updated successfully"),
+        (status = 200, description = "Student deliverable component relationship updated successfully"),
         (status = 400, description = "Invalid data in request", body = JsonError),
         (status = 401, description = "Authentication required", body = JsonError),
         (status = 404, description = "Relationship not found", body = JsonError),

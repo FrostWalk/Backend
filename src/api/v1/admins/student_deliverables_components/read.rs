@@ -41,7 +41,7 @@ pub(crate) struct GetDeliverablesForComponentResponse {
     path = "/v1/admins/student-deliverables-components/components/{deliverable_id}",
     responses(
         (status = 200, description = "Found components for student deliverable", body = GetComponentsForDeliverableResponse),
-        (status = 404, description = "Student part not found", body = JsonError),
+        (status = 404, description = "Student deliverable not found", body = JsonError),
         (status = 500, description = "Internal server error occurred", body = JsonError)
     ),
     security(("AdminAuth" = [])),
@@ -56,7 +56,7 @@ pub(super) async fn get_components_for_deliverable_handler(
     let deliverable_id = path.into_inner();
 
     // Verify the student deliverable exists
-    let part_exists =
+    let deliverable_exists =
         StudentDeliverable::where_col(|sp| sp.student_deliverable_id.equal(deliverable_id))
             .run(&data.db)
             .await
@@ -69,11 +69,11 @@ pub(super) async fn get_components_for_deliverable_handler(
                 )
             })?;
 
-    if part_exists.is_empty() {
-        return Err("Student part not found".to_json_error(StatusCode::NOT_FOUND));
+    if deliverable_exists.is_empty() {
+        return Err("Student deliverable not found".to_json_error(StatusCode::NOT_FOUND));
     }
 
-    // Get all relationships for this part
+    // Get all relationships for this deliverable
     let relationships = StudentDeliverablesComponent::where_col(|spc| {
         spc.student_deliverable_id.equal(deliverable_id)
     })
@@ -82,7 +82,7 @@ pub(super) async fn get_components_for_deliverable_handler(
     .map_err(|e| {
         error_with_log_id(
             format!(
-                "unable to retrieve components for part {}: {}",
+                "unable to retrieve components for deliverable {}: {}",
                 deliverable_id, e
             ),
             "Failed to retrieve components",
@@ -114,10 +114,10 @@ pub(super) async fn get_components_for_deliverable_handler(
 
         let component = match component_rows.pop() {
             Some(c) => DbState::into_inner(c),
-            None => continue, // Skip if component not found
+            None => continue, // Skip if deliverable component not found
         };
 
-        // Get part details
+        // Get deliverable details
         let mut deliverable_rows = StudentDeliverable::where_col(|sp| {
             sp.student_deliverable_id
                 .equal(relationship_data.student_deliverable_id)
@@ -126,7 +126,7 @@ pub(super) async fn get_components_for_deliverable_handler(
         .await
         .map_err(|e| {
             error_with_log_id(
-                format!("unable to retrieve part details: {}", e),
+                format!("unable to retrieve deliverable details: {}", e),
                 "Failed to retrieve components",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
@@ -135,7 +135,7 @@ pub(super) async fn get_components_for_deliverable_handler(
 
         let deliverable = match deliverable_rows.pop() {
             Some(p) => DbState::into_inner(p),
-            None => continue, // Skip if part not found
+            None => continue, // Skip if deliverable not found
         };
 
         components.push(StudentDeliverableComponentResponse {
@@ -156,7 +156,7 @@ pub(super) async fn get_components_for_deliverable_handler(
     path = "/v1/admins/student-deliverables-components/deliverables/{component_id}",
     responses(
         (status = 200, description = "Found deliverables for student component", body = GetDeliverablesForComponentResponse),
-        (status = 404, description = "Student component not found", body = JsonError),
+        (status = 404, description = "Student deliverable component not found", body = JsonError),
         (status = 500, description = "Internal server error occurred", body = JsonError)
     ),
     security(("AdminAuth" = [])),
@@ -233,7 +233,7 @@ pub(super) async fn get_deliverables_for_component_handler(
             None => continue, // Skip if component not found
         };
 
-        // Get part details
+        // Get deliverable details
         let mut deliverable_rows = StudentDeliverable::where_col(|sp| {
             sp.student_deliverable_id
                 .equal(relationship_data.student_deliverable_id)
@@ -242,7 +242,7 @@ pub(super) async fn get_deliverables_for_component_handler(
         .await
         .map_err(|e| {
             error_with_log_id(
-                format!("unable to retrieve part details: {}", e),
+                format!("unable to retrieve deliverable details: {}", e),
                 "Failed to retrieve deliverables",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
@@ -251,7 +251,7 @@ pub(super) async fn get_deliverables_for_component_handler(
 
         let deliverable = match deliverable_rows.pop() {
             Some(p) => DbState::into_inner(p),
-            None => continue, // Skip if part not found
+            None => continue, // Skip if deliverable not found
         };
 
         deliverables.push(StudentDeliverableComponentResponse {
