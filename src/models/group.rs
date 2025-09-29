@@ -1,7 +1,9 @@
 use crate::models::project::Project;
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use welds::WeldsModel;
 
-#[derive(Debug, Clone, WeldsModel)]
+#[derive(Debug, Clone, WeldsModel, Serialize, Deserialize, ToSchema)]
 #[welds(schema = "public", table = "groups")]
 #[welds(BelongsTo(project, Project, "project_id"))]
 pub struct Group {

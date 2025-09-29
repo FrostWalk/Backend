@@ -15,8 +15,6 @@ pub struct SecurityCodeWithNames {
     pub expiration: DateTime<Utc>,
     pub project_id: i32,
     pub project_name: String,
-    pub student_role_id: i32,
-    pub student_role_name: String,
 }
 #[derive(Debug, Serialize, ToSchema)]
 pub(crate) struct GetAllCodesResponse {
@@ -75,28 +73,10 @@ pub(in crate::api::v1) async fn get_all_codes_handler(
         }
     };
 
-    let roles = match SecurityCode::all()
-        .order_by_asc(|sc| sc.security_code_id)
-        .map_query(|sc| sc.student_role)
-        .run(&data.db)
-        .await
-    {
-        Ok(r) => r,
-        Err(e) => {
-            return Err(error_with_log_id(
-                format!("unable to retrieve user roles from database. Error: {}", e),
-                "Failed to retrieve security codes",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                log::Level::Error,
-            ));
-        }
-    };
-
     let mut out = Vec::with_capacity(codes.len());
-    for ((sc_state, p_state), r_state) in codes.into_iter().zip(projects).zip(roles) {
+    for (sc_state, p_state) in codes.into_iter().zip(projects) {
         let sc = DbState::into_inner(sc_state);
         let p = DbState::into_inner(p_state);
-        let r = DbState::into_inner(r_state);
 
         out.push(SecurityCodeWithNames {
             security_code_id: sc.security_code_id,
@@ -104,8 +84,6 @@ pub(in crate::api::v1) async fn get_all_codes_handler(
             expiration: sc.expiration,
             project_id: sc.project_id,
             project_name: p.name,
-            student_role_id: sc.student_role_id,
-            student_role_name: r.name,
         });
     }
 
