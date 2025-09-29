@@ -1,6 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
-use crate::models::student_parts_component::StudentPartsComponent;
+use crate::models::student_deliverables_component::StudentDeliverablesComponent;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
 use actix_web::{web, HttpResponse};
@@ -8,15 +8,15 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 #[derive(Debug, Deserialize, Serialize, ToSchema)]
-pub(crate) struct UpdateStudentPartComponentScheme {
+pub(crate) struct UpdateStudentDeliverableComponentScheme {
     #[schema(example = "10")]
     pub quantity: i32,
 }
 
 #[utoipa::path(
     patch,
-    path = "/v1/admins/student-parts-components/{id}",
-    request_body = UpdateStudentPartComponentScheme,
+    path = "/v1/admins/student-deliverables-components/{id}",
+    request_body = UpdateStudentDeliverableComponentScheme,
     responses(
         (status = 200, description = "Student part component relationship updated successfully"),
         (status = 400, description = "Invalid data in request", body = JsonError),
@@ -25,27 +25,31 @@ pub(crate) struct UpdateStudentPartComponentScheme {
         (status = 500, description = "Internal server error occurred", body = JsonError)
     ),
     security(("AdminAuth" = [])),
-    tag = "Student parts-components management",
+    tag = "Student deliverables-components management",
 )]
-/// Updates the quantity of a component in a student part.
+/// Updates the quantity of a component in a student deliverable.
 ///
-/// This endpoint allows authenticated admins to modify the quantity of a component in a student part by ID.
-pub(super) async fn update_student_part_component_handler(
-    path: web::Path<i32>, payload: Json<UpdateStudentPartComponentScheme>, data: Data<AppData>,
+/// This endpoint allows authenticated admins to modify the quantity of a component in a student deliverable by ID.
+pub(super) async fn update_student_deliverable_component_handler(
+    path: web::Path<i32>, payload: Json<UpdateStudentDeliverableComponentScheme>,
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
     let scheme = payload.into_inner();
-    let original_payload = Json(UpdateStudentPartComponentScheme {
+    let original_payload = Json(UpdateStudentDeliverableComponentScheme {
         quantity: scheme.quantity,
     });
 
     // Find the existing relationship by ID
-    let mut rows = StudentPartsComponent::where_col(|spc| spc.id.equal(id))
+    let mut rows = StudentDeliverablesComponent::where_col(|spc| spc.id.equal(id))
         .run(&data.db)
         .await
         .map_err(|e| {
             error_with_log_id_and_payload(
-                format!("unable to load student part component relationship: {}", e),
+                format!(
+                    "unable to load student deliverable component relationship: {}",
+                    e
+                ),
                 "Failed to update relationship",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
@@ -64,7 +68,7 @@ pub(super) async fn update_student_part_component_handler(
     relationship_state.save(&data.db).await.map_err(|e| {
         error_with_log_id_and_payload(
             format!(
-                "unable to update student part component relationship: {}",
+                "unable to update student deliverable component relationship: {}",
                 e
             ),
             "Failed to update relationship",
