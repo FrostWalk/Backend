@@ -1,10 +1,10 @@
-use crate::api::v1::admins::student_components::create::create_student_component_handler;
-use crate::api::v1::admins::student_components::delete::delete_student_component_handler;
-use crate::api::v1::admins::student_components::read::{
-    get_all_student_components_handler, get_parts_for_student_component_handler, get_student_component_handler,
-    get_student_components_for_project_handler,
+use crate::api::v1::admins::student_deliverables::create::create_student_deliverable_handler;
+use crate::api::v1::admins::student_deliverables::delete::delete_student_deliverable_handler;
+use crate::api::v1::admins::student_deliverables::read::{
+    get_all_student_deliverables_handler, get_components_for_student_deliverable_handler,
+    get_student_deliverable_handler, get_student_deliverables_for_project_handler,
 };
-use crate::api::v1::admins::student_components::update::update_student_component_handler;
+use crate::api::v1::admins::student_deliverables::update::update_student_deliverable_handler;
 use crate::jwt::admin_auth_factory::Admin;
 use crate::models::admin_role::AvailableAdminRole;
 use actix_web::{web, Scope};
@@ -14,12 +14,12 @@ pub(crate) mod delete;
 pub(crate) mod read;
 pub(crate) mod update;
 
-pub(super) fn student_components_scope() -> Scope {
-    web::scope("/student-components")
+pub(super) fn student_deliverables_scope() -> Scope {
+    web::scope("/student-deliverables")
         .route(
             "",
             web::get()
-                .to(get_all_student_components_handler)
+                .to(get_all_student_deliverables_handler)
                 .wrap(Admin::require_roles([
                     AvailableAdminRole::Root,
                     AvailableAdminRole::Professor,
@@ -28,7 +28,7 @@ pub(super) fn student_components_scope() -> Scope {
         .route(
             "",
             web::post()
-                .to(create_student_component_handler)
+                .to(create_student_deliverable_handler)
                 .wrap(Admin::require_roles([
                     AvailableAdminRole::Root,
                     AvailableAdminRole::Professor,
@@ -37,7 +37,7 @@ pub(super) fn student_components_scope() -> Scope {
         .route(
             "/project/{project_id}",
             web::get()
-                .to(get_student_components_for_project_handler)
+                .to(get_student_deliverables_for_project_handler)
                 .wrap(Admin::require_roles([
                     AvailableAdminRole::Root,
                     AvailableAdminRole::Professor,
@@ -46,16 +46,16 @@ pub(super) fn student_components_scope() -> Scope {
         .route(
             "/{id}",
             web::get()
-                .to(get_student_component_handler)
+                .to(get_student_deliverable_handler)
                 .wrap(Admin::require_roles([
                     AvailableAdminRole::Root,
                     AvailableAdminRole::Professor,
                 ])),
         )
         .route(
-            "/{id}/parts",
+            "/{id}/components",
             web::get()
-                .to(get_parts_for_student_component_handler)
+                .to(get_components_for_student_deliverable_handler)
                 .wrap(Admin::require_roles([
                     AvailableAdminRole::Root,
                     AvailableAdminRole::Professor,
@@ -64,7 +64,7 @@ pub(super) fn student_components_scope() -> Scope {
         .route(
             "/{id}",
             web::patch()
-                .to(update_student_component_handler)
+                .to(update_student_deliverable_handler)
                 .wrap(Admin::require_roles([
                     AvailableAdminRole::Root,
                     AvailableAdminRole::Professor,
@@ -73,7 +73,7 @@ pub(super) fn student_components_scope() -> Scope {
         .route(
             "/{id}",
             web::delete()
-                .to(delete_student_component_handler)
+                .to(delete_student_deliverable_handler)
                 .wrap(Admin::require_roles([
                     AvailableAdminRole::Root,
                     AvailableAdminRole::Professor,

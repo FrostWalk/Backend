@@ -19,20 +19,20 @@ pub mod group_member;
 // Fair related models
 pub mod fair;
 
-// Group parts and components
-pub mod group_component;
-pub mod group_part;
-pub mod group_part_selection;
-pub mod group_parts_component;
+// Group deliverables and components
+pub mod group_deliverable;
+pub mod group_deliverable_component;
+pub mod group_deliverable_selection;
+pub mod group_deliverables_component;
 
 // Transaction related models
 pub mod transaction;
 
-// Student parts and components
-pub mod student_part;
-pub mod student_part_selection;
-pub mod student_parts_component;
-pub mod students_component;
+// Student deliverables and components
+pub mod student_deliverable;
+pub mod student_deliverable_component;
+pub mod student_deliverable_selection;
+pub mod student_deliverables_component;
 
 // Upload related models
 pub mod student_upload;
