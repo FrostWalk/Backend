@@ -19,9 +19,9 @@ use crate::api::v1::students::auth::{
 use crate::api::v1::students::groups::{
     check_name::__path_check_name, create::__path_create_group, delete::__path_delete_group,
     members::__path_add_member, members::__path_remove_member, read::__path_get_groups,
-    update::__path_update_group, validate_code::__path_validate_code,
 };
 use crate::api::v1::students::projects::read::__path_get_student_projects;
+use crate::api::v1::students::security_codes::validate_code::__path_validate_code;
 use crate::api::v1::students::users::me::__path_students_me_handler;
 use crate::jwt::auth_middleware::{ADMIN_HEADER_NAME, STUDENT_HEADER_NAME};
 use utoipa::openapi::security::SecurityScheme;
@@ -54,7 +54,6 @@ use utoipa_swagger_ui::SwaggerUi;
         get_all_codes_handler,
         create_group,
         get_groups,
-        update_group,
         delete_group,
         validate_code,
         check_name,

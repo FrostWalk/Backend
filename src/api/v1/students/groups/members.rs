@@ -22,6 +22,17 @@ pub(crate) struct RemoveMemberRequest {
     pub student_id: i32,
 }
 
+#[derive(Debug, Deserialize, ToSchema)]
+pub(crate) struct BulkAddMembersRequest {
+    pub emails: Vec<String>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub(crate) struct BulkAddMembersResponse {
+    pub members_added: Vec<MemberInfo>,
+    pub members_not_found: Vec<String>,
+}
+
 #[derive(Debug, Serialize, ToSchema)]
 pub(crate) struct MemberResponse {
     pub success: bool,
@@ -153,6 +164,127 @@ pub(super) async fn add_member(
             log::Level::Error,
         )),
     }
+}
+
+#[utoipa::path(
+    post,
+    path = "/v1/students/groups/{group_id}/members/bulk",
+    request_body = BulkAddMembersRequest,
+    responses(
+        (status = 200, description = "Bulk member addition completed", body = BulkAddMembersResponse),
+        (status = 400, description = "Invalid request data", body = JsonError),
+        (status = 401, description = "Authentication required", body = JsonError),
+        (status = 403, description = "Insufficient permissions", body = JsonError),
+        (status = 404, description = "Group not found", body = JsonError),
+        (status = 500, description = "Internal server error", body = JsonError)
+    ),
+    security(("UserAuth" = [])),
+    tag = "Groups management",
+)]
+/// Add multiple members to a group at once
+///
+/// This endpoint allows GroupLeaders to add multiple members to their group in a single request.
+/// Returns information about which members were successfully added and which were not found.
+pub(super) async fn bulk_add_members(
+    req: HttpRequest, data: Data<AppData>, path: Path<i32>, body: Json<BulkAddMembersRequest>,
+) -> Result<HttpResponse, JsonError> {
+    let user = match req.extensions().get_student() {
+        Ok(user) => user,
+        Err(_) => {
+            return Err(error_with_log_id(
+                "entered a protected route without a user loaded in the request",
+                "Authentication error",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            ));
+        }
+    };
+
+    let group_id = path.into_inner();
+
+    // Verify the user is a GroupLeader of this group
+    if !is_group_leader(&data, user.student_id, group_id).await? {
+        return Err(error_with_log_id(
+            format!(
+                "user {} is not a GroupLeader of group {}",
+                user.student_id, group_id
+            ),
+            "Insufficient permissions",
+            StatusCode::FORBIDDEN,
+            log::Level::Warn,
+        ));
+    }
+
+    // Get the group to check project_id
+    let group = get_group(&data, group_id).await?;
+
+    let mut members_added = Vec::new();
+    let mut members_not_found = Vec::new();
+
+    for email in &body.emails {
+        // Find the student by email
+        let student_states = match Student::where_col(|s| s.email.equal(email))
+            .run(&data.db)
+            .await
+        {
+            Ok(rows) => rows,
+            Err(e) => {
+                log::warn!("unable to find student with email {}: {}", email, e);
+                members_not_found.push(email.clone());
+                continue;
+            }
+        };
+
+        if let Some(student_state) = student_states.into_iter().next() {
+            let student = DbState::into_inner(student_state);
+
+            // Check if the student is already in a group for this project
+            if is_student_in_project(&data, student.student_id, group.project_id).await? {
+                log::warn!(
+                    "student {} is already in a group for project {}",
+                    student.student_id,
+                    group.project_id
+                );
+                members_not_found.push(email.clone());
+                continue;
+            }
+
+            // Add the student as a group member with Member role
+            let mut member_state = DbState::new_uncreated(GroupMember {
+                group_member_id: 0,
+                group_id,
+                student_id: student.student_id,
+                student_role_id: AvailableStudentRole::Member as i32,
+            });
+
+            match member_state.save(&data.db).await {
+                Ok(_) => {
+                    members_added.push(MemberInfo {
+                        student_id: student.student_id,
+                        email: student.email.clone(),
+                        first_name: student.first_name,
+                        last_name: student.last_name,
+                        role: "Member".to_string(),
+                    });
+                }
+                Err(e) => {
+                    log::warn!(
+                        "unable to add student {} to group: {}",
+                        student.student_id,
+                        e
+                    );
+                    members_not_found.push(email.clone());
+                }
+            }
+        } else {
+            members_not_found.push(email.clone());
+        }
+    }
+
+    Ok(HttpResponse::Ok().json(BulkAddMembersResponse {
+        members_added,
+        members_not_found,
+    }))
 }
 
 #[utoipa::path(

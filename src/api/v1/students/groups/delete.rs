@@ -22,7 +22,6 @@ pub(crate) struct DeleteGroupResponse {
         (status = 200, description = "Group deleted successfully", body = DeleteGroupResponse),
         (status = 401, description = "Authentication required", body = JsonError),
         (status = 403, description = "Insufficient permissions", body = JsonError),
-        (status = 404, description = "Group not found", body = JsonError),
         (status = 500, description = "Internal server error", body = JsonError)
     ),
     security(("UserAuth" = [])),
@@ -30,7 +29,7 @@ pub(crate) struct DeleteGroupResponse {
 )]
 /// Delete a group
 ///
-/// This endpoint allows authenticated students with GroupLeader role to delete a group they lead.
+/// This endpoint allows authenticated students to delete a group they lead.
 /// This will also remove all group members.
 pub(crate) async fn delete_group(
     req: HttpRequest, data: Data<AppData>, path: Path<i32>,
@@ -82,28 +81,6 @@ pub(crate) async fn delete_group(
             ),
             "Insufficient permissions",
             StatusCode::FORBIDDEN,
-            log::Level::Warn,
-        ));
-    }
-
-    // Verify the group exists
-    let group_states = Group::where_col(|g| g.group_id.equal(group_id))
-        .run(&data.db)
-        .await
-        .map_err(|e| {
-            error_with_log_id(
-                format!("unable to fetch group {}: {}", group_id, e),
-                "Database error",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                log::Level::Error,
-            )
-        })?;
-
-    if group_states.is_empty() {
-        return Err(error_with_log_id(
-            format!("group {} not found", group_id),
-            "Group not found",
-            StatusCode::NOT_FOUND,
             log::Level::Warn,
         ));
     }
