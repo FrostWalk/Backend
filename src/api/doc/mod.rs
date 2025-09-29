@@ -6,6 +6,12 @@ use crate::api::v1::admins::projects::read::__path_get_one_project_handler;
 use crate::api::v1::admins::projects::update::__path_update_project_handler;
 use crate::api::v1::admins::security_codes::create::__path_create_code_handler;
 use crate::api::v1::admins::security_codes::read::__path_get_all_codes_handler;
+use crate::api::v1::admins::student_components::create::__path_create_student_component_handler;
+use crate::api::v1::admins::student_components::delete::__path_delete_student_component_handler;
+use crate::api::v1::admins::student_components::read::__path_get_all_student_components_handler;
+use crate::api::v1::admins::student_components::read::__path_get_student_component_handler;
+use crate::api::v1::admins::student_components::read::__path_get_student_components_for_project_handler;
+use crate::api::v1::admins::student_components::update::__path_update_student_component_handler;
 use crate::api::v1::admins::student_parts_components::create::__path_create_student_part_component_handler;
 use crate::api::v1::admins::student_parts_components::delete::__path_delete_student_part_component_handler;
 use crate::api::v1::admins::student_parts_components::read::__path_get_components_for_part_handler;
@@ -57,6 +63,12 @@ use utoipa_swagger_ui::SwaggerUi;
         get_student_projects,
         create_code_handler,
         get_all_codes_handler,
+        create_student_component_handler,
+        get_all_student_components_handler,
+        get_student_component_handler,
+        get_student_components_for_project_handler,
+        update_student_component_handler,
+        delete_student_component_handler,
         create_student_part_component_handler,
         get_components_for_part_handler,
         get_parts_for_component_handler,
@@ -73,6 +85,7 @@ use utoipa_swagger_ui::SwaggerUi;
     tags(
         (name = "Admin authentication", description = "Admin authentication endpoint"),
         (name = "Admin users management", description = "CRUD operations on admins"),
+        (name = "Student components management", description = "CRUD operations on student components"),
         (name = "Student parts-components management", description = "CRUD operations on student parts-components relationships"),
         (name = "Student authentication", description = "Student authentication endpoint"),
         (name = "Student users management", description = "CRUD operations on students"),
