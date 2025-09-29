@@ -1,3 +1,4 @@
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use welds::WeldsModel;
 
 #[derive(Debug, Clone, WeldsModel)]
@@ -7,3 +8,15 @@ pub struct StudentRole {
     pub student_role_id: i32,
     pub name: String,
 }
+
+#[derive(PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
+#[repr(i32)]
+pub(crate) enum AvailableStudentRole {
+    GroupLeader = 1,
+    Member = 2,
+}
+
+pub(crate) const ALL: [AvailableStudentRole; 2] = [
+    AvailableStudentRole::GroupLeader,
+    AvailableStudentRole::Member,
+];
