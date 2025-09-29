@@ -1,8 +1,8 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError, ToJsonError};
-use crate::models::student_part::StudentPart;
-use crate::models::student_parts_component::StudentPartsComponent;
-use crate::models::students_component::StudentsComponent;
+use crate::models::student_deliverable::StudentDeliverable;
+use crate::models::student_deliverable_component::StudentDeliverableComponent;
+use crate::models::student_deliverables_component::StudentDeliverablesComponent;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{web, HttpResponse};
@@ -13,7 +13,7 @@ use welds::state::DbState;
 #[derive(Debug, Serialize, ToSchema)]
 pub(crate) struct StudentComponentResponse {
     #[schema(example = "123")]
-    pub students_component_id: i32,
+    pub student_deliverable_component_id: i32,
     #[schema(example = "1")]
     pub project_id: i32,
     #[schema(example = "Resistor")]
@@ -31,33 +31,33 @@ pub(crate) struct GetStudentComponentsForProjectResponse {
 }
 
 #[derive(Debug, Serialize, ToSchema)]
-pub(crate) struct StudentComponentPartResponse {
+pub(crate) struct StudentComponentDeliverableResponse {
     #[schema(example = "123")]
     pub id: i32,
     #[schema(example = "1")]
-    pub student_part_id: i32,
+    pub student_deliverable_id: i32,
     #[schema(example = "2")]
-    pub students_component_id: i32,
+    pub student_deliverable_component_id: i32,
     #[schema(example = "5")]
     pub quantity: i32,
     #[schema(example = "Motor")]
-    pub part_name: String,
+    pub deliverable_name: String,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
-pub(crate) struct GetPartsForStudentComponentResponse {
-    pub parts: Vec<StudentComponentPartResponse>,
+pub(crate) struct GetDeliverablesForStudentComponentResponse {
+    pub deliverables: Vec<StudentComponentDeliverableResponse>,
 }
 
 #[utoipa::path(
     get,
-    path = "/v1/admins/student-components",
+    path = "/v1/admins/student-deliverable-components",
     responses(
         (status = 200, description = "Found all student components", body = GetAllStudentComponentsResponse),
         (status = 500, description = "Internal server error occurred", body = JsonError)
     ),
     security(("AdminAuth" = [])),
-    tag = "Student components management",
+    tag = "Student deliverable components management",
 )]
 /// Get all student components.
 ///
@@ -65,20 +65,23 @@ pub(crate) struct GetPartsForStudentComponentResponse {
 pub(super) async fn get_all_student_components_handler(
     data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let components = StudentsComponent::all().run(&data.db).await.map_err(|e| {
-        error_with_log_id(
-            format!("unable to retrieve all student components: {}", e),
-            "Failed to retrieve components",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-        )
-    })?;
+    let components = StudentDeliverableComponent::all()
+        .run(&data.db)
+        .await
+        .map_err(|e| {
+            error_with_log_id(
+                format!("unable to retrieve all student components: {}", e),
+                "Failed to retrieve components",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
+        })?;
 
     let response_components: Vec<StudentComponentResponse> = components
         .into_iter()
         .map(DbState::into_inner)
         .map(|component| StudentComponentResponse {
-            students_component_id: component.students_component_id,
+            student_deliverable_component_id: component.student_deliverable_component_id,
             project_id: component.project_id,
             name: component.name,
         })
@@ -91,14 +94,14 @@ pub(super) async fn get_all_student_components_handler(
 
 #[utoipa::path(
     get,
-    path = "/v1/admins/student-components/project/{project_id}",
+    path = "/v1/admins/student-deliverable-components/project/{project_id}",
     responses(
         (status = 200, description = "Found student components for project", body = GetStudentComponentsForProjectResponse),
         (status = 404, description = "Project not found", body = JsonError),
         (status = 500, description = "Internal server error occurred", body = JsonError)
     ),
     security(("AdminAuth" = [])),
-    tag = "Student components management",
+    tag = "Student deliverable components management",
 )]
 /// Get all student components for a specific project.
 ///
@@ -109,7 +112,7 @@ pub(super) async fn get_student_components_for_project_handler(
     let project_id = path.into_inner();
 
     // Get all components for this project
-    let components = StudentsComponent::where_col(|sc| sc.project_id.equal(project_id))
+    let components = StudentDeliverableComponent::where_col(|sc| sc.project_id.equal(project_id))
         .run(&data.db)
         .await
         .map_err(|e| {
@@ -129,7 +132,7 @@ pub(super) async fn get_student_components_for_project_handler(
     for component in components {
         let component_data = DbState::into_inner(component);
         response_components.push(StudentComponentResponse {
-            students_component_id: component_data.students_component_id,
+            student_deliverable_component_id: component_data.student_deliverable_component_id,
             project_id: component_data.project_id,
             name: component_data.name,
         });
@@ -144,14 +147,14 @@ pub(super) async fn get_student_components_for_project_handler(
 
 #[utoipa::path(
     get,
-    path = "/v1/admins/student-components/{id}",
+    path = "/v1/admins/student-deliverable-components/{id}",
     responses(
         (status = 200, description = "Found student component", body = StudentComponentResponse),
         (status = 404, description = "Student component not found", body = JsonError),
         (status = 500, description = "Internal server error occurred", body = JsonError)
     ),
     security(("AdminAuth" = [])),
-    tag = "Student components management",
+    tag = "Student deliverable components management",
 )]
 /// Get a specific student component by ID.
 ///
@@ -162,18 +165,19 @@ pub(super) async fn get_student_component_handler(
     let component_id = path.into_inner();
 
     // Get the component by ID
-    let mut components =
-        StudentsComponent::where_col(|sc| sc.students_component_id.equal(component_id))
-            .run(&data.db)
-            .await
-            .map_err(|e| {
-                error_with_log_id(
-                    format!("unable to retrieve component {}: {}", component_id, e),
-                    "Failed to retrieve component",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    log::Level::Error,
-                )
-            })?;
+    let mut components = StudentDeliverableComponent::where_col(|sc| {
+        sc.student_deliverable_component_id.equal(component_id)
+    })
+    .run(&data.db)
+    .await
+    .map_err(|e| {
+        error_with_log_id(
+            format!("unable to retrieve component {}: {}", component_id, e),
+            "Failed to retrieve component",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+        )
+    })?;
 
     let component = match components.pop() {
         Some(c) => DbState::into_inner(c),
@@ -181,7 +185,7 @@ pub(super) async fn get_student_component_handler(
     };
 
     Ok(HttpResponse::Ok().json(StudentComponentResponse {
-        students_component_id: component.students_component_id,
+        student_deliverable_component_id: component.student_deliverable_component_id,
         project_id: component.project_id,
         name: component.name,
     }))
@@ -189,91 +193,94 @@ pub(super) async fn get_student_component_handler(
 
 #[utoipa::path(
     get,
-    path = "/v1/admins/student-components/{id}/parts",
+    path = "/v1/admins/student-deliverable-components/{id}/deliverables",
     responses(
-        (status = 200, description = "Found parts for student component", body = GetPartsForStudentComponentResponse),
+        (status = 200, description = "Found deliverables for student component", body = GetDeliverablesForStudentComponentResponse),
         (status = 404, description = "Student component not found", body = JsonError),
         (status = 500, description = "Internal server error occurred", body = JsonError)
     ),
     security(("AdminAuth" = [])),
-    tag = "Student components management",
+    tag = "Student deliverable components management",
 )]
-/// Get all parts that use a specific student component.
+/// Get all deliverables that use a specific student component.
 ///
-/// Returns all student parts that use the specified component along with their quantities.
-pub(super) async fn get_parts_for_student_component_handler(
+/// Returns all student deliverables that use the specified component along with their quantities.
+pub(super) async fn get_deliverables_for_student_component_handler(
     path: web::Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let component_id = path.into_inner();
 
     // Verify the student component exists
-    let component_exists =
-        StudentsComponent::where_col(|sc| sc.students_component_id.equal(component_id))
-            .run(&data.db)
-            .await
-            .map_err(|e| {
-                error_with_log_id(
-                    format!("unable to check if student component exists: {}", e),
-                    "Failed to retrieve parts",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    log::Level::Error,
-                )
-            })?;
+    let component_exists = StudentDeliverableComponent::where_col(|sc| {
+        sc.student_deliverable_component_id.equal(component_id)
+    })
+    .run(&data.db)
+    .await
+    .map_err(|e| {
+        error_with_log_id(
+            format!("unable to check if student component exists: {}", e),
+            "Failed to retrieve deliverables",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+        )
+    })?;
 
     if component_exists.is_empty() {
         return Err("Student component not found".to_json_error(StatusCode::NOT_FOUND));
     }
 
     // Get all relationships for this component
-    let relationships =
-        StudentPartsComponent::where_col(|spc| spc.students_component_id.equal(component_id))
-            .run(&data.db)
-            .await
-            .map_err(|e| {
-                error_with_log_id(
-                    format!(
-                        "unable to retrieve parts for component {}: {}",
-                        component_id, e
-                    ),
-                    "Failed to retrieve parts",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    log::Level::Error,
-                )
-            })?;
+    let relationships = StudentDeliverablesComponent::where_col(|spc| {
+        spc.student_deliverable_component_id.equal(component_id)
+    })
+    .run(&data.db)
+    .await
+    .map_err(|e| {
+        error_with_log_id(
+            format!(
+                "unable to retrieve deliverables for component {}: {}",
+                component_id, e
+            ),
+            "Failed to retrieve deliverables",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+        )
+    })?;
 
-    let mut parts = Vec::new();
+    let mut deliverables = Vec::new();
 
     for relationship in relationships {
         let relationship_data = DbState::into_inner(relationship);
 
         // Get part details
-        let mut part_rows = StudentPart::where_col(|sp| {
-            sp.student_part_id.equal(relationship_data.student_part_id)
+        let mut deliverable_rows = StudentDeliverable::where_col(|sp| {
+            sp.student_deliverable_id
+                .equal(relationship_data.student_deliverable_id)
         })
         .run(&data.db)
         .await
         .map_err(|e| {
             error_with_log_id(
                 format!("unable to retrieve part details: {}", e),
-                "Failed to retrieve parts",
+                "Failed to retrieve deliverables",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
             )
         })?;
 
-        let part = match part_rows.pop() {
+        let deliverable = match deliverable_rows.pop() {
             Some(p) => DbState::into_inner(p),
             None => continue, // Skip if part not found
         };
 
-        parts.push(StudentComponentPartResponse {
+        deliverables.push(StudentComponentDeliverableResponse {
             id: relationship_data.id,
-            student_part_id: relationship_data.student_part_id,
-            students_component_id: relationship_data.students_component_id,
+            student_deliverable_id: relationship_data.student_deliverable_id,
+            student_deliverable_component_id: relationship_data.student_deliverable_component_id,
             quantity: relationship_data.quantity,
-            part_name: part.name,
+            deliverable_name: deliverable.name,
         });
     }
 
-    Ok(HttpResponse::Ok().json(GetPartsForStudentComponentResponse { parts }))
+    Ok(HttpResponse::Ok().json(GetDeliverablesForStudentComponentResponse { deliverables }))
 }

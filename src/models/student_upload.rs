@@ -6,8 +6,8 @@ use welds::WeldsModel;
 pub struct StudentUpload {
     #[welds(primary_key)]
     pub upload_id: i32,
-    #[welds(foreign_key = "student_part_selections.student_part_selection_id")]
-    pub student_part_selection_id: i32,
+    #[welds(foreign_key = "student_deliverable_selections.student_deliverable_selection_id")]
+    pub student_deliverable_selection_id: i32,
     pub path: String,
     pub timestamp: DateTime<Utc>,
 }
