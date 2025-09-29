@@ -1,7 +1,7 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError, ToJsonError};
-use crate::models::student_parts_component::StudentPartsComponent;
 use crate::models::student_part::StudentPart;
+use crate::models::student_parts_component::StudentPartsComponent;
 use crate::models::students_component::StudentsComponent;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
@@ -51,8 +51,7 @@ pub(crate) struct GetPartsForComponentResponse {
 ///
 /// Returns all components associated with the specified student part along with their quantities.
 pub(super) async fn get_components_for_part_handler(
-    path: web::Path<i32>,
-    data: Data<AppData>,
+    path: web::Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let part_id = path.into_inner();
 
@@ -74,28 +73,27 @@ pub(super) async fn get_components_for_part_handler(
     }
 
     // Get all relationships for this part
-    let relationships = StudentPartsComponent::where_col(|spc| {
-        spc.student_part_id.equal(part_id)
-    })
-    .run(&data.db)
-    .await
-    .map_err(|e| {
-        error_with_log_id(
-            format!("unable to retrieve components for part {}: {}", part_id, e),
-            "Failed to retrieve components",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-        )
-    })?;
+    let relationships = StudentPartsComponent::where_col(|spc| spc.student_part_id.equal(part_id))
+        .run(&data.db)
+        .await
+        .map_err(|e| {
+            error_with_log_id(
+                format!("unable to retrieve components for part {}: {}", part_id, e),
+                "Failed to retrieve components",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
+        })?;
 
     let mut components = Vec::new();
 
     for relationship in relationships {
         let relationship_data = DbState::into_inner(relationship);
-        
+
         // Get component details
         let mut component_rows = StudentsComponent::where_col(|sc| {
-            sc.students_component_id.equal(relationship_data.students_component_id)
+            sc.students_component_id
+                .equal(relationship_data.students_component_id)
         })
         .run(&data.db)
         .await
@@ -161,51 +159,54 @@ pub(super) async fn get_components_for_part_handler(
 ///
 /// Returns all student parts that use the specified component along with their quantities.
 pub(super) async fn get_parts_for_component_handler(
-    path: web::Path<i32>,
-    data: Data<AppData>,
+    path: web::Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let component_id = path.into_inner();
 
     // Verify the student component exists
-    let component_exists = StudentsComponent::where_col(|sc| sc.students_component_id.equal(component_id))
-        .run(&data.db)
-        .await
-        .map_err(|e| {
-            error_with_log_id(
-                format!("unable to check if student component exists: {}", e),
-                "Failed to retrieve parts",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                log::Level::Error,
-            )
-        })?;
+    let component_exists =
+        StudentsComponent::where_col(|sc| sc.students_component_id.equal(component_id))
+            .run(&data.db)
+            .await
+            .map_err(|e| {
+                error_with_log_id(
+                    format!("unable to check if student component exists: {}", e),
+                    "Failed to retrieve parts",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                )
+            })?;
 
     if component_exists.is_empty() {
         return Err("Student component not found".to_json_error(StatusCode::NOT_FOUND));
     }
 
     // Get all relationships for this component
-    let relationships = StudentPartsComponent::where_col(|spc| {
-        spc.students_component_id.equal(component_id)
-    })
-    .run(&data.db)
-    .await
-    .map_err(|e| {
-        error_with_log_id(
-            format!("unable to retrieve parts for component {}: {}", component_id, e),
-            "Failed to retrieve parts",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-        )
-    })?;
+    let relationships =
+        StudentPartsComponent::where_col(|spc| spc.students_component_id.equal(component_id))
+            .run(&data.db)
+            .await
+            .map_err(|e| {
+                error_with_log_id(
+                    format!(
+                        "unable to retrieve parts for component {}: {}",
+                        component_id, e
+                    ),
+                    "Failed to retrieve parts",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                )
+            })?;
 
     let mut parts = Vec::new();
 
     for relationship in relationships {
         let relationship_data = DbState::into_inner(relationship);
-        
+
         // Get component details
         let mut component_rows = StudentsComponent::where_col(|sc| {
-            sc.students_component_id.equal(relationship_data.students_component_id)
+            sc.students_component_id
+                .equal(relationship_data.students_component_id)
         })
         .run(&data.db)
         .await

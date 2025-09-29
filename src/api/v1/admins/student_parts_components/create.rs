@@ -48,8 +48,7 @@ pub(crate) struct CreateStudentPartComponentResponse {
 ///
 /// This endpoint allows authenticated admins to add components to student parts with specified quantities.
 pub(super) async fn create_student_part_component_handler(
-    payload: Json<CreateStudentPartComponentScheme>,
-    data: Data<AppData>,
+    payload: Json<CreateStudentPartComponentScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let scheme = payload.into_inner();
     let original_payload = Json(CreateStudentPartComponentScheme {
@@ -59,19 +58,23 @@ pub(super) async fn create_student_part_component_handler(
     });
 
     // Check if relationship already exists
-    let existing = StudentPartsComponent::where_col(|spc| spc.student_part_id.equal(scheme.student_part_id))
-        .where_col(|spc| spc.students_component_id.equal(scheme.students_component_id))
-        .run(&data.db)
-    .await
-    .map_err(|e| {
-        error_with_log_id_and_payload(
-            format!("unable to check existing relationship: {}", e),
-            "Failed to create relationship",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-            &original_payload,
-        )
-    })?;
+    let existing =
+        StudentPartsComponent::where_col(|spc| spc.student_part_id.equal(scheme.student_part_id))
+            .where_col(|spc| {
+                spc.students_component_id
+                    .equal(scheme.students_component_id)
+            })
+            .run(&data.db)
+            .await
+            .map_err(|e| {
+                error_with_log_id_and_payload(
+                    format!("unable to check existing relationship: {}", e),
+                    "Failed to create relationship",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                    &original_payload,
+                )
+            })?;
 
     if !existing.is_empty() {
         return Err("Relationship already exists".to_json_error(StatusCode::CONFLICT));
@@ -86,7 +89,10 @@ pub(super) async fn create_student_part_component_handler(
 
     if let Err(e) = state.save(&data.db).await {
         return Err(error_with_log_id_and_payload(
-            format!("unable to create student part component relationship: {}", e),
+            format!(
+                "unable to create student part component relationship: {}",
+                e
+            ),
             "Failed to create relationship",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
