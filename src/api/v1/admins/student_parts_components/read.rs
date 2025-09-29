@@ -22,7 +22,7 @@ pub(crate) struct StudentPartComponentResponse {
     pub quantity: i32,
     #[schema(example = "Resistor")]
     pub component_name: String,
-    #[schema(example = "10kΩ")]
+    #[schema(example = "10k")]
     pub part_name: String,
 }
 

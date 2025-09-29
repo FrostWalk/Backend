@@ -9,9 +9,17 @@ use crate::api::v1::admins::security_codes::read::__path_get_all_codes_handler;
 use crate::api::v1::admins::student_components::create::__path_create_student_component_handler;
 use crate::api::v1::admins::student_components::delete::__path_delete_student_component_handler;
 use crate::api::v1::admins::student_components::read::__path_get_all_student_components_handler;
+use crate::api::v1::admins::student_components::read::__path_get_parts_for_student_component_handler;
 use crate::api::v1::admins::student_components::read::__path_get_student_component_handler;
 use crate::api::v1::admins::student_components::read::__path_get_student_components_for_project_handler;
 use crate::api::v1::admins::student_components::update::__path_update_student_component_handler;
+use crate::api::v1::admins::student_parts::create::__path_create_student_part_handler;
+use crate::api::v1::admins::student_parts::delete::__path_delete_student_part_handler;
+use crate::api::v1::admins::student_parts::read::__path_get_all_student_parts_handler;
+use crate::api::v1::admins::student_parts::read::__path_get_components_for_student_part_handler;
+use crate::api::v1::admins::student_parts::read::__path_get_student_part_handler;
+use crate::api::v1::admins::student_parts::read::__path_get_student_parts_for_project_handler;
+use crate::api::v1::admins::student_parts::update::__path_update_student_part_handler;
 use crate::api::v1::admins::student_parts_components::create::__path_create_student_part_component_handler;
 use crate::api::v1::admins::student_parts_components::delete::__path_delete_student_part_component_handler;
 use crate::api::v1::admins::student_parts_components::read::__path_get_components_for_part_handler;
@@ -67,8 +75,16 @@ use utoipa_swagger_ui::SwaggerUi;
         get_all_student_components_handler,
         get_student_component_handler,
         get_student_components_for_project_handler,
+        get_parts_for_student_component_handler,
         update_student_component_handler,
         delete_student_component_handler,
+        create_student_part_handler,
+        get_all_student_parts_handler,
+        get_student_part_handler,
+        get_student_parts_for_project_handler,
+        get_components_for_student_part_handler,
+        update_student_part_handler,
+        delete_student_part_handler,
         create_student_part_component_handler,
         get_components_for_part_handler,
         get_parts_for_component_handler,
@@ -86,6 +102,7 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "Admin authentication", description = "Admin authentication endpoint"),
         (name = "Admin users management", description = "CRUD operations on admins"),
         (name = "Student components management", description = "CRUD operations on student components"),
+        (name = "Student parts management", description = "CRUD operations on student parts"),
         (name = "Student parts-components management", description = "CRUD operations on student parts-components relationships"),
         (name = "Student authentication", description = "Student authentication endpoint"),
         (name = "Student users management", description = "CRUD operations on students"),
