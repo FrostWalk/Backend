@@ -31,9 +31,7 @@ pub(crate) struct UpdateStudentPartComponentScheme {
 ///
 /// This endpoint allows authenticated admins to modify the quantity of a component in a student part by ID.
 pub(super) async fn update_student_part_component_handler(
-    path: web::Path<i32>,
-    payload: Json<UpdateStudentPartComponentScheme>,
-    data: Data<AppData>,
+    path: web::Path<i32>, payload: Json<UpdateStudentPartComponentScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
     let scheme = payload.into_inner();
@@ -44,16 +42,16 @@ pub(super) async fn update_student_part_component_handler(
     // Find the existing relationship by ID
     let mut rows = StudentPartsComponent::where_col(|spc| spc.id.equal(id))
         .run(&data.db)
-    .await
-    .map_err(|e| {
-        error_with_log_id_and_payload(
-            format!("unable to load student part component relationship: {}", e),
-            "Failed to update relationship",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-            &original_payload,
-        )
-    })?;
+        .await
+        .map_err(|e| {
+            error_with_log_id_and_payload(
+                format!("unable to load student part component relationship: {}", e),
+                "Failed to update relationship",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &original_payload,
+            )
+        })?;
 
     let mut relationship_state = match rows.pop() {
         Some(s) => s,
@@ -65,7 +63,10 @@ pub(super) async fn update_student_part_component_handler(
 
     relationship_state.save(&data.db).await.map_err(|e| {
         error_with_log_id_and_payload(
-            format!("unable to update student part component relationship: {}", e),
+            format!(
+                "unable to update student part component relationship: {}",
+                e
+            ),
             "Failed to update relationship",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,

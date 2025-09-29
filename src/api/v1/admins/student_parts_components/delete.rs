@@ -21,8 +21,7 @@ use actix_web::{web, HttpResponse};
 ///
 /// This endpoint allows authenticated admins to remove the relationship between a component and a student part by ID.
 pub(super) async fn delete_student_part_component_handler(
-    path: web::Path<i32>,
-    data: Data<AppData>,
+    path: web::Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 
@@ -46,7 +45,10 @@ pub(super) async fn delete_student_part_component_handler(
 
     relationship_state.delete(&data.db).await.map_err(|e| {
         error_with_log_id(
-            format!("unable to delete student part component relationship: {}", e),
+            format!(
+                "unable to delete student part component relationship: {}",
+                e
+            ),
             "Failed to delete relationship",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
