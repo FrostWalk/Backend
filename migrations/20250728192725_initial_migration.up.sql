@@ -134,10 +134,11 @@ create table students_components (
 );
 
 create table student_parts_components (
+    id serial primary key,
     student_part_id integer not null references student_parts on delete cascade,
     students_component_id integer not null references students_components on delete cascade,
     quantity integer not null,
-    primary key (student_part_id, students_component_id)
+    unique (student_part_id, students_component_id)
 );
 
 create table student_part_selections (
