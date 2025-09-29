@@ -25,28 +25,28 @@ pub(super) async fn delete_student_deliverable_handler(
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 
-    // Find the existing part by ID
+    // Find the existing deliverable by ID
     let mut rows = StudentDeliverable::where_col(|sp| sp.student_deliverable_id.equal(id))
         .run(&data.db)
         .await
         .map_err(|e| {
             error_with_log_id(
                 format!("unable to load student deliverable: {}", e),
-                "Failed to delete part",
+                "Failed to delete deliverable",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
             )
         })?;
 
-    let mut part_state = match rows.pop() {
+    let mut deliverable_state = match rows.pop() {
         Some(s) => s,
-        None => return Err("Student part not found".to_json_error(StatusCode::NOT_FOUND)),
+        None => return Err("Student deliverable not found".to_json_error(StatusCode::NOT_FOUND)),
     };
 
-    part_state.delete(&data.db).await.map_err(|e| {
+    deliverable_state.delete(&data.db).await.map_err(|e| {
         error_with_log_id(
             format!("unable to delete student deliverable: {}", e),
-            "Failed to delete part",
+            "Failed to delete deliverable",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
         )

@@ -40,53 +40,54 @@ pub(super) async fn update_student_deliverable_handler(
         name: scheme.name.clone(),
     });
 
-    // Find the existing part by ID
+    // Find the existing deliverable by ID
     let mut rows = StudentDeliverable::where_col(|sp| sp.student_deliverable_id.equal(id))
         .run(&data.db)
         .await
         .map_err(|e| {
             error_with_log_id_and_payload(
                 format!("unable to load student deliverable: {}", e),
-                "Failed to update part",
+                "Failed to update deliverable",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
                 &original_payload,
             )
         })?;
 
-    let mut part_state = match rows.pop() {
+    let mut deliverable_state = match rows.pop() {
         Some(s) => s,
-        None => return Err("Student part not found".to_json_error(StatusCode::NOT_FOUND)),
+        None => return Err("Student deliverable not found".to_json_error(StatusCode::NOT_FOUND)),
     };
 
-    // Check if another part with this name already exists for the same project
-    let existing = StudentDeliverable::where_col(|sp| sp.project_id.equal(part_state.project_id))
-        .where_col(|sp| sp.name.equal(&scheme.name))
-        .where_col(|sp| sp.student_deliverable_id.not_equal(id))
-        .run(&data.db)
-        .await
-        .map_err(|e| {
-            error_with_log_id_and_payload(
-                format!("unable to check existing student deliverable: {}", e),
-                "Failed to update part",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                log::Level::Error,
-                &original_payload,
-            )
-        })?;
+    // Check if another deliverable with this name already exists for the same project
+    let existing =
+        StudentDeliverable::where_col(|sp| sp.project_id.equal(deliverable_state.project_id))
+            .where_col(|sp| sp.name.equal(&scheme.name))
+            .where_col(|sp| sp.student_deliverable_id.not_equal(id))
+            .run(&data.db)
+            .await
+            .map_err(|e| {
+                error_with_log_id_and_payload(
+                    format!("unable to check existing student deliverable: {}", e),
+                    "Failed to update deliverable",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                    &original_payload,
+                )
+            })?;
 
     if !existing.is_empty() {
-        return Err("Part with this name already exists for the project"
+        return Err("Deliverable with this name already exists for the project"
             .to_json_error(StatusCode::CONFLICT));
     }
 
     // Update the name
-    part_state.name = scheme.name;
+    deliverable_state.name = scheme.name;
 
-    part_state.save(&data.db).await.map_err(|e| {
+    deliverable_state.save(&data.db).await.map_err(|e| {
         error_with_log_id_and_payload(
             format!("unable to update student deliverable: {}", e),
-            "Failed to update part",
+            "Failed to update deliverable",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
             &original_payload,

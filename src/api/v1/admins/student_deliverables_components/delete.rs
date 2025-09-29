@@ -9,7 +9,7 @@ use actix_web::{web, HttpResponse};
     delete,
     path = "/v1/admins/student-deliverables-components/{id}",
     responses(
-        (status = 200, description = "Student part component relationship deleted successfully"),
+        (status = 200, description = "Student deliverable component relationship deleted successfully"),
         (status = 401, description = "Authentication required", body = JsonError),
         (status = 404, description = "Relationship not found", body = JsonError),
         (status = 500, description = "Internal server error occurred", body = JsonError)

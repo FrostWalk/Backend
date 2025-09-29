@@ -108,7 +108,7 @@ pub(super) async fn get_student_deliverables_for_project_handler(
 ) -> Result<HttpResponse, JsonError> {
     let project_id = path.into_inner();
 
-    // Get all parts for this project
+    // Get all deliverables for this project
     let deliverables = StudentDeliverable::where_col(|sp| sp.project_id.equal(project_id))
         .run(&data.db)
         .await
@@ -147,7 +147,7 @@ pub(super) async fn get_student_deliverables_for_project_handler(
     path = "/v1/admins/student-deliverables/{id}",
     responses(
         (status = 200, description = "Found student deliverable", body = StudentDeliverableResponse),
-        (status = 404, description = "Student part not found", body = JsonError),
+        (status = 404, description = "Student deliverable not found", body = JsonError),
         (status = 500, description = "Internal server error occurred", body = JsonError)
     ),
     security(("AdminAuth" = [])),
@@ -161,15 +161,15 @@ pub(super) async fn get_student_deliverable_handler(
 ) -> Result<HttpResponse, JsonError> {
     let deliverable_id = path.into_inner();
 
-    // Get the part by ID
+    // Get the deliverable by ID
     let mut deliverables =
         StudentDeliverable::where_col(|sp| sp.student_deliverable_id.equal(deliverable_id))
             .run(&data.db)
             .await
             .map_err(|e| {
                 error_with_log_id(
-                    format!("unable to retrieve part {}: {}", deliverable_id, e),
-                    "Failed to retrieve part",
+                    format!("unable to retrieve deliverable {}: {}", deliverable_id, e),
+                    "Failed to retrieve deliverable",
                     StatusCode::INTERNAL_SERVER_ERROR,
                     log::Level::Error,
                 )
@@ -192,7 +192,7 @@ pub(super) async fn get_student_deliverable_handler(
     path = "/v1/admins/student-deliverables/{id}/components",
     responses(
         (status = 200, description = "Found components for student deliverable", body = GetComponentsForStudentDeliverableResponse),
-        (status = 404, description = "Student part not found", body = JsonError),
+        (status = 404, description = "Student deliverable not found", body = JsonError),
         (status = 500, description = "Internal server error occurred", body = JsonError)
     ),
     security(("AdminAuth" = [])),
@@ -207,7 +207,7 @@ pub(super) async fn get_components_for_student_deliverable_handler(
     let deliverable_id = path.into_inner();
 
     // Verify the student deliverable exists
-    let part_exists =
+    let deliverable_exists =
         StudentDeliverable::where_col(|sp| sp.student_deliverable_id.equal(deliverable_id))
             .run(&data.db)
             .await
@@ -220,11 +220,11 @@ pub(super) async fn get_components_for_student_deliverable_handler(
                 )
             })?;
 
-    if part_exists.is_empty() {
-        return Err("Student part not found".to_json_error(StatusCode::NOT_FOUND));
+    if deliverable_exists.is_empty() {
+        return Err("Student deliverable not found".to_json_error(StatusCode::NOT_FOUND));
     }
 
-    // Get all relationships for this part
+    // Get all relationships for this deliverable
     let relationships = StudentDeliverablesComponent::where_col(|spc| {
         spc.student_deliverable_id.equal(deliverable_id)
     })
@@ -233,7 +233,7 @@ pub(super) async fn get_components_for_student_deliverable_handler(
     .map_err(|e| {
         error_with_log_id(
             format!(
-                "unable to retrieve components for part {}: {}",
+                "unable to retrieve components for deliverable {}: {}",
                 deliverable_id, e
             ),
             "Failed to retrieve components",
@@ -265,7 +265,7 @@ pub(super) async fn get_components_for_student_deliverable_handler(
 
         let component = match component_rows.pop() {
             Some(c) => DbState::into_inner(c),
-            None => continue, // Skip if component not found
+            None => continue, // Skip if deliverable component not found
         };
 
         components.push(StudentDeliverableComponentResponse {
