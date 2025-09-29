@@ -3,7 +3,6 @@ use crate::common::json_error::{error_with_log_id, JsonError};
 use crate::jwt::get_user::LoggedUser;
 use crate::models::project::Project;
 use crate::models::security_code::SecurityCode;
-use crate::models::student_role::{AvailableStudentRole, StudentRole};
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
@@ -20,9 +19,7 @@ pub(crate) struct ValidateCodeRequest {
 #[derive(Debug, Serialize, ToSchema)]
 pub(crate) struct ValidateCodeResponse {
     pub is_valid: bool,
-    pub role: Option<String>,
     pub project: Option<ProjectInfo>,
-    pub message: String,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -34,7 +31,7 @@ pub(crate) struct ProjectInfo {
 
 #[utoipa::path(
     post,
-    path = "/v1/students/groups/validate-code",
+    path = "/v1/students/security-codes/validate",
     request_body = ValidateCodeRequest,
     responses(
         (status = 200, description = "Security code validation result", body = ValidateCodeResponse),
@@ -42,12 +39,12 @@ pub(crate) struct ProjectInfo {
         (status = 500, description = "Internal server error", body = JsonError)
     ),
     security(("UserAuth" = [])),
-    tag = "Groups management",
+    tag = "Security codes management",
 )]
-/// Validate a security code and return role information
+/// Validate a security code and return project information
 ///
 /// This endpoint allows students to validate a security code and get information about
-/// the role and project associated with it.
+/// the project associated with it. All security codes are for GroupLeader role.
 pub(super) async fn validate_code(
     req: HttpRequest, data: Data<AppData>, body: Json<ValidateCodeRequest>,
 ) -> Result<HttpResponse, JsonError> {
@@ -73,9 +70,7 @@ pub(super) async fn validate_code(
             None => {
                 return Ok(HttpResponse::Ok().json(ValidateCodeResponse {
                     is_valid: false,
-                    role: None,
                     project: None,
-                    message: "Invalid security code".to_string(),
                 }));
             }
         },
@@ -93,31 +88,9 @@ pub(super) async fn validate_code(
     if security_code.expiration <= Utc::now() {
         return Ok(HttpResponse::Ok().json(ValidateCodeResponse {
             is_valid: false,
-            role: None,
             project: None,
-            message: "Security code has expired".to_string(),
         }));
     }
-
-    // Get the role information
-    let role =
-        match StudentRole::where_col(|sr| sr.student_role_id.equal(security_code.student_role_id))
-            .run(&data.db)
-            .await
-        {
-            Ok(mut rows) => match rows.pop() {
-                Some(state) => Some(DbState::into_inner(state).name),
-                None => None,
-            },
-            Err(e) => {
-                return Err(error_with_log_id(
-                    format!("unable to fetch role information: {}", e),
-                    "Database error",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    log::Level::Error,
-                ));
-            }
-        };
 
     // Get the project information
     let project = match Project::where_col(|p| p.project_id.equal(security_code.project_id))
@@ -145,17 +118,9 @@ pub(super) async fn validate_code(
         }
     };
 
-    // Check if the role is GroupLeader
-    let is_group_leader = security_code.student_role_id == AvailableStudentRole::GroupLeader as i32;
-
+    // All security codes are for GroupLeader role
     Ok(HttpResponse::Ok().json(ValidateCodeResponse {
-        is_valid: is_group_leader,
-        role,
+        is_valid: true,
         project,
-        message: if is_group_leader {
-            "Valid GroupLeader security code".to_string()
-        } else {
-            "Security code is valid but not for GroupLeader role".to_string()
-        },
     }))
 }

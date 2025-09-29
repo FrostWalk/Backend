@@ -3,14 +3,13 @@ use crate::common::json_error::{error_with_log_id, JsonError};
 use crate::jwt::get_user::LoggedUser;
 use crate::models::group::Group;
 use actix_web::http::StatusCode;
-use actix_web::web::{Data, Query};
+use actix_web::web::{Data, Json};
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use welds::state::DbState;
 
 #[derive(Debug, Deserialize, ToSchema)]
-pub(crate) struct CheckNameQuery {
+pub(crate) struct CheckNameRequest {
     pub project_id: i32,
     pub name: String,
 }
@@ -18,18 +17,14 @@ pub(crate) struct CheckNameQuery {
 #[derive(Debug, Serialize, ToSchema)]
 pub(crate) struct CheckNameResponse {
     pub exists: bool,
-    pub message: String,
 }
 
 #[utoipa::path(
-    get,
+    post,
     path = "/v1/students/groups/check-name",
-    params(
-        ("project_id" = i32, Query, description = "Project ID"),
-        ("name" = String, Query, description = "Group name to check")
-    ),
+    request_body = CheckNameRequest,
     responses(
-        (status = 200, description = "Group name availability check result", body = CheckNameResponse),
+        (status = 200, description = "A boolean indicating if name exists already", body = CheckNameResponse),
         (status = 401, description = "Authentication required", body = JsonError),
         (status = 500, description = "Internal server error", body = JsonError)
     ),
@@ -41,7 +36,7 @@ pub(crate) struct CheckNameResponse {
 /// This endpoint allows students to check if a group name is already taken
 /// within a specific project before creating a group.
 pub(super) async fn check_name(
-    req: HttpRequest, data: Data<AppData>, query: Query<CheckNameQuery>,
+    req: HttpRequest, data: Data<AppData>, body: Json<CheckNameRequest>,
 ) -> Result<HttpResponse, JsonError> {
     let _user = match req.extensions().get_student() {
         Ok(user) => user,
@@ -55,8 +50,9 @@ pub(super) async fn check_name(
         }
     };
 
-    // Check if a group with this name exists in the project
-    let existing_groups = match Group::where_col(|g| g.project_id.equal(query.project_id))
+    // Query directly for groups with matching project_id AND name
+    let existing_groups = match Group::where_col(|g| g.project_id.equal(body.project_id))
+        .where_col(|g| g.name.equal(&body.name))
         .run(&data.db)
         .await
     {
@@ -71,22 +67,7 @@ pub(super) async fn check_name(
         }
     };
 
-    // Filter by name
-    let mut exists = false;
-    for group_state in existing_groups {
-        let group = DbState::into_inner(group_state);
-        if group.name == query.name {
-            exists = true;
-            break;
-        }
-    }
+    let exists = !existing_groups.is_empty();
 
-    Ok(HttpResponse::Ok().json(CheckNameResponse {
-        exists,
-        message: if exists {
-            format!("Group name '{}' already exists in this project", query.name)
-        } else {
-            format!("Group name '{}' is available", query.name)
-        },
-    }))
+    Ok(HttpResponse::Ok().json(CheckNameResponse { exists }))
 }
