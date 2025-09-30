@@ -2,6 +2,13 @@ use crate::api::health::{__path_health_check, __path_liveness_check};
 use crate::api::v1::admins::auth::forgot_password::__path_forgot_password_handler;
 use crate::api::v1::admins::auth::login::__path_admins_login_handler;
 use crate::api::v1::admins::auth::reset_password::__path_reset_password_handler;
+use crate::api::v1::admins::group_deliverable_components::create::__path_create_group_component_handler;
+use crate::api::v1::admins::group_deliverable_components::delete::__path_delete_group_component_handler;
+use crate::api::v1::admins::group_deliverable_components::read::__path_get_all_group_components_handler;
+use crate::api::v1::admins::group_deliverable_components::read::__path_get_deliverables_for_group_component_handler;
+use crate::api::v1::admins::group_deliverable_components::read::__path_get_group_component_handler;
+use crate::api::v1::admins::group_deliverable_components::read::__path_get_group_components_for_project_handler;
+use crate::api::v1::admins::group_deliverable_components::update::__path_update_group_component_handler;
 use crate::api::v1::admins::projects::create::__path_create_project_handler;
 use crate::api::v1::admins::projects::delete::__path_delete_project_handler;
 use crate::api::v1::admins::projects::read::__path_get_all_projects_handler;
@@ -23,11 +30,11 @@ use crate::api::v1::admins::student_deliverables::read::__path_get_components_fo
 use crate::api::v1::admins::student_deliverables::read::__path_get_student_deliverable_handler;
 use crate::api::v1::admins::student_deliverables::read::__path_get_student_deliverables_for_project_handler;
 use crate::api::v1::admins::student_deliverables::update::__path_update_student_deliverable_handler;
-use crate::api::v1::admins::student_deliverables_components::create::__path_create_student_deliverable_component_handler;
-use crate::api::v1::admins::student_deliverables_components::delete::__path_delete_student_deliverable_component_handler;
-use crate::api::v1::admins::student_deliverables_components::read::__path_get_components_for_deliverable_handler;
-use crate::api::v1::admins::student_deliverables_components::read::__path_get_deliverables_for_component_handler;
-use crate::api::v1::admins::student_deliverables_components::update::__path_update_student_deliverable_component_handler;
+use crate::api::v1::admins::student_deliverables_and_components::create::__path_create_student_deliverable_component_handler;
+use crate::api::v1::admins::student_deliverables_and_components::delete::__path_delete_student_deliverable_component_handler;
+use crate::api::v1::admins::student_deliverables_and_components::read::__path_get_components_for_deliverable_handler;
+use crate::api::v1::admins::student_deliverables_and_components::read::__path_get_deliverables_for_component_handler;
+use crate::api::v1::admins::student_deliverables_and_components::update::__path_update_student_deliverable_component_handler;
 use crate::api::v1::admins::users::create::__path_create_admin_handler;
 use crate::api::v1::admins::users::delete::__path_delete_admin_handler;
 use crate::api::v1::admins::users::me::__path_admins_me_handler;
@@ -83,6 +90,13 @@ use utoipa_swagger_ui::SwaggerUi;
         get_student_projects,
         create_code_handler,
         get_all_codes_handler,
+        create_group_component_handler,
+        get_all_group_components_handler,
+        get_group_component_handler,
+        get_group_components_for_project_handler,
+        get_deliverables_for_group_component_handler,
+        update_group_component_handler,
+        delete_group_component_handler,
         create_student_component_handler,
         get_all_student_components_handler,
         get_student_component_handler,
@@ -114,6 +128,7 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "Health", description = "Application health check endpoints for monitoring and Docker"),
         (name = "Admin authentication", description = "Admin authentication endpoint"),
         (name = "Admin users management", description = "CRUD operations on admins"),
+        (name = "Group deliverable components management", description = "CRUD operations on group deliverable components"),
         (name = "Student deliverable components management", description = "CRUD operations on student deliverable components"),
         (name = "Student deliverables management", description = "CRUD operations on student deliverables"),
         (name = "Student deliverables-components management", description = "CRUD operations on student deliverables-components relationships"),
