@@ -1,9 +1,9 @@
-use crate::api::v1::admins::student_deliverables_components::create::create_student_deliverable_component_handler;
-use crate::api::v1::admins::student_deliverables_components::delete::delete_student_deliverable_component_handler;
-use crate::api::v1::admins::student_deliverables_components::read::{
+use crate::api::v1::admins::student_deliverables_and_components::create::create_student_deliverable_component_handler;
+use crate::api::v1::admins::student_deliverables_and_components::delete::delete_student_deliverable_component_handler;
+use crate::api::v1::admins::student_deliverables_and_components::read::{
     get_components_for_deliverable_handler, get_deliverables_for_component_handler,
 };
-use crate::api::v1::admins::student_deliverables_components::update::update_student_deliverable_component_handler;
+use crate::api::v1::admins::student_deliverables_and_components::update::update_student_deliverable_component_handler;
 use crate::jwt::admin_auth_factory::Admin;
 use crate::models::admin_role::AvailableAdminRole;
 use actix_web::{web, Scope};
