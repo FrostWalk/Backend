@@ -1,8 +1,8 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
+use crate::database::repositories::admins_repository;
 use crate::jwt::token::create_admin_token;
 use crate::logging::payload_capture::capture_response_status;
-use crate::models::admin::Admin;
 use actix_web::cookie::time::Duration;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
@@ -52,9 +52,8 @@ pub(crate) async fn admins_login_handler(
     // common unauthorized response
     let unauthorized = Err(WRONG_CREDENTIALS.to_json_error(StatusCode::UNAUTHORIZED));
 
-    // find the user by email (Vec<DbState<Admin>>)
-    let mut rows = Admin::where_col(|a| a.email.equal(&req.email))
-        .run(&data.db)
+    // find the user by email
+    let admin_state = admins_repository::get_by_email(&data.db, &req.email)
         .await
         .map_err(|e| {
             error_with_log_id_and_payload(
@@ -67,12 +66,10 @@ pub(crate) async fn admins_login_handler(
         })?;
 
     // 2) not found -> unauthorized
-    let state = match rows.pop() {
-        Some(s) => s,
+    let user = match admin_state {
+        Some(state) => DbState::into_inner(state),
         None => return unauthorized,
     };
-
-    let user: Admin = DbState::into_inner(state);
 
     // 3) wrong password
     if verify_password(&req.password, &user.password_hash).is_err() {

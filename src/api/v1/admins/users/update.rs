@@ -1,6 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
-use crate::models::admin::Admin;
+use crate::database::repositories::admins_repository;
 use actix_web::http::StatusCode;
 use actix_web::web::Json;
 use actix_web::{web, HttpResponse};
@@ -47,8 +47,7 @@ pub(super) async fn update_admin_handler(
         password: scheme.password.clone(),
     });
 
-    let mut rows = Admin::where_col(|a| a.admin_id.equal(id))
-        .run(&data.db)
+    let admin_state_opt = admins_repository::get_by_id(&data.db, id)
         .await
         .map_err(|e| {
             error_with_log_id_and_payload(
@@ -60,7 +59,7 @@ pub(super) async fn update_admin_handler(
             )
         })?;
 
-    let mut admin_state = match rows.pop() {
+    let mut admin_state = match admin_state_opt {
         Some(s) => s,
         None => return Err("Admin not found".to_json_error(StatusCode::NOT_FOUND)),
     };

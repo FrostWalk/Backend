@@ -1,5 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError};
+use crate::database::repositories::security_codes;
 use crate::models::security_code::SecurityCode;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
@@ -36,12 +37,8 @@ pub(in crate::api::v1) async fn get_all_codes_handler(
 ) -> Result<HttpResponse, JsonError> {
     let now: DateTime<Utc> = Utc::now();
 
-    let codes: Vec<DbState<SecurityCode>> = match SecurityCode::all()
-        .order_by_asc(|sc| sc.security_code_id)
-        .run(&data.db)
-        .await
-    {
-        // Weelds currently does not support filtering rows using datetime operators like less_than
+    let codes: Vec<DbState<SecurityCode>> = match security_codes::get_all(&data.db).await {
+        // Filter for non-expired codes (Welds currently does not support filtering with datetime operators)
         Ok(c) => c.into_iter().filter(|code| code.expiration > now).collect(),
         Err(e) => {
             return Err(error_with_log_id(

@@ -1,7 +1,7 @@
 use crate::api::v1::admins::users::AdminResponseScheme;
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError, ToJsonError};
-use crate::models::admin::Admin;
+use crate::database::repositories::admins_repository;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{web, HttpResponse};
@@ -29,7 +29,7 @@ pub(crate) struct GetAllAdminsResponse {
 pub(super) async fn get_all_admins_handler(
     data: web::Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let states = Admin::all().run(&data.db).await.map_err(|e| {
+    let states = admins_repository::get_all(&data.db).await.map_err(|e| {
         error_with_log_id(
             format!("unable to retrieve admins from database: {}", e),
             "Failed to retrieve users",
@@ -66,8 +66,7 @@ pub(super) async fn get_one_admin_handler(
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 
-    let mut rows = Admin::where_col(|a| a.admin_id.equal(id))
-        .run(&data.db)
+    let admin_state = admins_repository::get_by_id(&data.db, id)
         .await
         .map_err(|e| {
             error_with_log_id(
@@ -78,7 +77,7 @@ pub(super) async fn get_one_admin_handler(
             )
         })?;
 
-    let state = match rows.pop() {
+    let state = match admin_state {
         Some(a) => a,
         None => return Err("Admin not found".to_json_error(StatusCode::NOT_FOUND)),
     };

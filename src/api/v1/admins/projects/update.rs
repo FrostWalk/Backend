@@ -1,6 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
-use crate::models::project::Project;
+use crate::database::repositories::projects_repository;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
 use actix_web::{web, HttpResponse};
@@ -41,8 +41,7 @@ pub(in crate::api::v1) async fn update_project_handler(
         active: scheme.active,
     });
 
-    let mut rows = Project::where_col(|p| p.project_id.equal(id))
-        .run(&data.db)
+    let state_opt = projects_repository::get_by_id(&data.db, id)
         .await
         .map_err(|e| {
             error_with_log_id_and_payload(
@@ -54,7 +53,7 @@ pub(in crate::api::v1) async fn update_project_handler(
             )
         })?;
 
-    let mut state = match rows.pop() {
+    let mut state = match state_opt {
         Some(s) => s,
         None => return Err("Project not found".to_json_error(StatusCode::NOT_FOUND)),
     };

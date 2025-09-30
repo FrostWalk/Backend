@@ -8,10 +8,42 @@ use welds::state::DbState;
 pub(crate) async fn get_all(db: &PostgresClient) -> welds::errors::Result<Vec<DbState<Admin>>> {
     Admin::all().run(db).await
 }
-pub(crate) async fn get_from_mail(
-    db: &PostgresClient, mail: &String,
-) -> welds::errors::Result<DbState<Admin>> {
-    Admin::where_col(|p| p.email.like(mail)).fetch_one(db).await
+
+/// Get an admin by email
+pub(crate) async fn get_by_email(
+    db: &PostgresClient, email: &str,
+) -> welds::errors::Result<Option<DbState<Admin>>> {
+    let mut rows = Admin::where_col(|a| a.email.equal(email)).run(db).await?;
+
+    Ok(rows.pop())
+}
+
+/// Get an admin by ID
+pub(crate) async fn get_by_id(
+    db: &PostgresClient, admin_id: i32,
+) -> welds::errors::Result<Option<DbState<Admin>>> {
+    let mut rows = Admin::where_col(|a| a.admin_id.equal(admin_id))
+        .run(db)
+        .await?;
+
+    Ok(rows.pop())
+}
+
+/// Delete an admin by ID
+/// Returns true if the admin was deleted, false if not found
+pub(crate) async fn delete_by_id(
+    db: &PostgresClient, admin_id: i32,
+) -> welds::errors::Result<bool> {
+    let mut rows = Admin::where_col(|a| a.admin_id.equal(admin_id))
+        .run(db)
+        .await?;
+
+    if let Some(mut state) = rows.pop() {
+        state.delete(db).await?;
+        Ok(true)
+    } else {
+        Ok(false)
+    }
 }
 
 pub(crate) async fn create_default_admin(db: &PostgresClient, email: String, password: String) {
