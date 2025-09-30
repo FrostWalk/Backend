@@ -9,6 +9,13 @@ use crate::api::v1::admins::group_deliverable_components::read::__path_get_deliv
 use crate::api::v1::admins::group_deliverable_components::read::__path_get_group_component_handler;
 use crate::api::v1::admins::group_deliverable_components::read::__path_get_group_components_for_project_handler;
 use crate::api::v1::admins::group_deliverable_components::update::__path_update_group_component_handler;
+use crate::api::v1::admins::group_deliverables::create::__path_create_group_deliverable_handler;
+use crate::api::v1::admins::group_deliverables::delete::__path_delete_group_deliverable_handler;
+use crate::api::v1::admins::group_deliverables::read::__path_get_all_group_deliverables_handler;
+use crate::api::v1::admins::group_deliverables::read::__path_get_components_for_group_deliverable_handler;
+use crate::api::v1::admins::group_deliverables::read::__path_get_group_deliverable_handler;
+use crate::api::v1::admins::group_deliverables::read::__path_get_group_deliverables_for_project_handler;
+use crate::api::v1::admins::group_deliverables::update::__path_update_group_deliverable_handler;
 use crate::api::v1::admins::projects::create::__path_create_project_handler;
 use crate::api::v1::admins::projects::delete::__path_delete_project_handler;
 use crate::api::v1::admins::projects::read::__path_get_all_projects_handler;
@@ -97,6 +104,13 @@ use utoipa_swagger_ui::SwaggerUi;
         get_deliverables_for_group_component_handler,
         update_group_component_handler,
         delete_group_component_handler,
+        create_group_deliverable_handler,
+        get_all_group_deliverables_handler,
+        get_group_deliverable_handler,
+        get_group_deliverables_for_project_handler,
+        get_components_for_group_deliverable_handler,
+        update_group_deliverable_handler,
+        delete_group_deliverable_handler,
         create_student_component_handler,
         get_all_student_components_handler,
         get_student_component_handler,
@@ -129,6 +143,7 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "Admin authentication", description = "Admin authentication endpoint"),
         (name = "Admin users management", description = "CRUD operations on admins"),
         (name = "Group deliverable components management", description = "CRUD operations on group deliverable components"),
+        (name = "Group deliverables management", description = "CRUD operations on group deliverables"),
         (name = "Student deliverable components management", description = "CRUD operations on student deliverable components"),
         (name = "Student deliverables management", description = "CRUD operations on student deliverables"),
         (name = "Student deliverables-components management", description = "CRUD operations on student deliverables-components relationships"),

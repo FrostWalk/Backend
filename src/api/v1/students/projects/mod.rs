@@ -2,7 +2,6 @@ use crate::api::v1::students::projects::read::get_student_projects;
 use crate::jwt::student_auth_factory::Student;
 use actix_web::{web, Scope};
 
-mod join;
 pub(crate) mod read;
 
 pub(super) fn projects_scope() -> Scope {
