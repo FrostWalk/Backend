@@ -98,10 +98,11 @@ create table group_deliverable_components (
 );
 
 create table group_deliverables_components (
+    id serial primary key,
     group_deliverable_id integer not null references group_deliverables on delete cascade,
     group_deliverable_component_id integer not null references group_deliverable_components on delete cascade,
     quantity integer not null,
-    primary key (group_deliverable_id, group_deliverable_component_id)
+    unique (group_deliverable_id, group_deliverable_component_id)
 );
 
 create table group_deliverable_selections (
