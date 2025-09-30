@@ -67,6 +67,7 @@ use crate::api::v1::students::groups::{
 use crate::api::v1::students::projects::read::__path_get_student_projects;
 use crate::api::v1::students::security_codes::validate_code::__path_validate_code;
 use crate::api::v1::students::users::me::__path_students_me_handler;
+use crate::api::version::__path_version_info;
 use crate::jwt::auth_middleware::{ADMIN_HEADER_NAME, STUDENT_HEADER_NAME};
 use utoipa::openapi::security::SecurityScheme;
 use utoipa::openapi::security::{ApiKey, ApiKeyValue};
@@ -79,6 +80,7 @@ use utoipa_swagger_ui::SwaggerUi;
     paths(
         health_check,
         liveness_check,
+        version_info,
         students_login_handler,
         confirm_student_handler,
         student_signup_handler,
@@ -150,6 +152,7 @@ use utoipa_swagger_ui::SwaggerUi;
     ),
     tags(
         (name = "Health", description = "Application health check endpoints for monitoring and Docker"),
+        (name = "Version", description = "Application version information endpoints"),
         (name = "Admin authentication", description = "Admin authentication endpoint"),
         (name = "Admin users management", description = "CRUD operations on admins"),
         (name = "Group deliverable components management", description = "CRUD operations on group deliverable components"),
