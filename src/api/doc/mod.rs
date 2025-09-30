@@ -1,3 +1,4 @@
+use crate::api::health::{__path_health_check, __path_liveness_check};
 use crate::api::v1::admins::auth::login::__path_admins_login_handler;
 use crate::api::v1::admins::projects::create::__path_create_project_handler;
 use crate::api::v1::admins::projects::delete::__path_delete_project_handler;
@@ -52,6 +53,8 @@ use utoipa_swagger_ui::SwaggerUi;
 #[derive(OpenApi)]
 #[openapi(
     paths(
+        health_check,
+        liveness_check,
         students_login_handler,
         confirm_student_handler,
         student_signup_handler,
@@ -99,6 +102,7 @@ use utoipa_swagger_ui::SwaggerUi;
         remove_member,
     ),
     tags(
+        (name = "Health", description = "Application health check endpoints for monitoring and Docker"),
         (name = "Admin authentication", description = "Admin authentication endpoint"),
         (name = "Admin users management", description = "CRUD operations on admins"),
         (name = "Student deliverable components management", description = "CRUD operations on student deliverable components"),
