@@ -5,7 +5,8 @@ use crate::models::student_deliverable_component::StudentDeliverableComponent;
 use crate::models::student_deliverables_component::StudentDeliverablesComponent;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
-use actix_web::{web, HttpResponse};
+use actix_web::web::Path;
+use actix_web::HttpResponse;
 use serde::Serialize;
 use utoipa::ToSchema;
 use welds::state::DbState;
@@ -107,7 +108,7 @@ pub(super) async fn get_all_student_components_handler(
 ///
 /// Returns all student components associated with the specified project.
 pub(super) async fn get_student_components_for_project_handler(
-    path: web::Path<i32>, data: Data<AppData>,
+    path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let project_id = path.into_inner();
 
@@ -160,7 +161,7 @@ pub(super) async fn get_student_components_for_project_handler(
 ///
 /// Returns the details of the specified student component.
 pub(super) async fn get_student_component_handler(
-    path: web::Path<i32>, data: Data<AppData>,
+    path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let component_id = path.into_inner();
 
@@ -206,7 +207,7 @@ pub(super) async fn get_student_component_handler(
 ///
 /// Returns all student deliverables that use the specified component along with their quantities.
 pub(super) async fn get_deliverables_for_student_component_handler(
-    path: web::Path<i32>, data: Data<AppData>,
+    path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let component_id = path.into_inner();
 

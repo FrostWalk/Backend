@@ -3,8 +3,8 @@ use crate::common::json_error::{error_with_log_id, JsonError, ToJsonError};
 use crate::database::repositories::projects_repository;
 use crate::models::project::Project;
 use actix_web::http::StatusCode;
-use actix_web::web::Data;
-use actix_web::{web, HttpResponse};
+use actix_web::web::{Data, Path};
+use actix_web::HttpResponse;
 use serde::Serialize;
 use utoipa::ToSchema;
 
@@ -56,7 +56,7 @@ pub(in crate::api::v1) async fn get_all_projects_handler(
 )]
 /// Get project details by id
 pub(in crate::api::v1) async fn get_one_project_handler(
-    path: web::Path<i32>, data: Data<AppData>,
+    path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 

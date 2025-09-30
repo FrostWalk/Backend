@@ -2,8 +2,8 @@ use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
 use crate::database::repositories::projects_repository;
 use actix_web::http::StatusCode;
-use actix_web::web::{Data, Json};
-use actix_web::{web, HttpResponse};
+use actix_web::web::{Data, Json, Path};
+use actix_web::HttpResponse;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -30,7 +30,7 @@ pub struct UpdateProjectScheme {
 )]
 /// Update a project details
 pub(in crate::api::v1) async fn update_project_handler(
-    path: web::Path<i32>, req: Json<UpdateProjectScheme>, data: Data<AppData>,
+    path: Path<i32>, req: Json<UpdateProjectScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 
