@@ -56,23 +56,16 @@ pub(crate) struct CreateCodeResponse {
 )]
 /// Generate a unique code for a project
 pub(in crate::api::v1) async fn create_code_handler(
-    payload: Json<CreateCodeScheme>, data: Data<AppData>,
+    req: Json<CreateCodeScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let scheme = payload.into_inner();
-    let original_payload = Json(CreateCodeScheme {
-        project_id: scheme.project_id,
-        user_role_id: scheme.user_role_id,
-        expiration: scheme.expiration,
-    });
-
     let skew = Duration::days(1);
     let now = Utc::now() - skew;
 
-    if scheme.project_id <= 0 {
+    if req.project_id <= 0 {
         return Err("Project id field is mandatory".to_json_error(StatusCode::BAD_REQUEST));
-    } else if scheme.user_role_id <= 0 {
+    } else if req.user_role_id <= 0 {
         return Err("User role id field is mandatory".to_json_error(StatusCode::BAD_REQUEST));
-    } else if scheme.expiration <= now {
+    } else if req.expiration <= now {
         return Err("Expiration must be grater than one day".to_json_error(StatusCode::BAD_REQUEST));
     }
 
@@ -91,7 +84,7 @@ pub(in crate::api::v1) async fn create_code_handler(
                     "Failed to create security code",
                     StatusCode::INTERNAL_SERVER_ERROR,
                     log::Level::Error,
-                    &original_payload,
+                    &req,
                 ));
             }
         }

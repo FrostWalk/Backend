@@ -37,26 +37,24 @@ pub(crate) struct CreateProjectResponse {
 )]
 /// Create a project
 pub(in crate::api::v1) async fn create_project_handler(
-    payload: Json<CreateProjectScheme>, data: Data<AppData>,
+    req: Json<CreateProjectScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let scheme: CreateProjectScheme = payload.into_inner();
-
-    if scheme.name.is_empty() {
+    if req.name.is_empty() {
         return Err("Name field is mandatory".to_json_error(StatusCode::BAD_REQUEST));
-    } else if scheme.max_student_uploads < 1 {
+    } else if req.max_student_uploads < 1 {
         return Err(
             "Max student uploads must be greater than 0".to_json_error(StatusCode::BAD_REQUEST)
         );
-    } else if scheme.max_group_size < 2 {
+    } else if req.max_group_size < 2 {
         return Err("Max group size must be greater than 1".to_json_error(StatusCode::BAD_REQUEST));
     }
 
     let mut p = Project::new();
-    p.name = scheme.name.clone();
+    p.name = req.name.clone();
     p.year = Local::now().year();
-    p.max_student_uploads = scheme.max_student_uploads;
-    p.max_group_size = scheme.max_group_size;
-    p.active = scheme.active;
+    p.max_student_uploads = req.max_student_uploads;
+    p.max_group_size = req.max_group_size;
+    p.active = req.active;
 
     match p.save(&data.db).await {
         Ok(_) => {}
@@ -66,7 +64,7 @@ pub(in crate::api::v1) async fn create_project_handler(
                 "Failed to create project",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &scheme,
+                &req,
             ));
         }
     }

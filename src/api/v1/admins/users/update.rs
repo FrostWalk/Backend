@@ -36,16 +36,9 @@ pub(crate) struct UpdateAdminScheme {
 ///
 /// This endpoint allows authenticated admins to update their own or other admin's details. Only root admins can modify roles.
 pub(super) async fn update_admin_handler(
-    path: web::Path<i32>, payload: Json<UpdateAdminScheme>, data: web::Data<AppData>,
+    path: web::Path<i32>, req: Json<UpdateAdminScheme>, data: web::Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
-    let scheme = payload.into_inner();
-    let original_payload = Json(UpdateAdminScheme {
-        first_name: scheme.first_name.clone(),
-        last_name: scheme.last_name.clone(),
-        email: scheme.email.clone(),
-        password: scheme.password.clone(),
-    });
 
     let admin_state_opt = admins_repository::get_by_id(&data.db, id)
         .await
@@ -55,7 +48,7 @@ pub(super) async fn update_admin_handler(
                 "Failed to update user",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &original_payload,
+                &req,
             )
         })?;
 
@@ -65,16 +58,16 @@ pub(super) async fn update_admin_handler(
     };
 
     // Apply only provided fields
-    if let Some(v) = scheme.first_name {
+    if let Some(v) = req.first_name.clone() {
         admin_state.first_name = v;
     }
-    if let Some(v) = scheme.last_name {
+    if let Some(v) = req.last_name.clone() {
         admin_state.last_name = v;
     }
-    if let Some(v) = scheme.email {
+    if let Some(v) = req.email.clone() {
         admin_state.email = v;
     }
-    if let Some(v) = scheme.password {
+    if let Some(v) = req.password.clone() {
         admin_state.password_hash = generate_hash(v);
     }
 
@@ -84,7 +77,7 @@ pub(super) async fn update_admin_handler(
             "Failed to update user",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &original_payload,
+            &req,
         )
     })?;
 

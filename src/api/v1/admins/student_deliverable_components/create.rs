@@ -44,29 +44,22 @@ pub(crate) struct CreateStudentComponentResponse {
 ///
 /// This endpoint allows authenticated admins to create a new student component for a specific project.
 pub(super) async fn create_student_component_handler(
-    payload: Json<CreateStudentComponentScheme>, data: Data<AppData>,
+    req: Json<CreateStudentComponentScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let scheme = payload.into_inner();
-    let original_payload = Json(CreateStudentComponentScheme {
-        project_id: scheme.project_id,
-        name: scheme.name.clone(),
-    });
-
     // Check if component with this name already exists for the project
-    let existing =
-        StudentDeliverableComponent::where_col(|sc| sc.project_id.equal(scheme.project_id))
-            .where_col(|sc| sc.name.equal(&scheme.name))
-            .run(&data.db)
-            .await
-            .map_err(|e| {
-                error_with_log_id_and_payload(
-                    format!("unable to check existing component: {}", e),
-                    "Failed to create component",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    log::Level::Error,
-                    &original_payload,
-                )
-            })?;
+    let existing = StudentDeliverableComponent::where_col(|sc| sc.project_id.equal(req.project_id))
+        .where_col(|sc| sc.name.equal(&req.name))
+        .run(&data.db)
+        .await
+        .map_err(|e| {
+            error_with_log_id_and_payload(
+                format!("unable to check existing component: {}", e),
+                "Failed to create component",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &req,
+            )
+        })?;
 
     if !existing.is_empty() {
         return Err("Component with this name already exists for the project"
@@ -75,8 +68,8 @@ pub(super) async fn create_student_component_handler(
 
     let mut state = DbState::new_uncreated(StudentDeliverableComponent {
         student_deliverable_component_id: 0,
-        project_id: scheme.project_id,
-        name: scheme.name.clone(),
+        project_id: req.project_id,
+        name: req.name.clone(),
     });
 
     if let Err(e) = state.save(&data.db).await {
@@ -85,13 +78,13 @@ pub(super) async fn create_student_component_handler(
             "Failed to create component",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &original_payload,
+            &req,
         ));
     }
 
     Ok(HttpResponse::Ok().json(CreateStudentComponentResponse {
         student_deliverable_component_id: state.student_deliverable_component_id,
-        project_id: scheme.project_id,
-        name: scheme.name,
+        project_id: req.project_id,
+        name: req.name.clone(),
     }))
 }
