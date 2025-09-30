@@ -1,7 +1,15 @@
+use crate::models::student_deliverables_component::StudentDeliverablesComponent;
+use serde::Serialize;
+use utoipa::ToSchema;
 use welds::WeldsModel;
 
-#[derive(Debug, Clone, WeldsModel)]
+#[derive(Debug, Clone, Serialize, ToSchema, WeldsModel)]
 #[welds(schema = "public", table = "student_deliverable_components")]
+#[welds(HasMany(
+    student_deliverables_components,
+    StudentDeliverablesComponent,
+    "student_deliverable_component_id"
+))]
 pub struct StudentDeliverableComponent {
     #[welds(primary_key)]
     pub student_deliverable_component_id: i32,

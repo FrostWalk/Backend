@@ -1,6 +1,5 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError, ToJsonError};
-use crate::models::group_deliverable::GroupDeliverable;
 use crate::models::group_deliverable_component::GroupDeliverableComponent;
 use crate::models::group_deliverables_component::GroupDeliverablesComponent;
 use actix_web::http::StatusCode;
@@ -228,7 +227,7 @@ pub(super) async fn get_deliverables_for_group_component_handler(
         return Err("Group component not found".to_json_error(StatusCode::NOT_FOUND));
     }
 
-    // Get all relationships for this component
+    // Efficiently fetch relationships with related entities using map_query
     let relationships = GroupDeliverablesComponent::where_col(|gdc| {
         gdc.group_deliverable_component_id.equal(component_id)
     })
@@ -246,31 +245,30 @@ pub(super) async fn get_deliverables_for_group_component_handler(
         )
     })?;
 
+    let deliverables_data = GroupDeliverablesComponent::where_col(|gdc| {
+        gdc.group_deliverable_component_id.equal(component_id)
+    })
+    .map_query(|gdc| gdc.group_deliverable)
+    .run(&data.db)
+    .await
+    .map_err(|e| {
+        error_with_log_id(
+            format!(
+                "unable to retrieve deliverables for component {}: {}",
+                component_id, e
+            ),
+            "Failed to retrieve deliverables",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+        )
+    })?;
+
     let mut deliverables = Vec::new();
 
-    for relationship in relationships {
-        let relationship_data = DbState::into_inner(relationship);
-
-        // Get deliverable details
-        let mut deliverable_rows = GroupDeliverable::where_col(|gd| {
-            gd.group_deliverable_id
-                .equal(relationship_data.group_deliverable_id)
-        })
-        .run(&data.db)
-        .await
-        .map_err(|e| {
-            error_with_log_id(
-                format!("unable to retrieve deliverable details: {}", e),
-                "Failed to retrieve deliverables",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                log::Level::Error,
-            )
-        })?;
-
-        let deliverable = match deliverable_rows.pop() {
-            Some(p) => DbState::into_inner(p),
-            None => continue, // Skip if deliverable not found
-        };
+    for (relationship_state, deliverable_state) in relationships.into_iter().zip(deliverables_data)
+    {
+        let relationship_data = DbState::into_inner(relationship_state);
+        let deliverable = DbState::into_inner(deliverable_state);
 
         deliverables.push(GroupComponentDeliverableResponse {
             group_deliverable_id: relationship_data.group_deliverable_id,
