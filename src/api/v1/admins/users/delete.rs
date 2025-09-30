@@ -1,11 +1,11 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError, ToJsonError};
+use crate::database::repositories::admins_repository;
 use crate::jwt::get_user::LoggedUser;
-use crate::models::admin::Admin;
 use crate::models::admin_role::AvailableAdminRole;
 use actix_web::http::StatusCode;
-use actix_web::web::Data;
-use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
+use actix_web::web::{Data, Path};
+use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use log::warn;
 
 #[utoipa::path(
@@ -21,7 +21,7 @@ use log::warn;
 )]
 /// Delete an admin
 pub(super) async fn delete_admin_handler(
-    req: HttpRequest, path: web::Path<i32>, data: Data<AppData>,
+    req: HttpRequest, path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let admin_id = path.into_inner();
 
@@ -39,8 +39,7 @@ pub(super) async fn delete_admin_handler(
     };
 
     // Load the admin to delete
-    let mut rows = Admin::where_col(|a| a.admin_id.equal(admin_id))
-        .run(&data.db)
+    let admin_state = admins_repository::get_by_id(&data.db, admin_id)
         .await
         .map_err(|e| {
             error_with_log_id(
@@ -51,7 +50,7 @@ pub(super) async fn delete_admin_handler(
             )
         })?;
 
-    let mut admin_state = match rows.pop() {
+    let mut admin_state = match admin_state {
         Some(s) => s,
         None => return Err("Admin not found".to_json_error(StatusCode::NOT_FOUND)),
     };

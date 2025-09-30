@@ -2,8 +2,9 @@ use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
 use crate::models::student_deliverable_component::StudentDeliverableComponent;
 use actix_web::http::StatusCode;
+use actix_web::web::Path;
 use actix_web::web::{Data, Json};
-use actix_web::{web, HttpResponse};
+use actix_web::HttpResponse;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -32,13 +33,9 @@ pub(crate) struct UpdateStudentComponentScheme {
 ///
 /// This endpoint allows authenticated admins to modify the name of a student component by ID.
 pub(super) async fn update_student_component_handler(
-    path: web::Path<i32>, payload: Json<UpdateStudentComponentScheme>, data: Data<AppData>,
+    path: Path<i32>, req: Json<UpdateStudentComponentScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
-    let scheme = payload.into_inner();
-    let original_payload = Json(UpdateStudentComponentScheme {
-        name: scheme.name.clone(),
-    });
 
     // Find the existing component by ID
     let mut rows =
@@ -51,7 +48,7 @@ pub(super) async fn update_student_component_handler(
                     "Failed to update component",
                     StatusCode::INTERNAL_SERVER_ERROR,
                     log::Level::Error,
-                    &original_payload,
+                    &req,
                 )
             })?;
 
@@ -64,7 +61,7 @@ pub(super) async fn update_student_component_handler(
     let existing = StudentDeliverableComponent::where_col(|sc| {
         sc.project_id.equal(component_state.project_id)
     })
-    .where_col(|sc| sc.name.equal(&scheme.name))
+    .where_col(|sc| sc.name.equal(&req.name))
     .where_col(|sc| sc.student_deliverable_component_id.not_equal(id))
     .run(&data.db)
     .await
@@ -74,7 +71,7 @@ pub(super) async fn update_student_component_handler(
             "Failed to update component",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &original_payload,
+            &req,
         )
     })?;
 
@@ -84,7 +81,7 @@ pub(super) async fn update_student_component_handler(
     }
 
     // Update the name
-    component_state.name = scheme.name;
+    component_state.name = req.name.clone();
 
     component_state.save(&data.db).await.map_err(|e| {
         error_with_log_id_and_payload(
@@ -92,7 +89,7 @@ pub(super) async fn update_student_component_handler(
             "Failed to update component",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &original_payload,
+            &req,
         )
     })?;
 

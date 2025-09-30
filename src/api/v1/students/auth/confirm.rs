@@ -1,6 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError, ToJsonError};
-use crate::models::student::Student;
+use crate::database::repositories::students_repository;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Query};
 use actix_web::HttpResponse;
@@ -48,8 +48,7 @@ pub(super) async fn confirm_student_handler(
         }
     };
 
-    let mut students = Student::where_col(|s| s.email.equal(&email))
-        .run(&data.db)
+    let student_state = students_repository::get_by_email(&data.db, &email)
         .await
         .map_err(|e| {
             error_with_log_id(
@@ -60,7 +59,7 @@ pub(super) async fn confirm_student_handler(
             )
         })?;
 
-    let student_state = match students.pop() {
+    let student_state = match student_state {
         Some(student) => student,
         None => {
             error!("student with email {} not found", email);
