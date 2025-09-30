@@ -1,7 +1,7 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError};
+use crate::database::repositories::groups_repository;
 use crate::jwt::get_user::LoggedUser;
-use crate::models::group::Group;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
@@ -50,24 +50,17 @@ pub(super) async fn check_name(
         }
     };
 
-    // Query directly for groups with matching project_id AND name
-    let existing_groups = match Group::where_col(|g| g.project_id.equal(body.project_id))
-        .where_col(|g| g.name.equal(&body.name))
-        .run(&data.db)
+    // Check if the group name already exists for this project
+    let exists = groups_repository::name_exists_for_project(&data.db, body.project_id, &body.name)
         .await
-    {
-        Ok(rows) => rows,
-        Err(e) => {
-            return Err(error_with_log_id(
+        .map_err(|e| {
+            error_with_log_id(
                 format!("unable to check group name availability: {}", e),
                 "Database error",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-            ));
-        }
-    };
-
-    let exists = !existing_groups.is_empty();
+            )
+        })?;
 
     Ok(HttpResponse::Ok().json(CheckNameResponse { exists }))
 }

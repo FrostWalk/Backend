@@ -1,8 +1,7 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError};
+use crate::database::repositories::{projects_repository, security_codes};
 use crate::jwt::get_user::LoggedUser;
-use crate::models::project::Project;
-use crate::models::security_code::SecurityCode;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
@@ -61,26 +60,24 @@ pub(super) async fn validate_code(
     };
 
     // Find the security code
-    let security_code = match SecurityCode::where_col(|sc| sc.code.equal(&body.security_code))
-        .run(&data.db)
+    let security_code_state = security_codes::get_by_code(&data.db, &body.security_code)
         .await
-    {
-        Ok(mut rows) => match rows.pop() {
-            Some(state) => DbState::into_inner(state),
-            None => {
-                return Ok(HttpResponse::Ok().json(ValidateCodeResponse {
-                    is_valid: false,
-                    project: None,
-                }));
-            }
-        },
-        Err(e) => {
-            return Err(error_with_log_id(
+        .map_err(|e| {
+            error_with_log_id(
                 format!("unable to validate security code: {}", e),
                 "Database error",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-            ));
+            )
+        })?;
+
+    let security_code = match security_code_state {
+        Some(state) => DbState::into_inner(state),
+        None => {
+            return Ok(HttpResponse::Ok().json(ValidateCodeResponse {
+                is_valid: false,
+                project: None,
+            }));
         }
     };
 
@@ -93,29 +90,27 @@ pub(super) async fn validate_code(
     }
 
     // Get the project information
-    let project = match Project::where_col(|p| p.project_id.equal(security_code.project_id))
-        .run(&data.db)
+    let project_state = projects_repository::get_by_id(&data.db, security_code.project_id)
         .await
-    {
-        Ok(mut rows) => match rows.pop() {
-            Some(state) => {
-                let project_data = DbState::into_inner(state);
-                Some(ProjectInfo {
-                    project_id: project_data.project_id,
-                    name: project_data.name,
-                    year: project_data.year,
-                })
-            }
-            None => None,
-        },
-        Err(e) => {
-            return Err(error_with_log_id(
+        .map_err(|e| {
+            error_with_log_id(
                 format!("unable to fetch project information: {}", e),
                 "Database error",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-            ));
+            )
+        })?;
+
+    let project = match project_state {
+        Some(state) => {
+            let project_data = DbState::into_inner(state);
+            Some(ProjectInfo {
+                project_id: project_data.project_id,
+                name: project_data.name,
+                year: project_data.year,
+            })
         }
+        None => None,
     };
 
     // All security codes are for GroupLeader role

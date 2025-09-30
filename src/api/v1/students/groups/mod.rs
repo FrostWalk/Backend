@@ -1,7 +1,7 @@
 use crate::api::v1::students::groups::check_name::check_name;
 use crate::api::v1::students::groups::create::create_group;
 use crate::api::v1::students::groups::delete::delete_group;
-use crate::api::v1::students::groups::members::{add_member, bulk_add_members, remove_member};
+use crate::api::v1::students::groups::members::{add_member, remove_member};
 use crate::api::v1::students::groups::read::get_groups;
 use crate::jwt::student_auth_factory::Student;
 use actix_web::{web, Scope};
@@ -30,12 +30,6 @@ pub(super) fn groups_scope() -> Scope {
         .route(
             "/{group_id}/members",
             web::post().to(add_member).wrap(Student::require_auth()),
-        )
-        .route(
-            "/{group_id}/members/bulk",
-            web::post()
-                .to(bulk_add_members)
-                .wrap(Student::require_auth()),
         )
         .route(
             "/{group_id}/members",

@@ -1,5 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError, ToJsonError};
+use crate::database::repositories::projects_repository;
 use crate::models::project::Project;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
@@ -25,7 +26,7 @@ pub(crate) struct GetAllProjectsResponse {
 pub(in crate::api::v1) async fn get_all_projects_handler(
     data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let states = Project::all().run(&data.db).await.map_err(|e| {
+    let states = projects_repository::get_all(&data.db).await.map_err(|e| {
         error_with_log_id(
             format!("unable to retrieve projects from database: {}", e),
             "Failed to retrieve projects",
@@ -59,8 +60,7 @@ pub(in crate::api::v1) async fn get_one_project_handler(
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 
-    let mut rows = Project::where_col(|p| p.project_id.equal(id))
-        .run(&data.db)
+    let state = projects_repository::get_by_id(&data.db, id)
         .await
         .map_err(|e| {
             error_with_log_id(
@@ -71,7 +71,7 @@ pub(in crate::api::v1) async fn get_one_project_handler(
             )
         })?;
 
-    let proj = match rows.pop() {
+    let proj = match state {
         Some(state) => welds::state::DbState::into_inner(state),
         None => return Err("Project not found".to_json_error(StatusCode::NOT_FOUND)),
     };
