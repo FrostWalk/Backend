@@ -30,16 +30,9 @@ pub struct UpdateProjectScheme {
 )]
 /// Update a project details
 pub(in crate::api::v1) async fn update_project_handler(
-    path: web::Path<i32>, payload: Json<UpdateProjectScheme>, data: Data<AppData>,
+    path: web::Path<i32>, req: Json<UpdateProjectScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
-    let scheme = payload.into_inner();
-    let original_payload = Json(UpdateProjectScheme {
-        name: scheme.name.clone(),
-        max_student_uploads: scheme.max_student_uploads,
-        max_group_size: scheme.max_group_size,
-        active: scheme.active,
-    });
 
     let state_opt = projects_repository::get_by_id(&data.db, id)
         .await
@@ -49,7 +42,7 @@ pub(in crate::api::v1) async fn update_project_handler(
                 "Failed to update project",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &original_payload,
+                &req,
             )
         })?;
 
@@ -59,16 +52,16 @@ pub(in crate::api::v1) async fn update_project_handler(
     };
 
     // 2) Apply only provided fields
-    if let Some(v) = scheme.name {
+    if let Some(v) = req.name.clone() {
         state.name = v;
     }
-    if let Some(v) = scheme.max_student_uploads {
+    if let Some(v) = req.max_student_uploads {
         state.max_student_uploads = v;
     }
-    if let Some(v) = scheme.max_group_size {
+    if let Some(v) = req.max_group_size {
         state.max_group_size = v;
     }
-    if let Some(v) = scheme.active {
+    if let Some(v) = req.active {
         state.active = v;
     }
 
@@ -78,7 +71,7 @@ pub(in crate::api::v1) async fn update_project_handler(
             "Failed to update project",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &original_payload,
+            &req,
         )
     })?;
 

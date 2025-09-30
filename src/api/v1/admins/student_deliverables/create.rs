@@ -44,17 +44,11 @@ pub(crate) struct CreateStudentDeliverableResponse {
 ///
 /// This endpoint allows authenticated admins to create a new student deliverable for a specific project.
 pub(super) async fn create_student_deliverable_handler(
-    payload: Json<CreateStudentDeliverableScheme>, data: Data<AppData>,
+    req: Json<CreateStudentDeliverableScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let scheme = payload.into_inner();
-    let original_payload = Json(CreateStudentDeliverableScheme {
-        project_id: scheme.project_id,
-        name: scheme.name.clone(),
-    });
-
     // Check if deliverable with this name already exists for the project
-    let existing = StudentDeliverable::where_col(|sp| sp.project_id.equal(scheme.project_id))
-        .where_col(|sp| sp.name.equal(&scheme.name))
+    let existing = StudentDeliverable::where_col(|sp| sp.project_id.equal(req.project_id))
+        .where_col(|sp| sp.name.equal(&req.name))
         .run(&data.db)
         .await
         .map_err(|e| {
@@ -63,7 +57,7 @@ pub(super) async fn create_student_deliverable_handler(
                 "Failed to create deliverable",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &original_payload,
+                &req,
             )
         })?;
 
@@ -74,8 +68,8 @@ pub(super) async fn create_student_deliverable_handler(
 
     let mut state = DbState::new_uncreated(StudentDeliverable {
         student_deliverable_id: 0,
-        project_id: scheme.project_id,
-        name: scheme.name.clone(),
+        project_id: req.project_id,
+        name: req.name.clone(),
     });
 
     if let Err(e) = state.save(&data.db).await {
@@ -84,13 +78,13 @@ pub(super) async fn create_student_deliverable_handler(
             "Failed to create deliverable",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &original_payload,
+            &req,
         ));
     }
 
     Ok(HttpResponse::Ok().json(CreateStudentDeliverableResponse {
         student_deliverable_id: state.student_deliverable_id,
-        project_id: scheme.project_id,
-        name: scheme.name,
+        project_id: req.project_id,
+        name: req.name.clone(),
     }))
 }

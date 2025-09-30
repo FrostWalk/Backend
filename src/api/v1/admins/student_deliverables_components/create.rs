@@ -48,23 +48,15 @@ pub(crate) struct CreateStudentDeliverableComponentResponse {
 ///
 /// This endpoint allows authenticated admins to add components to student deliverables with specified quantities.
 pub(super) async fn create_student_deliverable_component_handler(
-    payload: Json<CreateStudentDeliverableComponentScheme>, data: Data<AppData>,
+    req: Json<CreateStudentDeliverableComponentScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let scheme = payload.into_inner();
-    let original_payload = Json(CreateStudentDeliverableComponentScheme {
-        student_deliverable_id: scheme.student_deliverable_id,
-        student_deliverable_component_id: scheme.student_deliverable_component_id,
-        quantity: scheme.quantity,
-    });
-
     // Check if relationship already exists
     let existing = StudentDeliverablesComponent::where_col(|spc| {
-        spc.student_deliverable_id
-            .equal(scheme.student_deliverable_id)
+        spc.student_deliverable_id.equal(req.student_deliverable_id)
     })
     .where_col(|spc| {
         spc.student_deliverable_component_id
-            .equal(scheme.student_deliverable_component_id)
+            .equal(req.student_deliverable_component_id)
     })
     .run(&data.db)
     .await
@@ -74,7 +66,7 @@ pub(super) async fn create_student_deliverable_component_handler(
             "Failed to create relationship",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &original_payload,
+            &req,
         )
     })?;
 
@@ -84,9 +76,9 @@ pub(super) async fn create_student_deliverable_component_handler(
 
     let mut state = DbState::new_uncreated(StudentDeliverablesComponent {
         id: 0,
-        student_deliverable_id: scheme.student_deliverable_id,
-        student_deliverable_component_id: scheme.student_deliverable_component_id,
-        quantity: scheme.quantity,
+        student_deliverable_id: req.student_deliverable_id,
+        student_deliverable_component_id: req.student_deliverable_component_id,
+        quantity: req.quantity,
     });
 
     if let Err(e) = state.save(&data.db).await {
@@ -98,16 +90,16 @@ pub(super) async fn create_student_deliverable_component_handler(
             "Failed to create relationship",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &original_payload,
+            &req,
         ));
     }
 
     Ok(
         HttpResponse::Ok().json(CreateStudentDeliverableComponentResponse {
             id: state.id,
-            student_deliverable_id: scheme.student_deliverable_id,
-            student_deliverable_component_id: scheme.student_deliverable_component_id,
-            quantity: scheme.quantity,
+            student_deliverable_id: req.student_deliverable_id,
+            student_deliverable_component_id: req.student_deliverable_component_id,
+            quantity: req.quantity,
         }),
     )
 }

@@ -5,8 +5,8 @@ use crate::jwt::token::create_admin_token;
 use crate::logging::payload_capture::capture_response_status;
 use actix_web::cookie::time::Duration;
 use actix_web::http::StatusCode;
-use actix_web::web::Data;
-use actix_web::{web, HttpResponse};
+use actix_web::web::{Data, Json};
+use actix_web::HttpResponse;
 use password_auth::verify_password;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -47,7 +47,7 @@ pub(crate) struct LoginAdminsResponse {
     tag = "Admin authentication"
 )]
 pub(crate) async fn admins_login_handler(
-    req: web::Json<LoginAdminsSchema>, data: Data<AppData>,
+    req: Json<LoginAdminsSchema>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // common unauthorized response
     let unauthorized = Err(WRONG_CREDENTIALS.to_json_error(StatusCode::UNAUTHORIZED));

@@ -32,13 +32,9 @@ pub(crate) struct UpdateStudentDeliverableScheme {
 ///
 /// This endpoint allows authenticated admins to modify the name of a student deliverable by ID.
 pub(super) async fn update_student_deliverable_handler(
-    path: web::Path<i32>, payload: Json<UpdateStudentDeliverableScheme>, data: Data<AppData>,
+    path: web::Path<i32>, req: Json<UpdateStudentDeliverableScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
-    let scheme = payload.into_inner();
-    let original_payload = Json(UpdateStudentDeliverableScheme {
-        name: scheme.name.clone(),
-    });
 
     // Find the existing deliverable by ID
     let mut rows = StudentDeliverable::where_col(|sp| sp.student_deliverable_id.equal(id))
@@ -50,7 +46,7 @@ pub(super) async fn update_student_deliverable_handler(
                 "Failed to update deliverable",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &original_payload,
+                &req,
             )
         })?;
 
@@ -62,7 +58,7 @@ pub(super) async fn update_student_deliverable_handler(
     // Check if another deliverable with this name already exists for the same project
     let existing =
         StudentDeliverable::where_col(|sp| sp.project_id.equal(deliverable_state.project_id))
-            .where_col(|sp| sp.name.equal(&scheme.name))
+            .where_col(|sp| sp.name.equal(&req.name))
             .where_col(|sp| sp.student_deliverable_id.not_equal(id))
             .run(&data.db)
             .await
@@ -72,7 +68,7 @@ pub(super) async fn update_student_deliverable_handler(
                     "Failed to update deliverable",
                     StatusCode::INTERNAL_SERVER_ERROR,
                     log::Level::Error,
-                    &original_payload,
+                    &req,
                 )
             })?;
 
@@ -82,7 +78,7 @@ pub(super) async fn update_student_deliverable_handler(
     }
 
     // Update the name
-    deliverable_state.name = scheme.name;
+    deliverable_state.name = req.name.clone();
 
     deliverable_state.save(&data.db).await.map_err(|e| {
         error_with_log_id_and_payload(
@@ -90,7 +86,7 @@ pub(super) async fn update_student_deliverable_handler(
             "Failed to update deliverable",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &original_payload,
+            &req,
         )
     })?;
 
