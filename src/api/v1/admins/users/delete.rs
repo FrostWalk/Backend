@@ -4,8 +4,8 @@ use crate::database::repositories::admins_repository;
 use crate::jwt::get_user::LoggedUser;
 use crate::models::admin_role::AvailableAdminRole;
 use actix_web::http::StatusCode;
-use actix_web::web::Data;
-use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
+use actix_web::web::{Data, Path};
+use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use log::warn;
 
 #[utoipa::path(
@@ -21,7 +21,7 @@ use log::warn;
 )]
 /// Delete an admin
 pub(super) async fn delete_admin_handler(
-    req: HttpRequest, path: web::Path<i32>, data: Data<AppData>,
+    req: HttpRequest, path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let admin_id = path.into_inner();
 
