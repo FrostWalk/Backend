@@ -1,5 +1,7 @@
 use crate::api::health::{__path_health_check, __path_liveness_check};
+use crate::api::v1::admins::auth::forgot_password::__path_forgot_password_handler;
 use crate::api::v1::admins::auth::login::__path_admins_login_handler;
+use crate::api::v1::admins::auth::reset_password::__path_reset_password_handler;
 use crate::api::v1::admins::projects::create::__path_create_project_handler;
 use crate::api::v1::admins::projects::delete::__path_delete_project_handler;
 use crate::api::v1::admins::projects::read::__path_get_all_projects_handler;
@@ -33,7 +35,10 @@ use crate::api::v1::admins::users::read::__path_get_all_admins_handler;
 use crate::api::v1::admins::users::read::__path_get_one_admin_handler;
 use crate::api::v1::admins::users::update::__path_update_admin_handler;
 use crate::api::v1::students::auth::{
-    confirm::__path_confirm_student_handler, login::__path_students_login_handler,
+    confirm::__path_confirm_student_handler,
+    forgot_password::__path_forgot_password_handler as __path_students_forgot_password_handler,
+    login::__path_students_login_handler,
+    reset_password::__path_reset_password_handler as __path_students_reset_password_handler,
     signup::__path_student_signup_handler,
 };
 use crate::api::v1::students::groups::{
@@ -58,8 +63,12 @@ use utoipa_swagger_ui::SwaggerUi;
         students_login_handler,
         confirm_student_handler,
         student_signup_handler,
+        students_forgot_password_handler,
+        students_reset_password_handler,
         students_me_handler,
         admins_login_handler,
+        forgot_password_handler,
+        reset_password_handler,
         get_one_admin_handler,
         get_all_admins_handler,
         admins_me_handler,

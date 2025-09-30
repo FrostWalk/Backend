@@ -50,15 +50,6 @@ pub(crate) struct CreateAdminResponse {
 pub(super) async fn create_admin_handler(
     req: HttpRequest, payload: Json<CreateAdminScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let scheme = payload.into_inner();
-    let original_payload = Json(CreateAdminScheme {
-        first_name: scheme.first_name.clone(),
-        last_name: scheme.last_name.clone(),
-        email: scheme.email.clone(),
-        password: scheme.password.clone(),
-        admin_role_id: scheme.admin_role_id,
-    });
-
     let user = match req.extensions().get_admin() {
         Ok(user) => user,
         Err(e) => {
@@ -68,7 +59,7 @@ pub(super) async fn create_admin_handler(
     };
 
     if (user.admin_role_id != AvailableAdminRole::Root as i32)
-        && (scheme.admin_role_id == AvailableAdminRole::Root as i32)
+        && (payload.admin_role_id == AvailableAdminRole::Root as i32)
     {
         warn!("user {} tried to create a root user", user.email);
         return Err("Operation not permitted".to_json_error(StatusCode::FORBIDDEN));
@@ -76,11 +67,11 @@ pub(super) async fn create_admin_handler(
 
     let mut state = DbState::new_uncreated(Admin {
         admin_id: 0,
-        first_name: scheme.first_name,
-        last_name: scheme.last_name,
-        email: scheme.email,
-        password_hash: generate_hash(scheme.password),
-        admin_role_id: scheme.admin_role_id,
+        first_name: payload.first_name.clone(),
+        last_name: payload.last_name.clone(),
+        email: payload.email.clone(),
+        password_hash: generate_hash(payload.password.clone()),
+        admin_role_id: payload.admin_role_id,
     });
 
     if let Err(e) = state.save(&data.db).await {
@@ -89,7 +80,7 @@ pub(super) async fn create_admin_handler(
             "Failed to create user",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &original_payload,
+            &payload,
         ));
     }
 

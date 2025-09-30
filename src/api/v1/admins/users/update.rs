@@ -1,9 +1,9 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
-use crate::models::admin::Admin;
+use crate::database::repositories::admins_repository;
 use actix_web::http::StatusCode;
-use actix_web::web::Json;
-use actix_web::{web, HttpResponse};
+use actix_web::web::{Data, Json, Path};
+use actix_web::HttpResponse;
 use password_auth::generate_hash;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -36,19 +36,11 @@ pub(crate) struct UpdateAdminScheme {
 ///
 /// This endpoint allows authenticated admins to update their own or other admin's details. Only root admins can modify roles.
 pub(super) async fn update_admin_handler(
-    path: web::Path<i32>, payload: Json<UpdateAdminScheme>, data: web::Data<AppData>,
+    path: Path<i32>, req: Json<UpdateAdminScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
-    let scheme = payload.into_inner();
-    let original_payload = Json(UpdateAdminScheme {
-        first_name: scheme.first_name.clone(),
-        last_name: scheme.last_name.clone(),
-        email: scheme.email.clone(),
-        password: scheme.password.clone(),
-    });
 
-    let mut rows = Admin::where_col(|a| a.admin_id.equal(id))
-        .run(&data.db)
+    let admin_state_opt = admins_repository::get_by_id(&data.db, id)
         .await
         .map_err(|e| {
             error_with_log_id_and_payload(
@@ -56,26 +48,26 @@ pub(super) async fn update_admin_handler(
                 "Failed to update user",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &original_payload,
+                &req,
             )
         })?;
 
-    let mut admin_state = match rows.pop() {
+    let mut admin_state = match admin_state_opt {
         Some(s) => s,
         None => return Err("Admin not found".to_json_error(StatusCode::NOT_FOUND)),
     };
 
     // Apply only provided fields
-    if let Some(v) = scheme.first_name {
+    if let Some(v) = req.first_name.clone() {
         admin_state.first_name = v;
     }
-    if let Some(v) = scheme.last_name {
+    if let Some(v) = req.last_name.clone() {
         admin_state.last_name = v;
     }
-    if let Some(v) = scheme.email {
+    if let Some(v) = req.email.clone() {
         admin_state.email = v;
     }
-    if let Some(v) = scheme.password {
+    if let Some(v) = req.password.clone() {
         admin_state.password_hash = generate_hash(v);
     }
 
@@ -85,7 +77,7 @@ pub(super) async fn update_admin_handler(
             "Failed to update user",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &original_payload,
+            &req,
         )
     })?;
 

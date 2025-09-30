@@ -1,9 +1,9 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
-use crate::models::project::Project;
+use crate::database::repositories::projects_repository;
 use actix_web::http::StatusCode;
-use actix_web::web::{Data, Json};
-use actix_web::{web, HttpResponse};
+use actix_web::web::{Data, Json, Path};
+use actix_web::HttpResponse;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -30,19 +30,11 @@ pub struct UpdateProjectScheme {
 )]
 /// Update a project details
 pub(in crate::api::v1) async fn update_project_handler(
-    path: web::Path<i32>, payload: Json<UpdateProjectScheme>, data: Data<AppData>,
+    path: Path<i32>, req: Json<UpdateProjectScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
-    let scheme = payload.into_inner();
-    let original_payload = Json(UpdateProjectScheme {
-        name: scheme.name.clone(),
-        max_student_uploads: scheme.max_student_uploads,
-        max_group_size: scheme.max_group_size,
-        active: scheme.active,
-    });
 
-    let mut rows = Project::where_col(|p| p.project_id.equal(id))
-        .run(&data.db)
+    let state_opt = projects_repository::get_by_id(&data.db, id)
         .await
         .map_err(|e| {
             error_with_log_id_and_payload(
@@ -50,26 +42,26 @@ pub(in crate::api::v1) async fn update_project_handler(
                 "Failed to update project",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &original_payload,
+                &req,
             )
         })?;
 
-    let mut state = match rows.pop() {
+    let mut state = match state_opt {
         Some(s) => s,
         None => return Err("Project not found".to_json_error(StatusCode::NOT_FOUND)),
     };
 
     // 2) Apply only provided fields
-    if let Some(v) = scheme.name {
+    if let Some(v) = req.name.clone() {
         state.name = v;
     }
-    if let Some(v) = scheme.max_student_uploads {
+    if let Some(v) = req.max_student_uploads {
         state.max_student_uploads = v;
     }
-    if let Some(v) = scheme.max_group_size {
+    if let Some(v) = req.max_group_size {
         state.max_group_size = v;
     }
-    if let Some(v) = scheme.active {
+    if let Some(v) = req.active {
         state.active = v;
     }
 
@@ -79,7 +71,7 @@ pub(in crate::api::v1) async fn update_project_handler(
             "Failed to update project",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &original_payload,
+            &req,
         )
     })?;
 

@@ -2,8 +2,9 @@ use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
 use crate::models::student_deliverables_component::StudentDeliverablesComponent;
 use actix_web::http::StatusCode;
+use actix_web::web::Path;
 use actix_web::web::{Data, Json};
-use actix_web::{web, HttpResponse};
+use actix_web::HttpResponse;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -31,15 +32,9 @@ pub(crate) struct UpdateStudentDeliverableComponentScheme {
 ///
 /// This endpoint allows authenticated admins to modify the quantity of a component in a student deliverable by ID.
 pub(super) async fn update_student_deliverable_component_handler(
-    path: web::Path<i32>, payload: Json<UpdateStudentDeliverableComponentScheme>,
-    data: Data<AppData>,
+    path: Path<i32>, req: Json<UpdateStudentDeliverableComponentScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
-    let scheme = payload.into_inner();
-    let original_payload = Json(UpdateStudentDeliverableComponentScheme {
-        quantity: scheme.quantity,
-    });
-
     // Find the existing relationship by ID
     let mut rows = StudentDeliverablesComponent::where_col(|spc| spc.id.equal(id))
         .run(&data.db)
@@ -53,7 +48,7 @@ pub(super) async fn update_student_deliverable_component_handler(
                 "Failed to update relationship",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &original_payload,
+                &req,
             )
         })?;
 
@@ -63,7 +58,7 @@ pub(super) async fn update_student_deliverable_component_handler(
     };
 
     // Update the quantity
-    relationship_state.quantity = scheme.quantity;
+    relationship_state.quantity = req.quantity;
 
     relationship_state.save(&data.db).await.map_err(|e| {
         error_with_log_id_and_payload(
@@ -74,7 +69,7 @@ pub(super) async fn update_student_deliverable_component_handler(
             "Failed to update relationship",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &original_payload,
+            &req,
         )
     })?;
 

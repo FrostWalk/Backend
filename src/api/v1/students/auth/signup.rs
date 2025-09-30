@@ -48,30 +48,21 @@ pub(crate) struct StudentSignupResponse {
 ///
 /// This endpoint allows students to register to the app.
 pub(super) async fn student_signup_handler(
-    payload: Json<StudentSignupScheme>, data: Data<AppData>,
+    req: Json<StudentSignupScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let scheme = payload.into_inner();
-    let original_payload = Json(StudentSignupScheme {
-        first_name: scheme.first_name.clone(),
-        last_name: scheme.last_name.clone(),
-        email: scheme.email.clone(),
-        password: scheme.password.clone(),
-        university_id: scheme.university_id,
-    });
-
     // Validate that all fields are not empty or default values
-    if scheme.first_name.trim().is_empty() {
+    if req.first_name.trim().is_empty() {
         return Err("First name cannot be empty".to_json_error(StatusCode::BAD_REQUEST));
-    } else if scheme.last_name.trim().is_empty() {
+    } else if req.last_name.trim().is_empty() {
         return Err("Last name cannot be empty".to_json_error(StatusCode::BAD_REQUEST));
-    } else if scheme.email.trim().is_empty() {
+    } else if req.email.trim().is_empty() {
         return Err("Email cannot be empty".to_json_error(StatusCode::BAD_REQUEST));
-    } else if scheme.password.trim().is_empty() {
+    } else if req.password.trim().is_empty() {
         return Err("Password cannot be empty".to_json_error(StatusCode::BAD_REQUEST));
     }
 
     // check that email domain is valid
-    let email_domain = scheme.email.split('@').nth(1);
+    let email_domain = req.email.split('@').nth(1);
     if let Some(domain) = email_domain {
         let allowed_domains = data.config.allowed_signup_domains();
         if !allowed_domains.contains(&domain.to_string()) {
@@ -85,11 +76,11 @@ pub(super) async fn student_signup_handler(
 
     let mut result = DbState::new_uncreated(Student {
         student_id: 0,
-        first_name: scheme.first_name,
-        last_name: scheme.last_name,
-        email: scheme.email,
-        university_id: scheme.university_id,
-        password_hash: generate_hash(scheme.password),
+        first_name: req.first_name.clone(),
+        last_name: req.last_name.clone(),
+        email: req.email.clone(),
+        university_id: req.university_id,
+        password_hash: generate_hash(req.password.clone()),
         is_pending: true,
     });
 
@@ -99,7 +90,7 @@ pub(super) async fn student_signup_handler(
             "Account creation failed",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &original_payload,
+            &req,
         ));
     }
 
@@ -111,7 +102,7 @@ pub(super) async fn student_signup_handler(
                 "Account creation failed",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &original_payload,
+                &req,
             ));
         }
     };
@@ -130,7 +121,7 @@ pub(super) async fn student_signup_handler(
             "Account created but confirmation email could not be sent",
             StatusCode::SERVICE_UNAVAILABLE,
             log::Level::Error,
-            &original_payload,
+            &req,
         ));
     }
 

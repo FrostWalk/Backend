@@ -1,5 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError};
+use crate::database::repositories::projects_repository;
 use crate::jwt::get_user::LoggedUser;
 use crate::models::group::Group;
 use crate::models::group_member::GroupMember;
@@ -74,8 +75,7 @@ pub(crate) async fn get_groups(
         let group = DbState::into_inner(group_state);
 
         // Get the project for this group
-        let project_states = Project::where_col(|p| p.project_id.equal(group.project_id))
-            .run(&data.db)
+        let project_state = projects_repository::get_by_id(&data.db, group.project_id)
             .await
             .map_err(|e| {
                 error_with_log_id(
@@ -89,7 +89,7 @@ pub(crate) async fn get_groups(
                 )
             })?;
 
-        let project = match project_states.into_iter().next() {
+        let project = match project_state {
             Some(state) => DbState::into_inner(state),
             None => {
                 return Err(error_with_log_id(

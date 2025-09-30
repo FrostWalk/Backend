@@ -1,8 +1,8 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
+use crate::database::repositories::students_repository;
 use crate::jwt::token::create_student_token;
 use crate::logging::payload_capture::capture_response_status;
-use crate::models::student::Student;
 use actix_web::cookie::time::Duration;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
@@ -54,8 +54,7 @@ pub(crate) async fn students_login_handler(
     let unauthorized = Err(WRONG_CREDENTIALS.to_json_error(StatusCode::UNAUTHORIZED));
 
     // look up student by email
-    let mut rows = Student::where_col(|s| s.email.equal(&req.email))
-        .run(&data.db)
+    let student_state = students_repository::get_by_email(&data.db, &req.email)
         .await
         .map_err(|e| {
             error_with_log_id_and_payload(
@@ -68,12 +67,10 @@ pub(crate) async fn students_login_handler(
         })?;
 
     // 2) not found
-    let state = match rows.pop() {
-        Some(s) => s, // DbState<Student>
+    let user = match student_state {
+        Some(state) => DbState::into_inner(state),
         None => return unauthorized,
     };
-
-    let user: Student = DbState::into_inner(state);
 
     // 3) wrong password
     if verify_password(&req.password, &user.password_hash).is_err() {

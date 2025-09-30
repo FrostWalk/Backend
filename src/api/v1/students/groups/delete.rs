@@ -1,14 +1,11 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError};
+use crate::database::repositories::groups_repository;
 use crate::jwt::get_user::LoggedUser;
-use crate::models::group::Group;
-use crate::models::group_member::GroupMember;
-use crate::models::student_role::AvailableStudentRole;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use utoipa::ToSchema;
-use welds::state::DbState;
 
 #[derive(Debug, serde::Serialize, ToSchema)]
 pub(crate) struct DeleteGroupResponse {
@@ -48,9 +45,8 @@ pub(crate) async fn delete_group(
 
     let group_id = path.into_inner();
 
-    // Verify the group exists and the user is a GroupLeader of this group
-    let group_member_states = GroupMember::where_col(|gm| gm.group_id.equal(group_id))
-        .run(&data.db)
+    // Verify the user is a GroupLeader of this group
+    let is_leader = groups_repository::is_group_leader(&data.db, user.student_id, group_id)
         .await
         .map_err(|e| {
             error_with_log_id(
@@ -61,19 +57,7 @@ pub(crate) async fn delete_group(
             )
         })?;
 
-    // Check if the user is a GroupLeader of this group
-    let mut is_group_leader = false;
-    for gm in group_member_states {
-        let group_member = DbState::into_inner(gm);
-        if group_member.student_id == user.student_id
-            && group_member.student_role_id == AvailableStudentRole::GroupLeader as i32
-        {
-            is_group_leader = true;
-            break;
-        }
-    }
-
-    if !is_group_leader {
+    if !is_leader {
         return Err(error_with_log_id(
             format!(
                 "user {} is not a GroupLeader of group {}",
@@ -85,40 +69,17 @@ pub(crate) async fn delete_group(
         ));
     }
 
-    // Delete all group members first
-    match GroupMember::where_col(|gm| gm.group_id.equal(group_id))
-        .delete(&data.db)
+    // Delete the group and all its members
+    groups_repository::delete_group_with_members(&data.db, group_id)
         .await
-    {
-        Ok(_) => {}
-        Err(e) => {
-            return Err(error_with_log_id(
-                format!(
-                    "unable to delete group members for group {}: {}",
-                    group_id, e
-                ),
-                "Database error",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                log::Level::Error,
-            ));
-        }
-    }
-
-    // Delete the group
-    match Group::where_col(|g| g.group_id.equal(group_id))
-        .delete(&data.db)
-        .await
-    {
-        Ok(_) => {}
-        Err(e) => {
-            return Err(error_with_log_id(
+        .map_err(|e| {
+            error_with_log_id(
                 format!("unable to delete group {}: {}", group_id, e),
                 "Database error",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-            ));
-        }
-    }
+            )
+        })?;
 
     Ok(HttpResponse::Ok().json(DeleteGroupResponse {
         message: format!("Group {} deleted successfully", group_id),
