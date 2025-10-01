@@ -71,6 +71,12 @@ use crate::api::v1::students::groups::{
 };
 use crate::api::v1::students::projects::read::__path_get_student_projects;
 use crate::api::v1::students::security_codes::validate_code::__path_validate_code;
+use crate::api::v1::students::student_deliverable_selections::{
+    create::__path_create_student_deliverable_selection,
+    delete::__path_delete_student_deliverable_selection,
+    read::__path_get_student_deliverable_selection,
+    update::__path_update_student_deliverable_selection,
+};
 use crate::api::v1::students::users::me::__path_students_me_handler;
 use crate::api::version::__path_version_info;
 use crate::jwt::auth_middleware::{ADMIN_HEADER_NAME, STUDENT_HEADER_NAME};
@@ -157,6 +163,10 @@ use utoipa_swagger_ui::SwaggerUi;
         create_group_deliverable_selection,
         get_group_deliverable_selection,
         update_group_deliverable_selection,
+        create_student_deliverable_selection,
+        get_student_deliverable_selection,
+        update_student_deliverable_selection,
+        delete_student_deliverable_selection,
     ),
     tags(
         (name = "Health", description = "Application health check endpoints for monitoring and Docker"),
@@ -175,6 +185,7 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "Security codes management", description = "CRUD operations on security codes"),
         (name = "Groups management", description = "CRUD operations on groups and group members"),
         (name = "Group Deliverable Selections", description = "Operations for group deliverable selections"),
+        (name = "Student Deliverable Selections", description = "Operations for student deliverable selections"),
     ),
     modifiers(&SecurityAddon),
     info(
