@@ -4,7 +4,6 @@ create table projects (
     year integer not null,
     max_student_uploads integer not null,
     max_group_size integer not null,
-    max_groups integer not null default 4,
     deliverable_selection_deadline timestamp,
     active boolean not null
 );
