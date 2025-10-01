@@ -41,6 +41,7 @@ use crate::api::v1::admins::student_deliverable_components::read::__path_get_del
 use crate::api::v1::admins::student_deliverable_components::read::__path_get_student_component_handler;
 use crate::api::v1::admins::student_deliverable_components::read::__path_get_student_components_for_project_handler;
 use crate::api::v1::admins::student_deliverable_components::update::__path_update_student_component_handler;
+use crate::api::v1::admins::student_deliverable_selections::read::__path_get_student_deliverable_selections;
 use crate::api::v1::admins::student_deliverables::create::__path_create_student_deliverable_handler;
 use crate::api::v1::admins::student_deliverables::delete::__path_delete_student_deliverable_handler;
 use crate::api::v1::admins::student_deliverables::read::__path_get_all_student_deliverables_handler;
@@ -124,6 +125,7 @@ use utoipa_swagger_ui::SwaggerUi;
         transfer_leadership,
         admin_add_member,
         get_group_deliverable_selections,
+        get_student_deliverable_selections,
         get_student_projects,
         create_code_handler,
         get_all_codes_handler,
