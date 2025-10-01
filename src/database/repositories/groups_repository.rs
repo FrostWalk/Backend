@@ -119,3 +119,11 @@ pub(crate) async fn name_exists_for_project(
 
     Ok(false)
 }
+
+/// Count the number of groups for a specific project
+pub(crate) async fn count_groups_for_project(
+    db: &PostgresClient, project_id: i32,
+) -> welds::errors::Result<i32> {
+    let groups = get_by_project_id(db, project_id).await?;
+    Ok(groups.len() as i32)
+}

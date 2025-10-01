@@ -21,7 +21,10 @@ pub(crate) struct CreateGroupRequest {
 
 #[derive(Debug, Serialize, ToSchema)]
 pub(crate) struct CreateGroupResponse {
-    pub group: Group,
+    pub group_id: i32,
+    pub name: String,
+    pub project_id: i32,
+    pub role: String,
 }
 
 #[utoipa::path(
@@ -89,6 +92,19 @@ pub(crate) async fn create_group(
             "security code has expired",
             "Invalid security code",
             StatusCode::BAD_REQUEST,
+            log::Level::Warn,
+        ));
+    }
+
+    // Verify the user_role_id from the security code is for "Group Leader"
+    if security_code.user_role_id != AvailableStudentRole::GroupLeader as i32 {
+        return Err(error_with_log_id(
+            format!(
+                "security code is for role {}, but group creation requires Group Leader role",
+                security_code.user_role_id
+            ),
+            "This security code is not valid for creating groups",
+            StatusCode::FORBIDDEN,
             log::Level::Warn,
         ));
     }
@@ -164,6 +180,9 @@ pub(crate) async fn create_group(
     }
 
     Ok(HttpResponse::Created().json(CreateGroupResponse {
-        group: created_group,
+        group_id: created_group.group_id,
+        name: created_group.name,
+        project_id: created_group.project_id,
+        role: "Group Leader".to_string(),
     }))
 }
