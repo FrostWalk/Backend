@@ -28,6 +28,9 @@ use crate::api::v1::admins::groups::members::{
     __path_remove_member as __path_admin_remove_member, __path_transfer_leadership,
 };
 use crate::api::v1::admins::groups::read::__path_get_project_groups;
+use crate::api::v1::admins::projects::coordinators::{
+    __path_assign_coordinator, __path_list_coordinators, __path_remove_coordinator,
+};
 use crate::api::v1::admins::projects::create::__path_create_project_handler;
 use crate::api::v1::admins::projects::delete::__path_delete_project_handler;
 use crate::api::v1::admins::projects::read::__path_get_all_projects_handler;
@@ -121,6 +124,9 @@ use utoipa_swagger_ui::SwaggerUi;
         update_project_handler,
         get_one_project_handler,
         delete_project_handler,
+        assign_coordinator,
+        list_coordinators,
+        remove_coordinator,
         get_project_groups,
         get_group_details,
         admin_remove_member,
