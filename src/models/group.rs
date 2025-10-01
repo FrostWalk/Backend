@@ -1,4 +1,5 @@
 use crate::models::project::Project;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use welds::WeldsModel;
@@ -12,4 +13,5 @@ pub struct Group {
     #[welds(foreign_key = "projects.project_id")]
     pub project_id: i32,
     pub name: String,
+    pub created_at: DateTime<Utc>,
 }

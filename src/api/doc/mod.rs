@@ -60,6 +60,11 @@ use crate::api::v1::students::auth::{
     reset_password::__path_reset_password_handler as __path_students_reset_password_handler,
     signup::__path_student_signup_handler,
 };
+use crate::api::v1::students::group_deliverable_selections::{
+    create::__path_create_group_deliverable_selection,
+    read::__path_get_group_deliverable_selection,
+    update::__path_update_group_deliverable_selection,
+};
 use crate::api::v1::students::groups::{
     check_name::__path_check_name, create::__path_create_group, delete::__path_delete_group,
     members::__path_add_member, members::__path_remove_member, read::__path_get_groups,
@@ -149,6 +154,9 @@ use utoipa_swagger_ui::SwaggerUi;
         check_name,
         add_member,
         remove_member,
+        create_group_deliverable_selection,
+        get_group_deliverable_selection,
+        update_group_deliverable_selection,
     ),
     tags(
         (name = "Health", description = "Application health check endpoints for monitoring and Docker"),
@@ -166,6 +174,7 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "Projects management", description = "CRUD operations on projects"),
         (name = "Security codes management", description = "CRUD operations on security codes"),
         (name = "Groups management", description = "CRUD operations on groups and group members"),
+        (name = "Group Deliverable Selections", description = "Operations for group deliverable selections"),
     ),
     modifiers(&SecurityAddon),
     info(

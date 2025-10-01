@@ -123,6 +123,7 @@ pub(crate) async fn create_group(
         group_id: 0,
         project_id: security_code.project_id,
         name: body.name.clone(),
+        created_at: Utc::now(),
     });
 
     let created_group = match group_state.save(&data.db).await {
@@ -143,6 +144,7 @@ pub(crate) async fn create_group(
         group_id: created_group.group_id,
         student_id: user.student_id,
         student_role_id: AvailableStudentRole::GroupLeader as i32,
+        joined_at: Utc::now(),
     });
 
     match group_member_state.save(&data.db).await {

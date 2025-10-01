@@ -7,6 +7,7 @@ use crate::models::student_role::AvailableStudentRole;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json, Path};
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use welds::state::DbState;
@@ -218,6 +219,7 @@ pub(super) async fn add_member(
         group_id,
         student_id: student.student_id,
         student_role_id: AvailableStudentRole::Member as i32,
+        joined_at: Utc::now(),
     });
 
     match member_state.save(&data.db).await {

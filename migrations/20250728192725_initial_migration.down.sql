@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS coordinator_projects;
 DROP TABLE IF EXISTS student_uploads;
 DROP TABLE IF EXISTS transactions;
 DROP TABLE IF EXISTS group_deliverable_selections;
