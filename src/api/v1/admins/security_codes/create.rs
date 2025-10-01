@@ -1,12 +1,14 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
 use crate::database::repositories::security_codes::security_code_exists;
+use crate::models::security_code::SecurityCode;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::{schema, ToSchema};
+use welds::state::DbState;
 
 fn generate_random_code() -> String {
     use rand::Rng;
@@ -30,8 +32,6 @@ fn generate_random_code() -> String {
 pub(crate) struct CreateCodeScheme {
     #[schema(example = 10)]
     pub project_id: i32,
-    #[schema(example = 10)]
-    pub user_role_id: i32,
     #[schema(value_type = String, example = "2025-09-22T12:34:56Z")]
     pub expiration: DateTime<Utc>,
 }
@@ -63,8 +63,6 @@ pub(in crate::api::v1) async fn create_code_handler(
 
     if req.project_id <= 0 {
         return Err("Project id field is mandatory".to_json_error(StatusCode::BAD_REQUEST));
-    } else if req.user_role_id <= 0 {
-        return Err("User role id field is mandatory".to_json_error(StatusCode::BAD_REQUEST));
     } else if req.expiration <= now {
         return Err("Expiration must be grater than one day".to_json_error(StatusCode::BAD_REQUEST));
     }
@@ -74,7 +72,7 @@ pub(in crate::api::v1) async fn create_code_handler(
     while !done {
         code = generate_random_code();
         match security_code_exists(&data.db, code.as_str()).await {
-            Ok(b) => done = b,
+            Ok(exists) => done = !exists,
             Err(e) => {
                 return Err(error_with_log_id_and_payload(
                     format!(
@@ -90,5 +88,22 @@ pub(in crate::api::v1) async fn create_code_handler(
         }
     }
 
-    Ok(HttpResponse::Created().json(CreateCodeResponse { code }))
+    // Create and save the security code to the database
+    let mut security_code_state = DbState::new_uncreated(SecurityCode {
+        security_code_id: 0,
+        project_id: req.project_id,
+        code: code.clone(),
+        expiration: req.expiration,
+    });
+
+    match security_code_state.save(&data.db).await {
+        Ok(_) => Ok(HttpResponse::Created().json(CreateCodeResponse { code })),
+        Err(e) => Err(error_with_log_id_and_payload(
+            format!("unable to save security code to database: {}", e),
+            "Failed to create security code",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+            &req,
+        )),
+    }
 }

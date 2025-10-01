@@ -96,18 +96,7 @@ pub(crate) async fn create_group(
         ));
     }
 
-    // Verify the user_role_id from the security code is for "Group Leader"
-    if security_code.user_role_id != AvailableStudentRole::GroupLeader as i32 {
-        return Err(error_with_log_id(
-            format!(
-                "security code is for role {}, but group creation requires Group Leader role",
-                security_code.user_role_id
-            ),
-            "This security code is not valid for creating groups",
-            StatusCode::FORBIDDEN,
-            log::Level::Warn,
-        ));
-    }
+    // Security codes are only given to Group Leaders, so no role validation needed
 
     // Check if the student already has a group for this project
     let in_project = groups_repository::is_student_in_project(
