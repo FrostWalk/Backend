@@ -7,6 +7,7 @@ use crate::api::v1::admins::groups::groups_scope;
 use crate::api::v1::admins::projects::projects_scope;
 use crate::api::v1::admins::security_codes::security_codes_scope;
 use crate::api::v1::admins::student_deliverable_components::student_deliverable_components_scope;
+use crate::api::v1::admins::student_deliverable_selections::student_deliverable_selections_scope;
 use crate::api::v1::admins::student_deliverables::student_deliverables_scope;
 use crate::api::v1::admins::student_deliverables_and_components::student_deliverables_components_scope;
 use crate::api::v1::admins::users::users_scope;
@@ -21,6 +22,7 @@ pub(crate) mod groups;
 pub(crate) mod projects;
 pub(crate) mod security_codes;
 pub(crate) mod student_deliverable_components;
+pub(crate) mod student_deliverable_selections;
 pub(crate) mod student_deliverables;
 pub(crate) mod student_deliverables_and_components;
 pub(crate) mod users;
@@ -37,6 +39,7 @@ pub(super) fn admins_scope() -> Scope {
         .service(group_deliverables_scope())
         .service(group_deliverables_components_scope())
         .service(student_deliverable_components_scope())
+        .service(student_deliverable_selections_scope())
         .service(student_deliverables_scope())
         .service(student_deliverables_components_scope())
 }
