@@ -146,7 +146,10 @@ pub(super) async fn get_group_details(
         .await
         .map_err(|e| {
             error_with_log_id(
-                format!("unable to fetch group members for group {}: {}", group_id, e),
+                format!(
+                    "unable to fetch group members for group {}: {}",
+                    group_id, e
+                ),
                 "Database error",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
@@ -179,87 +182,110 @@ pub(super) async fn get_group_details(
             };
 
             // Get student's deliverable selection for this project
-            let student_deliverable_selection = match student_deliverable_selections_repository::get_by_student_and_project(
-                &data.db,
-                student.student_id,
-                group.project_id,
-            )
-            .await
-            {
-                Ok(Some(selection_state)) => {
-                    let selection = DbState::into_inner(selection_state);
+            let student_deliverable_selection =
+                match student_deliverable_selections_repository::get_by_student_and_project(
+                    &data.db,
+                    student.student_id,
+                    group.project_id,
+                )
+                .await
+                {
+                    Ok(Some(selection_state)) => {
+                        let selection = DbState::into_inner(selection_state);
 
-                    // Get the deliverable details
-                    let deliverable_state = StudentDeliverable::find_by_id(&data.db, selection.student_deliverable_id)
+                        // Get the deliverable details
+                        let deliverable_state = StudentDeliverable::find_by_id(
+                            &data.db,
+                            selection.student_deliverable_id,
+                        )
                         .await
                         .map_err(|e| {
                             error_with_log_id(
-                                format!("unable to fetch student deliverable {}: {}", selection.student_deliverable_id, e),
+                                format!(
+                                    "unable to fetch student deliverable {}: {}",
+                                    selection.student_deliverable_id, e
+                                ),
                                 "Database error",
                                 StatusCode::INTERNAL_SERVER_ERROR,
                                 log::Level::Error,
                             )
                         })?;
 
-                    if let Some(deliverable_state) = deliverable_state {
-                        let deliverable = DbState::into_inner(deliverable_state);
+                        if let Some(deliverable_state) = deliverable_state {
+                            let deliverable = DbState::into_inner(deliverable_state);
 
-                        // Get components for this deliverable
-                        let components_relations = StudentDeliverablesComponent::where_col(|sdc| {
-                            sdc.student_deliverable_id.equal(selection.student_deliverable_id)
-                        })
-                        .run(&data.db)
-                        .await
-                        .map_err(|e| {
-                            error_with_log_id(
-                                format!("unable to fetch components for deliverable {}: {}", selection.student_deliverable_id, e),
-                                "Database error",
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                log::Level::Error,
-                            )
-                        })?;
-
-                        let mut components = Vec::new();
-                        for relation_state in components_relations {
-                            let relation = DbState::into_inner(relation_state);
-
-                            // Get component details
-                            let component_state = StudentDeliverableComponent::find_by_id(&data.db, relation.student_deliverable_component_id)
+                            // Get components for this deliverable
+                            let components_relations =
+                                StudentDeliverablesComponent::where_col(|sdc| {
+                                    sdc.student_deliverable_id
+                                        .equal(selection.student_deliverable_id)
+                                })
+                                .run(&data.db)
                                 .await
                                 .map_err(|e| {
                                     error_with_log_id(
-                                        format!("unable to fetch component {}: {}", relation.student_deliverable_component_id, e),
+                                        format!(
+                                            "unable to fetch components for deliverable {}: {}",
+                                            selection.student_deliverable_id, e
+                                        ),
                                         "Database error",
                                         StatusCode::INTERNAL_SERVER_ERROR,
                                         log::Level::Error,
                                     )
                                 })?;
 
-                            if let Some(component_state) = component_state {
-                                let component = DbState::into_inner(component_state);
-                                components.push(ComponentDetail {
-                                    student_deliverable_component_id: component.student_deliverable_component_id,
-                                    name: component.name,
-                                    project_id: component.project_id,
-                                });
-                            }
-                        }
+                            let mut components = Vec::new();
+                            for relation_state in components_relations {
+                                let relation = DbState::into_inner(relation_state);
 
-                        Some(StudentDeliverableSelectionDetail {
-                            student_deliverable_id: selection.student_deliverable_id,
-                            student_deliverable_name: deliverable.name,
-                            components,
-                        })
-                    } else {
+                                // Get component details
+                                let component_state = StudentDeliverableComponent::find_by_id(
+                                    &data.db,
+                                    relation.student_deliverable_component_id,
+                                )
+                                .await
+                                .map_err(|e| {
+                                    error_with_log_id(
+                                        format!(
+                                            "unable to fetch component {}: {}",
+                                            relation.student_deliverable_component_id, e
+                                        ),
+                                        "Database error",
+                                        StatusCode::INTERNAL_SERVER_ERROR,
+                                        log::Level::Error,
+                                    )
+                                })?;
+
+                                if let Some(component_state) = component_state {
+                                    let component = DbState::into_inner(component_state);
+                                    components.push(ComponentDetail {
+                                        student_deliverable_component_id: component
+                                            .student_deliverable_component_id,
+                                        name: component.name,
+                                        project_id: component.project_id,
+                                    });
+                                }
+                            }
+
+                            Some(StudentDeliverableSelectionDetail {
+                                student_deliverable_id: selection.student_deliverable_id,
+                                student_deliverable_name: deliverable.name,
+                                components,
+                            })
+                        } else {
+                            None
+                        }
+                    }
+                    Ok(None) => None,
+                    Err(e) => {
+                        log::warn!(
+                            "Failed to fetch deliverable selection for student {}: {}",
+                            student.student_id,
+                            e
+                        );
                         None
                     }
-                }
-                Ok(None) => None,
-                Err(e) => {
-                    log::warn!("Failed to fetch deliverable selection for student {}: {}", student.student_id, e);
-                    None
-                }
-            };
+                };
 
             members.push(GroupMemberDetail {
                 student_id: student.student_id,
@@ -332,4 +358,3 @@ pub(super) async fn get_group_details(
         deliverable_selection: deliverable_detail,
     }))
 }
-

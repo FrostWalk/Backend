@@ -10,7 +10,6 @@ use crate::api::v1::admins::group_deliverable_components::read::__path_get_group
 use crate::api::v1::admins::group_deliverable_components::read::__path_get_group_components_for_project_handler;
 use crate::api::v1::admins::group_deliverable_components::update::__path_update_group_component_handler;
 use crate::api::v1::admins::group_deliverable_selections::read::__path_get_group_deliverable_selections;
-use crate::api::v1::admins::groups::details::__path_get_group_details;
 use crate::api::v1::admins::group_deliverables::create::__path_create_group_deliverable_handler;
 use crate::api::v1::admins::group_deliverables::delete::__path_delete_group_deliverable_handler;
 use crate::api::v1::admins::group_deliverables::read::__path_get_all_group_deliverables_handler;
@@ -23,6 +22,7 @@ use crate::api::v1::admins::group_deliverables_and_components::delete::__path_de
 use crate::api::v1::admins::group_deliverables_and_components::read::__path_get_components_for_deliverable_handler as __path_get_group_components_for_group_deliverable_handler;
 use crate::api::v1::admins::group_deliverables_and_components::read::__path_get_deliverables_for_component_handler as __path_get_group_deliverables_for_group_component_handler;
 use crate::api::v1::admins::group_deliverables_and_components::update::__path_update_group_deliverable_component_handler;
+use crate::api::v1::admins::groups::details::__path_get_group_details;
 use crate::api::v1::admins::groups::members::{
     __path_add_member as __path_admin_add_member,
     __path_remove_member as __path_admin_remove_member, __path_transfer_leadership,
