@@ -4,6 +4,7 @@ pub mod project;
 // Admin related models
 pub mod admin;
 pub mod admin_role;
+pub mod coordinator_project;
 
 // Student related models
 pub mod blacklist;
