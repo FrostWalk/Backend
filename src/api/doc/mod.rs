@@ -21,6 +21,11 @@ use crate::api::v1::admins::group_deliverables_and_components::delete::__path_de
 use crate::api::v1::admins::group_deliverables_and_components::read::__path_get_components_for_deliverable_handler as __path_get_group_components_for_group_deliverable_handler;
 use crate::api::v1::admins::group_deliverables_and_components::read::__path_get_deliverables_for_component_handler as __path_get_group_deliverables_for_group_component_handler;
 use crate::api::v1::admins::group_deliverables_and_components::update::__path_update_group_deliverable_component_handler;
+use crate::api::v1::admins::groups::members::{
+    __path_add_member as __path_admin_add_member,
+    __path_remove_member as __path_admin_remove_member, __path_transfer_leadership,
+};
+use crate::api::v1::admins::groups::read::__path_get_project_groups;
 use crate::api::v1::admins::projects::create::__path_create_project_handler;
 use crate::api::v1::admins::projects::delete::__path_delete_project_handler;
 use crate::api::v1::admins::projects::read::__path_get_all_projects_handler;
@@ -67,7 +72,8 @@ use crate::api::v1::students::group_deliverable_selections::{
 };
 use crate::api::v1::students::groups::{
     check_name::__path_check_name, create::__path_create_group, delete::__path_delete_group,
-    members::__path_add_member, members::__path_remove_member, read::__path_get_groups,
+    members::__path_add_member, members::__path_remove_member,
+    members_list::__path_list_group_members, read::__path_get_groups,
 };
 use crate::api::v1::students::projects::read::__path_get_student_projects;
 use crate::api::v1::students::security_codes::validate_code::__path_validate_code;
@@ -112,6 +118,10 @@ use utoipa_swagger_ui::SwaggerUi;
         update_project_handler,
         get_one_project_handler,
         delete_project_handler,
+        get_project_groups,
+        admin_remove_member,
+        transfer_leadership,
+        admin_add_member,
         get_student_projects,
         create_code_handler,
         get_all_codes_handler,
@@ -160,6 +170,7 @@ use utoipa_swagger_ui::SwaggerUi;
         check_name,
         add_member,
         remove_member,
+        list_group_members,
         create_group_deliverable_selection,
         get_group_deliverable_selection,
         update_group_deliverable_selection,

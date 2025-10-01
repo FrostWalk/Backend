@@ -41,7 +41,6 @@ create table students (
 create table security_codes (
     security_code_id serial primary key,
     project_id integer not null references projects on delete cascade,
-    user_role_id integer not null references student_roles on delete cascade,
     code varchar not null unique,
     expiration timestamp not null
 );
