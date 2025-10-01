@@ -10,6 +10,7 @@ use crate::api::v1::admins::group_deliverable_components::read::__path_get_group
 use crate::api::v1::admins::group_deliverable_components::read::__path_get_group_components_for_project_handler;
 use crate::api::v1::admins::group_deliverable_components::update::__path_update_group_component_handler;
 use crate::api::v1::admins::group_deliverable_selections::read::__path_get_group_deliverable_selections;
+use crate::api::v1::admins::groups::details::__path_get_group_details;
 use crate::api::v1::admins::group_deliverables::create::__path_create_group_deliverable_handler;
 use crate::api::v1::admins::group_deliverables::delete::__path_delete_group_deliverable_handler;
 use crate::api::v1::admins::group_deliverables::read::__path_get_all_group_deliverables_handler;
@@ -121,6 +122,7 @@ use utoipa_swagger_ui::SwaggerUi;
         get_one_project_handler,
         delete_project_handler,
         get_project_groups,
+        get_group_details,
         admin_remove_member,
         transfer_leadership,
         admin_add_member,
