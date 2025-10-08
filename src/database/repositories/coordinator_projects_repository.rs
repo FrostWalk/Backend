@@ -26,6 +26,20 @@ pub(crate) async fn get_by_project_id(
         .await
 }
 
+/// Get all projects assigned to a coordinator
+pub(crate) async fn get_projects_by_coordinator(
+    db: &PostgresClient, admin_id: i32,
+) -> welds::errors::Result<Vec<i32>> {
+    let assignments = CoordinatorProject::where_col(|cp| cp.admin_id.equal(admin_id))
+        .run(db)
+        .await?;
+
+    Ok(assignments
+        .into_iter()
+        .map(|state| state.project_id)
+        .collect())
+}
+
 /// Check if a coordinator is assigned to a project
 pub(crate) async fn is_assigned(
     db: &PostgresClient, admin_id: i32, project_id: i32,
