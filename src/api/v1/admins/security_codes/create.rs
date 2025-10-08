@@ -1,11 +1,15 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
+use crate::common::json_error::{error_with_log_id, error_with_log_id_and_payload, JsonError, ToJsonError};
+use crate::database::repositories::coordinator_projects_repository;
 use crate::database::repositories::security_codes::security_code_exists;
+use crate::jwt::get_user::LoggedUser;
+use crate::models::admin_role::AvailableAdminRole;
 use crate::models::security_code::SecurityCode;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
-use actix_web::HttpResponse;
+use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use chrono::{DateTime, Duration, Utc};
+use log::error;
 use serde::{Deserialize, Serialize};
 use utoipa::{schema, ToSchema};
 use welds::state::DbState;
@@ -49,15 +53,26 @@ pub(crate) struct CreateCodeResponse {
     responses(
         (status = 201, description = "Code created successfully", body = CreateCodeResponse),
         (status = 400, description = "Invalid data in request", body = JsonError),
+        (status = 403, description = "Access denied", body = JsonError),
         (status = 500, description = "Internal server error", body = JsonError)
     ),
     security(("AdminAuth" = [])),
     tag = "Security codes management",
 )]
 /// Generate a unique code for a project
+///
+/// Coordinators can only create codes for projects they are assigned to. Professors/Root can create codes for any project.
 pub(in crate::api::v1) async fn create_code_handler(
-    req: Json<CreateCodeScheme>, data: Data<AppData>,
+    http_req: HttpRequest, req: Json<CreateCodeScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
+    let user = match http_req.extensions().get_admin() {
+        Ok(user) => user,
+        Err(e) => {
+            error!("entered a protected route without a user loaded in the request");
+            return Err(e.to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
+        }
+    };
+
     let skew = Duration::days(1);
     let now = Utc::now() - skew;
 
@@ -65,6 +80,26 @@ pub(in crate::api::v1) async fn create_code_handler(
         return Err("Project id field is mandatory".to_json_error(StatusCode::BAD_REQUEST));
     } else if req.expiration <= now {
         return Err("Expiration must be grater than one day".to_json_error(StatusCode::BAD_REQUEST));
+    }
+
+    // Check if user is a coordinator and if they have access to this project
+    let is_coordinator = user.admin_role_id == AvailableAdminRole::Coordinator as i32;
+    if is_coordinator {
+        let is_assigned = coordinator_projects_repository::is_assigned(&data.db, user.admin_id, req.project_id)
+            .await
+            .map_err(|e| {
+                error_with_log_id(
+                    format!("unable to check coordinator assignment: {}", e),
+                    "Failed to create security code",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                )
+            })?;
+
+        if !is_assigned {
+            return Err("Access denied - you are not assigned to this project"
+                .to_json_error(StatusCode::FORBIDDEN));
+        }
     }
 
     let mut done = false;
