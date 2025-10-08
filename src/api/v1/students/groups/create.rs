@@ -21,7 +21,10 @@ pub(crate) struct CreateGroupRequest {
 
 #[derive(Debug, Serialize, ToSchema)]
 pub(crate) struct CreateGroupResponse {
-    pub group: Group,
+    pub group_id: i32,
+    pub name: String,
+    pub project_id: i32,
+    pub role: String,
 }
 
 #[utoipa::path(
@@ -93,6 +96,8 @@ pub(crate) async fn create_group(
         ));
     }
 
+    // Security codes are only given to Group Leaders, so no role validation needed
+
     // Check if the student already has a group for this project
     let in_project = groups_repository::is_student_in_project(
         &data.db,
@@ -123,6 +128,7 @@ pub(crate) async fn create_group(
         group_id: 0,
         project_id: security_code.project_id,
         name: body.name.clone(),
+        created_at: Utc::now(),
     });
 
     let created_group = match group_state.save(&data.db).await {
@@ -143,6 +149,7 @@ pub(crate) async fn create_group(
         group_id: created_group.group_id,
         student_id: user.student_id,
         student_role_id: AvailableStudentRole::GroupLeader as i32,
+        joined_at: Utc::now(),
     });
 
     match group_member_state.save(&data.db).await {
@@ -162,6 +169,9 @@ pub(crate) async fn create_group(
     }
 
     Ok(HttpResponse::Created().json(CreateGroupResponse {
-        group: created_group,
+        group_id: created_group.group_id,
+        name: created_group.name,
+        project_id: created_group.project_id,
+        role: "Group Leader".to_string(),
     }))
 }

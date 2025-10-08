@@ -2,6 +2,7 @@ use crate::models::group_deliverable::GroupDeliverable;
 use crate::models::group_deliverable_component::GroupDeliverableComponent;
 use crate::models::student_deliverable::StudentDeliverable;
 use crate::models::student_deliverable_component::StudentDeliverableComponent;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use welds::WeldsModel;
@@ -23,5 +24,6 @@ pub struct Project {
     pub year: i32,
     pub max_student_uploads: i32,
     pub max_group_size: i32,
+    pub deliverable_selection_deadline: Option<DateTime<Utc>>,
     pub active: bool,
 }

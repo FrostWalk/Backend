@@ -9,6 +9,7 @@ use crate::api::v1::admins::group_deliverable_components::read::__path_get_deliv
 use crate::api::v1::admins::group_deliverable_components::read::__path_get_group_component_handler;
 use crate::api::v1::admins::group_deliverable_components::read::__path_get_group_components_for_project_handler;
 use crate::api::v1::admins::group_deliverable_components::update::__path_update_group_component_handler;
+use crate::api::v1::admins::group_deliverable_selections::read::__path_get_group_deliverable_selections;
 use crate::api::v1::admins::group_deliverables::create::__path_create_group_deliverable_handler;
 use crate::api::v1::admins::group_deliverables::delete::__path_delete_group_deliverable_handler;
 use crate::api::v1::admins::group_deliverables::read::__path_get_all_group_deliverables_handler;
@@ -21,6 +22,15 @@ use crate::api::v1::admins::group_deliverables_and_components::delete::__path_de
 use crate::api::v1::admins::group_deliverables_and_components::read::__path_get_components_for_deliverable_handler as __path_get_group_components_for_group_deliverable_handler;
 use crate::api::v1::admins::group_deliverables_and_components::read::__path_get_deliverables_for_component_handler as __path_get_group_deliverables_for_group_component_handler;
 use crate::api::v1::admins::group_deliverables_and_components::update::__path_update_group_deliverable_component_handler;
+use crate::api::v1::admins::groups::details::__path_get_group_details;
+use crate::api::v1::admins::groups::members::{
+    __path_add_member as __path_admin_add_member,
+    __path_remove_member as __path_admin_remove_member, __path_transfer_leadership,
+};
+use crate::api::v1::admins::groups::read::__path_get_project_groups;
+use crate::api::v1::admins::projects::coordinators::{
+    __path_assign_coordinator, __path_list_coordinators, __path_remove_coordinator,
+};
 use crate::api::v1::admins::projects::create::__path_create_project_handler;
 use crate::api::v1::admins::projects::delete::__path_delete_project_handler;
 use crate::api::v1::admins::projects::read::__path_get_all_projects_handler;
@@ -35,6 +45,7 @@ use crate::api::v1::admins::student_deliverable_components::read::__path_get_del
 use crate::api::v1::admins::student_deliverable_components::read::__path_get_student_component_handler;
 use crate::api::v1::admins::student_deliverable_components::read::__path_get_student_components_for_project_handler;
 use crate::api::v1::admins::student_deliverable_components::update::__path_update_student_component_handler;
+use crate::api::v1::admins::student_deliverable_selections::read::__path_get_student_deliverable_selections;
 use crate::api::v1::admins::student_deliverables::create::__path_create_student_deliverable_handler;
 use crate::api::v1::admins::student_deliverables::delete::__path_delete_student_deliverable_handler;
 use crate::api::v1::admins::student_deliverables::read::__path_get_all_student_deliverables_handler;
@@ -60,12 +71,24 @@ use crate::api::v1::students::auth::{
     reset_password::__path_reset_password_handler as __path_students_reset_password_handler,
     signup::__path_student_signup_handler,
 };
+use crate::api::v1::students::group_deliverable_selections::{
+    create::__path_create_group_deliverable_selection,
+    read::__path_get_group_deliverable_selection,
+    update::__path_update_group_deliverable_selection,
+};
 use crate::api::v1::students::groups::{
     check_name::__path_check_name, create::__path_create_group, delete::__path_delete_group,
-    members::__path_add_member, members::__path_remove_member, read::__path_get_groups,
+    members::__path_add_member, members::__path_remove_member,
+    members_list::__path_list_group_members, read::__path_get_groups,
 };
 use crate::api::v1::students::projects::read::__path_get_student_projects;
 use crate::api::v1::students::security_codes::validate_code::__path_validate_code;
+use crate::api::v1::students::student_deliverable_selections::{
+    create::__path_create_student_deliverable_selection,
+    delete::__path_delete_student_deliverable_selection,
+    read::__path_get_student_deliverable_selection,
+    update::__path_update_student_deliverable_selection,
+};
 use crate::api::v1::students::users::me::__path_students_me_handler;
 use crate::api::version::__path_version_info;
 use crate::jwt::auth_middleware::{ADMIN_HEADER_NAME, STUDENT_HEADER_NAME};
@@ -101,6 +124,16 @@ use utoipa_swagger_ui::SwaggerUi;
         update_project_handler,
         get_one_project_handler,
         delete_project_handler,
+        assign_coordinator,
+        list_coordinators,
+        remove_coordinator,
+        get_project_groups,
+        get_group_details,
+        admin_remove_member,
+        transfer_leadership,
+        admin_add_member,
+        get_group_deliverable_selections,
+        get_student_deliverable_selections,
         get_student_projects,
         create_code_handler,
         get_all_codes_handler,
@@ -149,6 +182,14 @@ use utoipa_swagger_ui::SwaggerUi;
         check_name,
         add_member,
         remove_member,
+        list_group_members,
+        create_group_deliverable_selection,
+        get_group_deliverable_selection,
+        update_group_deliverable_selection,
+        create_student_deliverable_selection,
+        get_student_deliverable_selection,
+        update_student_deliverable_selection,
+        delete_student_deliverable_selection,
     ),
     tags(
         (name = "Health", description = "Application health check endpoints for monitoring and Docker"),
@@ -166,6 +207,8 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "Projects management", description = "CRUD operations on projects"),
         (name = "Security codes management", description = "CRUD operations on security codes"),
         (name = "Groups management", description = "CRUD operations on groups and group members"),
+        (name = "Group Deliverable Selections", description = "Operations for group deliverable selections"),
+        (name = "Student Deliverable Selections", description = "Operations for student deliverable selections"),
     ),
     modifiers(&SecurityAddon),
     info(

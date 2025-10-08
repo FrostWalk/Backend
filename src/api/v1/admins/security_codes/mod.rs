@@ -16,6 +16,7 @@ pub(super) fn security_codes_scope() -> Scope {
                 .wrap(Admin::require_roles([
                     AvailableAdminRole::Root,
                     AvailableAdminRole::Professor,
+                    AvailableAdminRole::Coordinator,
                 ])),
         )
         .route(
@@ -25,6 +26,7 @@ pub(super) fn security_codes_scope() -> Scope {
                 .wrap(Admin::require_roles([
                     AvailableAdminRole::Root,
                     AvailableAdminRole::Professor,
+                    AvailableAdminRole::Coordinator,
                 ])),
         )
 }

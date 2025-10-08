@@ -4,7 +4,7 @@ use crate::models::project::Project;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
-use chrono::{Datelike, Local};
+use chrono::{DateTime, Datelike, Local, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -16,6 +16,8 @@ pub(crate) struct CreateProjectScheme {
     pub max_student_uploads: i32,
     #[schema(example = 4)]
     pub max_group_size: i32,
+    #[schema(value_type = Option<String>, example = "2025-12-15T23:59:59Z")]
+    pub deliverable_selection_deadline: Option<DateTime<Utc>>,
     #[schema(example = true)]
     pub active: bool,
 }
@@ -54,6 +56,7 @@ pub(in crate::api::v1) async fn create_project_handler(
     p.year = Local::now().year();
     p.max_student_uploads = req.max_student_uploads;
     p.max_group_size = req.max_group_size;
+    p.deliverable_selection_deadline = req.deliverable_selection_deadline;
     p.active = req.active;
 
     match p.save(&data.db).await {
