@@ -8,6 +8,7 @@ use actix_web::web::{Data, Json};
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use log::{error, warn};
 use password_auth::generate_hash;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use welds::state::DbState;
@@ -20,8 +21,6 @@ pub(crate) struct CreateAdminScheme {
     pub last_name: String,
     #[schema(example = "john.doe@example.com")]
     pub email: String,
-    #[schema(example = "SecureP@ss123")]
-    pub password: String,
     #[schema(example = "2")]
     pub admin_role_id: i32,
 }
@@ -47,6 +46,7 @@ pub(crate) struct CreateAdminResponse {
 /// Creates a new admin user.
 ///
 /// This endpoint allows authenticated users to create new admin accounts. Only users with the root role can create other root users.
+/// A random password is automatically generated and sent to the admin via email.
 pub(super) async fn create_admin_handler(
     req: HttpRequest, payload: Json<CreateAdminScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
@@ -65,12 +65,22 @@ pub(super) async fn create_admin_handler(
         return Err("Operation not permitted".to_json_error(StatusCode::FORBIDDEN));
     }
 
+    // Generate a random secure password (16 characters, alphanumeric)
+    let mut rng = rand::rng();
+    const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let generated_password: String = (0..16)
+        .map(|_| {
+            let idx = rng.random_range(0..CHARS.len());
+            CHARS[idx] as char
+        })
+        .collect();
+
     let mut state = DbState::new_uncreated(Admin {
         admin_id: 0,
         first_name: payload.first_name.clone(),
         last_name: payload.last_name.clone(),
         email: payload.email.clone(),
-        password_hash: generate_hash(payload.password.clone()),
+        password_hash: generate_hash(&generated_password),
         admin_role_id: payload.admin_role_id,
     });
 
@@ -82,6 +92,18 @@ pub(super) async fn create_admin_handler(
             log::Level::Error,
             &payload,
         ));
+    }
+
+    // Send welcome email with credentials
+    let full_name = format!("{} {}", payload.first_name, payload.last_name);
+    if let Err(e) = data
+        .mailer
+        .send_admin_welcome(payload.email.clone(), full_name, generated_password)
+        .await
+    {
+        error!("Failed to send welcome email to {}: {}", payload.email, e);
+        // Note: We continue even if email fails, as the admin was already created
+        // The professor can manually share credentials if needed
     }
 
     Ok(HttpResponse::Ok().json(CreateAdminResponse {

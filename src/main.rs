@@ -4,6 +4,7 @@ use crate::config::Config;
 use crate::database::repositories::admins_repository::create_default_admin;
 use crate::logging::logger::init_mongo_logger;
 use crate::logging::middleware::RequestContextMiddleware;
+use crate::mail::Mailer;
 use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
@@ -38,7 +39,15 @@ async fn main() -> std::io::Result<()> {
         }
     };
 
-    let app_data = AppData::new(app_config.clone(), client.clone()).await;
+    let mailer = match Mailer::from_config(&app_config) {
+        Ok(mailer) => mailer,
+        Err(e) => {
+            error!("failed to initialize mailer: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    let app_data = AppData::new(app_config.clone(), client.clone(), mailer).await;
 
     info!("migrating database schema");
     sqlx::migrate!().run(client.as_sqlx_pool()).await.expect("");

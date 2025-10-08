@@ -15,6 +15,7 @@ type Result<T> = std::result::Result<T, DynError>;
 
 const CONFIRMATION_URL: &str = "/v1/students/auth/confirm";
 
+#[derive(Clone)]
 pub struct Mailer {
     transport: AsyncSmtpTransport<Tokio1Executor>,
     from: Mailbox,
@@ -130,6 +131,29 @@ impl Mailer {
             "Reset your password",
             "reset.html",
             "reset.txt",
+            ctx,
+        )
+        .await
+    }
+
+    pub async fn send_admin_welcome(
+        &self, to_email: String, to_name: String, password: String,
+    ) -> Result<()> {
+        let login_url = self.base_url.to_string();
+
+        let ctx = minijinja::context! {
+            user_name => to_name,
+            email => to_email.clone(),
+            password => password,
+            login_url => login_url,
+        };
+
+        self.send_templated(
+            to_email,
+            to_name,
+            "Welcome to Advanced Programming Administration",
+            "admin_welcome.html",
+            "admin_welcome.txt",
             ctx,
         )
         .await
