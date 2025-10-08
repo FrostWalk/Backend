@@ -50,19 +50,17 @@ pub(in crate::api::v1) async fn get_all_projects_handler(
 
     let projects: Vec<Project> = if is_coordinator {
         // Coordinators see only their assigned projects
-        let project_ids = coordinator_projects_repository::get_projects_by_coordinator(
-            &data.db,
-            user.admin_id,
-        )
-        .await
-        .map_err(|e| {
-            error_with_log_id(
-                format!("unable to retrieve coordinator projects: {}", e),
-                "Failed to retrieve projects",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                log::Level::Error,
-            )
-        })?;
+        let project_ids =
+            coordinator_projects_repository::get_projects_by_coordinator(&data.db, user.admin_id)
+                .await
+                .map_err(|e| {
+                    error_with_log_id(
+                        format!("unable to retrieve coordinator projects: {}", e),
+                        "Failed to retrieve projects",
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        log::Level::Error,
+                    )
+                })?;
 
         if project_ids.is_empty() {
             Vec::new()
