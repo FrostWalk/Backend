@@ -1,12 +1,16 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError};
-use crate::database::repositories::{groups_repository, projects_repository, students_repository};
+use crate::database::repositories::{
+    groups_repository, projects_repository, student_deliverable_selections_repository,
+    students_repository,
+};
 use crate::jwt::get_user::LoggedUser;
 use crate::models::group_member::GroupMember;
 use crate::models::student_role::AvailableStudentRole;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json, Path};
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use welds::state::DbState;
@@ -119,6 +123,15 @@ pub(super) async fn add_member(
         }
     };
 
+    // Verify the student has confirmed their email
+    if student.is_pending {
+        return Ok(HttpResponse::Ok().json(MemberResponse {
+            success: false,
+            message: "Student must confirm their email before joining a group".to_string(),
+            member: None,
+        }));
+    }
+
     // Get the group and check if the student is already in a group for this project
     let group_state = groups_repository::get_by_id(&data.db, group_id)
         .await
@@ -218,6 +231,7 @@ pub(super) async fn add_member(
         group_id,
         student_id: student.student_id,
         student_role_id: AvailableStudentRole::Member as i32,
+        joined_at: Utc::now(),
     });
 
     match member_state.save(&data.db).await {
@@ -345,6 +359,47 @@ pub(super) async fn remove_member(
             message: "Cannot remove the group leader".to_string(),
             member: None,
         }));
+    }
+
+    // Get the group to find the project_id for deliverable selection deletion
+    let group_state = groups_repository::get_by_id(&data.db, group_id)
+        .await
+        .map_err(|e| {
+            error_with_log_id(
+                format!("unable to fetch group {}: {}", group_id, e),
+                "Database error",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
+        })?;
+
+    let group = match group_state {
+        Some(state) => DbState::into_inner(state),
+        None => {
+            return Err(error_with_log_id(
+                format!("group {} not found", group_id),
+                "Group not found",
+                StatusCode::NOT_FOUND,
+                log::Level::Warn,
+            ));
+        }
+    };
+
+    // Delete the student's deliverable selection for this project (MANDATORY - Q4)
+    if let Err(e) = student_deliverable_selections_repository::delete_by_student_and_project(
+        &data.db,
+        member.student_id,
+        group.project_id,
+    )
+    .await
+    {
+        // Log the error but don't fail the operation - the member should still be removed
+        log::warn!(
+            "Failed to delete deliverable selection for student {} in project {}: {}",
+            member.student_id,
+            group.project_id,
+            e
+        );
     }
 
     // Remove the member using where_col delete with member ID
