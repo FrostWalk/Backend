@@ -52,7 +52,7 @@ fn get_git_tag() -> String {
             return ci_tag;
         }
     }
-    
+
     // If in CI but no tag, try to get the latest tag from history
     if env::var("CI_COMMIT_SHA").is_ok() {
         // We're in CI, try to get the latest tag
@@ -70,7 +70,7 @@ fn get_git_tag() -> String {
         // If no tags found at all, use a default version
         return "0.1.0".to_string();
     }
-    
+
     // Fall back to git describe for local builds (includes commit info and dirty status)
     match Command::new("git")
         .args(&["describe", "--tags", "--always", "--dirty"])
@@ -94,7 +94,7 @@ fn get_git_commit() -> String {
             return ci_commit;
         }
     }
-    
+
     // Fall back to git command for local builds
     match Command::new("git").args(&["rev-parse", "HEAD"]).output() {
         Ok(output) => {
