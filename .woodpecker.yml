@@ -1,3 +1,4 @@
+# Fetch full history + tags so manual runs can find the latest tag.
 clone:
   git:
     image: woodpeckerci/plugin-git
@@ -21,8 +22,7 @@ steps: # ---------- DEV IMAGE (ferris-store:dev) ----------
       # Build in dev profile, Alpine final image
       build_args:
         PROFILE: dev
-        GIT_COMMIT: ${CI_COMMIT_SHA}
-        GIT_TAG: ${CI_COMMIT_TAG}
+      build_args_from_env: true
       # Link image to the source repository (OCI label)
       labels:
         - org.opencontainers.image.source=https://github.com/FrostWalk/Ferris-Store
@@ -84,8 +84,7 @@ steps: # ---------- DEV IMAGE (ferris-store:dev) ----------
       dockerfile: Dockerfile
       build_args:
         PROFILE: release
-        GIT_COMMIT: ${CI_COMMIT_SHA}
-        GIT_TAG: ${CI_COMMIT_TAG}
+      build_args_from_env: true
       labels:
         - org.opencontainers.image.source=https://github.com/FrostWalk/Ferris-Store
         - org.opencontainers.image.licenses=MIT
