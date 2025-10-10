@@ -1,24 +1,27 @@
-FROM rust:slim AS build
-RUN apt-get update && apt-get install curl -y
+# Buil stage
+FROM rust:slim AS builder
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y curl musl-tools build-essential pkg-config
+RUN rustup target add x86_64-unknown-linux-musl
 
 WORKDIR /app
 COPY ./ ./
 
-# Build profile switches via ARG (`dev` or `release`)
-ARG PROFILE=dev
-ENV RUST_BACKTRACE=1
-RUN cargo install --path . --root /out --profile ${PROFILE}
+# compile a static musl binary
+ARG PROFILE=release
+RUN cargo install --path . --root /out --profile ${PROFILE} --target x86_64-unknown-linux-musl
 
+# Runtime Stage
 FROM alpine:latest
 
-RUN adduser -D -H -s /sbin/nologin app
+RUN adduser -D app
 WORKDIR /app
 
-COPY --from=build /out/bin/ferris-store /app/ferris-store
+COPY --from=builder --chown=app:app /out/bin/backend /app/backend
+RUN chmod +x /app/backend
 
 USER app
 
-ENV RUST_BACKTRACE=1
+ENV RUST_BACKTRACE=0
 
 # app environmnet variables
 ENV ADDRESS="0.0.0.0"
@@ -40,4 +43,4 @@ ENV APP_BASE_URL=""
 ENV EMAIL_FROM="Advanced Programming"
 ENV EMAIL_TOKEN_SECRET=""
 
-ENTRYPOINT ["/app/ferris-store"]
+ENTRYPOINT ["/app/backend"]
