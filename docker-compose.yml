@@ -8,7 +8,7 @@ services:
     - db_data:/var/lib/postgresql
     environment:
       - POSTGRES_PASSWORD=password
-      - TZ=Europe/rome
+      - TZ=Europe/Rome
     restart: unless-stopped
 
   mongodb:
@@ -17,10 +17,20 @@ services:
     ports:
       - "27017:27017"
     environment:
-      - TZ=Europe/rome
+      - TZ=Europe/Rome
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
+    restart: unless-stopped
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    environment:
+      - TZ=Europe/Rome
     restart: unless-stopped
 
 volumes:
