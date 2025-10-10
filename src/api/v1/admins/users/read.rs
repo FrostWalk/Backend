@@ -1,11 +1,10 @@
 use crate::api::v1::admins::users::AdminResponseScheme;
 use crate::app_data::AppData;
-use crate::common::json_error::{database_error, JsonError, ToJsonError};
-use crate::models::admin::Admin;
+use crate::common::json_error::{error_with_log_id, JsonError, ToJsonError};
+use crate::database::repositories::admins_repository;
 use actix_web::http::StatusCode;
-use actix_web::web::Data;
-use actix_web::{web, HttpResponse};
-use log::error;
+use actix_web::web::{Data, Path};
+use actix_web::HttpResponse;
 use serde::Serialize;
 use utoipa::ToSchema;
 use welds::state::DbState;
@@ -27,16 +26,15 @@ pub(crate) struct GetAllAdminsResponse {
 /// Handler for retrieving a list of admin users
 ///
 /// Returns array with all the data of the admins except passwords
-pub(super) async fn get_all_admins_handler(
-    data: web::Data<AppData>,
-) -> Result<HttpResponse, JsonError> {
-    let states = Admin::all()
-        .run(&data.db)
-        .await
-        .map_err(|e| {
-            error!("unable to retrieve admins from database: {}", e);
-            database_error()
-        })?;
+pub(super) async fn get_all_admins_handler(data: Data<AppData>) -> Result<HttpResponse, JsonError> {
+    let states = admins_repository::get_all(&data.db).await.map_err(|e| {
+        error_with_log_id(
+            format!("unable to retrieve admins from database: {}", e),
+            "Failed to retrieve users",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+        )
+    })?;
 
     let admins: Vec<AdminResponseScheme> = states
         .into_iter()
@@ -62,22 +60,24 @@ pub(super) async fn get_all_admins_handler(
 /// Returns detailed information about a specific admin user
 /// without including sensitive fields like passwords.
 pub(super) async fn get_one_admin_handler(
-    path: web::Path<i32>,
-    data: Data<AppData>,
+    path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 
-    let mut rows = Admin::where_col(|a| a.admin_id.equal(id))
-        .run(&data.db)
+    let admin_state = admins_repository::get_by_id(&data.db, id)
         .await
         .map_err(|e| {
-            error!("unable to retrieve admin from database: {}", e);
-            database_error()
+            error_with_log_id(
+                format!("unable to retrieve admin from database: {}", e),
+                "Failed to retrieve users",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
         })?;
 
-    let state = match rows.pop() {
+    let state = match admin_state {
         Some(a) => a,
-        None => return Err("admin not found".to_json_error(StatusCode::NOT_FOUND)),
+        None => return Err("Admin not found".to_json_error(StatusCode::NOT_FOUND)),
     };
 
     let admin = AdminResponseScheme::from(DbState::into_inner(state));

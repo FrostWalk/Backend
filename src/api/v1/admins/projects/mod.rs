@@ -1,11 +1,15 @@
+use crate::api::v1::admins::projects::coordinators::{
+    assign_coordinator, list_coordinators, remove_coordinator,
+};
 use crate::api::v1::admins::projects::create::create_project_handler;
 use crate::api::v1::admins::projects::delete::delete_project_handler;
 use crate::api::v1::admins::projects::read::{get_all_projects_handler, get_one_project_handler};
 use crate::api::v1::admins::projects::update::update_project_handler;
-use crate::database::repositories::admins_repository::{AdminRole, ALL};
 use crate::jwt::admin_auth_factory::Admin;
+use crate::models::admin_role::{AvailableAdminRole, ALL};
 use actix_web::{web, Scope};
 
+pub(crate) mod coordinators;
 pub(crate) mod create;
 pub(crate) mod delete;
 pub(crate) mod read;
@@ -18,8 +22,8 @@ pub(super) fn projects_scope() -> Scope {
             web::post()
                 .to(create_project_handler)
                 .wrap(Admin::require_roles([
-                    AdminRole::Root,
-                    AdminRole::Professor,
+                    AvailableAdminRole::Root,
+                    AvailableAdminRole::Professor,
                 ])),
         )
         .route(
@@ -39,8 +43,8 @@ pub(super) fn projects_scope() -> Scope {
             web::patch()
                 .to(update_project_handler)
                 .wrap(Admin::require_roles([
-                    AdminRole::Root,
-                    AdminRole::Professor,
+                    AvailableAdminRole::Root,
+                    AvailableAdminRole::Professor,
                 ])),
         )
         .route(
@@ -48,8 +52,32 @@ pub(super) fn projects_scope() -> Scope {
             web::delete()
                 .to(delete_project_handler)
                 .wrap(Admin::require_roles([
-                    AdminRole::Root,
-                    AdminRole::Professor,
+                    AvailableAdminRole::Root,
+                    AvailableAdminRole::Professor,
+                ])),
+        )
+        .route(
+            "/{project_id}/coordinators",
+            web::post()
+                .to(assign_coordinator)
+                .wrap(Admin::require_roles([
+                    AvailableAdminRole::Root,
+                    AvailableAdminRole::Professor,
+                ])),
+        )
+        .route(
+            "/{project_id}/coordinators",
+            web::get()
+                .to(list_coordinators)
+                .wrap(Admin::require_roles(ALL)),
+        )
+        .route(
+            "/{project_id}/coordinators/{admin_id}",
+            web::delete()
+                .to(remove_coordinator)
+                .wrap(Admin::require_roles([
+                    AvailableAdminRole::Root,
+                    AvailableAdminRole::Professor,
                 ])),
         )
 }

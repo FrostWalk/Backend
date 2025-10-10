@@ -1,5 +1,6 @@
 use crate::models::group::Group;
 use crate::models::student::Student;
+use chrono::{DateTime, Utc};
 use welds::WeldsModel;
 
 #[derive(Debug, Clone, WeldsModel)]
@@ -15,4 +16,5 @@ pub struct GroupMember {
     pub student_id: i32,
     #[welds(foreign_key = "student_roles.student_role_id")]
     pub student_role_id: i32,
+    pub joined_at: DateTime<Utc>,
 }

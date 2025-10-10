@@ -1,0 +1,14 @@
+Hi {{ user_name }}!
+
+An admin account has been created for you in the Advanced Programming Administration system.
+
+Your login credentials:
+
+Login URL: {{ login_url }}
+Email: {{ email }}
+Password: {{ password }}
+
+Please log in and change your password as soon as possible.
+
+If you did not expect this account, please contact the professor immediately.
+

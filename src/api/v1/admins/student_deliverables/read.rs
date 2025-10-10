@@ -1,0 +1,279 @@
+use crate::app_data::AppData;
+use crate::common::json_error::{error_with_log_id, JsonError, ToJsonError};
+use crate::models::student_deliverable::StudentDeliverable;
+use crate::models::student_deliverables_component::StudentDeliverablesComponent;
+use actix_web::http::StatusCode;
+use actix_web::web::Data;
+use actix_web::web::Path;
+use actix_web::HttpResponse;
+use serde::Serialize;
+use utoipa::ToSchema;
+use welds::state::DbState;
+
+#[derive(Debug, Serialize, ToSchema)]
+pub(crate) struct StudentDeliverableResponse {
+    #[schema(example = "123")]
+    pub student_deliverable_id: i32,
+    #[schema(example = "1")]
+    pub project_id: i32,
+    #[schema(example = "Motor")]
+    pub name: String,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub(crate) struct GetAllStudentDeliverablesResponse {
+    pub deliverables: Vec<StudentDeliverableResponse>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub(crate) struct GetStudentDeliverablesForProjectResponse {
+    pub deliverables: Vec<StudentDeliverableResponse>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub(crate) struct StudentDeliverableComponentResponse {
+    #[schema(example = "123")]
+    pub id: i32,
+    #[schema(example = "1")]
+    pub student_deliverable_id: i32,
+    #[schema(example = "2")]
+    pub student_deliverable_component_id: i32,
+    #[schema(example = "5")]
+    pub quantity: i32,
+    #[schema(example = "Resistor")]
+    pub component_name: String,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub(crate) struct GetComponentsForStudentDeliverableResponse {
+    pub components: Vec<StudentDeliverableComponentResponse>,
+}
+
+#[utoipa::path(
+    get,
+    path = "/v1/admins/student-deliverables",
+    responses(
+        (status = 200, description = "Found all student deliverables", body = GetAllStudentDeliverablesResponse),
+        (status = 500, description = "Internal server error occurred", body = JsonError)
+    ),
+    security(("AdminAuth" = [])),
+    tag = "Student deliverables management",
+)]
+/// Get all student deliverables.
+///
+/// Returns all student deliverables across all projects.
+pub(super) async fn get_all_student_deliverables_handler(
+    data: Data<AppData>,
+) -> Result<HttpResponse, JsonError> {
+    let deliverables = StudentDeliverable::all().run(&data.db).await.map_err(|e| {
+        error_with_log_id(
+            format!("unable to retrieve all student deliverables: {}", e),
+            "Failed to retrieve deliverables",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+        )
+    })?;
+
+    let response_deliverables: Vec<StudentDeliverableResponse> = deliverables
+        .into_iter()
+        .map(DbState::into_inner)
+        .map(|deliverable| StudentDeliverableResponse {
+            student_deliverable_id: deliverable.student_deliverable_id,
+            project_id: deliverable.project_id,
+            name: deliverable.name,
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(GetAllStudentDeliverablesResponse {
+        deliverables: response_deliverables,
+    }))
+}
+
+#[utoipa::path(
+    get,
+    path = "/v1/admins/student-deliverables/project/{project_id}",
+    responses(
+        (status = 200, description = "Found student deliverables for project", body = GetStudentDeliverablesForProjectResponse),
+        (status = 404, description = "Project not found", body = JsonError),
+        (status = 500, description = "Internal server error occurred", body = JsonError)
+    ),
+    security(("AdminAuth" = [])),
+    tag = "Student deliverables management",
+)]
+/// Get all student deliverables for a specific project.
+///
+/// Returns all student deliverables associated with the specified project.
+pub(super) async fn get_student_deliverables_for_project_handler(
+    path: Path<i32>, data: Data<AppData>,
+) -> Result<HttpResponse, JsonError> {
+    let project_id = path.into_inner();
+
+    // Get all deliverables for this project
+    let deliverables = StudentDeliverable::where_col(|sp| sp.project_id.equal(project_id))
+        .run(&data.db)
+        .await
+        .map_err(|e| {
+            error_with_log_id(
+                format!(
+                    "unable to retrieve deliverables for project {}: {}",
+                    project_id, e
+                ),
+                "Failed to retrieve deliverables",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
+        })?;
+
+    let mut response_deliverables = Vec::new();
+
+    for deliverable in deliverables {
+        let deliverable_data = DbState::into_inner(deliverable);
+        response_deliverables.push(StudentDeliverableResponse {
+            student_deliverable_id: deliverable_data.student_deliverable_id,
+            project_id: deliverable_data.project_id,
+            name: deliverable_data.name,
+        });
+    }
+
+    Ok(
+        HttpResponse::Ok().json(GetStudentDeliverablesForProjectResponse {
+            deliverables: response_deliverables,
+        }),
+    )
+}
+
+#[utoipa::path(
+    get,
+    path = "/v1/admins/student-deliverables/{id}",
+    responses(
+        (status = 200, description = "Found student deliverable", body = StudentDeliverableResponse),
+        (status = 404, description = "Student deliverable not found", body = JsonError),
+        (status = 500, description = "Internal server error occurred", body = JsonError)
+    ),
+    security(("AdminAuth" = [])),
+    tag = "Student deliverables management",
+)]
+/// Get a specific student deliverable by ID.
+///
+/// Returns the details of the specified student deliverable.
+pub(super) async fn get_student_deliverable_handler(
+    path: Path<i32>, data: Data<AppData>,
+) -> Result<HttpResponse, JsonError> {
+    let deliverable_id = path.into_inner();
+
+    // Get the deliverable by ID
+    let mut deliverables =
+        StudentDeliverable::where_col(|sp| sp.student_deliverable_id.equal(deliverable_id))
+            .run(&data.db)
+            .await
+            .map_err(|e| {
+                error_with_log_id(
+                    format!("unable to retrieve deliverable {}: {}", deliverable_id, e),
+                    "Failed to retrieve deliverable",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                )
+            })?;
+
+    let deliverable = match deliverables.pop() {
+        Some(p) => DbState::into_inner(p),
+        None => return Err("Student deliverable not found".to_json_error(StatusCode::NOT_FOUND)),
+    };
+
+    Ok(HttpResponse::Ok().json(StudentDeliverableResponse {
+        student_deliverable_id: deliverable.student_deliverable_id,
+        project_id: deliverable.project_id,
+        name: deliverable.name,
+    }))
+}
+
+#[utoipa::path(
+    get,
+    path = "/v1/admins/student-deliverables/{id}/components",
+    responses(
+        (status = 200, description = "Found components for student deliverable", body = GetComponentsForStudentDeliverableResponse),
+        (status = 404, description = "Student deliverable not found", body = JsonError),
+        (status = 500, description = "Internal server error occurred", body = JsonError)
+    ),
+    security(("AdminAuth" = [])),
+    tag = "Student deliverables management",
+)]
+/// Get all components for a specific student deliverable.
+///
+/// Returns all components associated with the specified student deliverable along with their quantities.
+pub(super) async fn get_components_for_student_deliverable_handler(
+    path: Path<i32>, data: Data<AppData>,
+) -> Result<HttpResponse, JsonError> {
+    let deliverable_id = path.into_inner();
+
+    // Verify the student deliverable exists
+    let deliverable_exists =
+        StudentDeliverable::where_col(|sp| sp.student_deliverable_id.equal(deliverable_id))
+            .run(&data.db)
+            .await
+            .map_err(|e| {
+                error_with_log_id(
+                    format!("unable to check if student deliverable exists: {}", e),
+                    "Failed to retrieve components",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                )
+            })?;
+
+    if deliverable_exists.is_empty() {
+        return Err("Student deliverable not found".to_json_error(StatusCode::NOT_FOUND));
+    }
+
+    // Efficiently fetch relationships with related entities using map_query
+    let relationships = StudentDeliverablesComponent::where_col(|spc| {
+        spc.student_deliverable_id.equal(deliverable_id)
+    })
+    .run(&data.db)
+    .await
+    .map_err(|e| {
+        error_with_log_id(
+            format!(
+                "unable to retrieve components for deliverable {}: {}",
+                deliverable_id, e
+            ),
+            "Failed to retrieve components",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+        )
+    })?;
+
+    let components_data = StudentDeliverablesComponent::where_col(|spc| {
+        spc.student_deliverable_id.equal(deliverable_id)
+    })
+    .map_query(|spc| spc.student_deliverable_component)
+    .run(&data.db)
+    .await
+    .map_err(|e| {
+        error_with_log_id(
+            format!(
+                "unable to retrieve components for deliverable {}: {}",
+                deliverable_id, e
+            ),
+            "Failed to retrieve components",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+        )
+    })?;
+
+    let mut components = Vec::new();
+
+    for (relationship_state, component_state) in relationships.into_iter().zip(components_data) {
+        let relationship_data = DbState::into_inner(relationship_state);
+        let component = DbState::into_inner(component_state);
+
+        components.push(StudentDeliverableComponentResponse {
+            id: relationship_data.id,
+            student_deliverable_id: relationship_data.student_deliverable_id,
+            student_deliverable_component_id: relationship_data.student_deliverable_component_id,
+            quantity: relationship_data.quantity,
+            component_name: component.name,
+        });
+    }
+
+    Ok(HttpResponse::Ok().json(GetComponentsForStudentDeliverableResponse { components }))
+}

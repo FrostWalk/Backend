@@ -1,9 +1,8 @@
 use crate::api::v1::admins::users::AdminResponseScheme;
-use crate::common::json_error::{JsonError, ToJsonError};
+use crate::common::json_error::{error_with_log_id, JsonError};
 use crate::jwt::get_user::LoggedUser;
 use actix_web::http::StatusCode;
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
-use log::error;
 
 #[utoipa::path(
     get,
@@ -24,9 +23,13 @@ use log::error;
 pub(super) async fn admins_me_handler(req: HttpRequest) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_admin() {
         Ok(user) => user,
-        Err(e) => {
-            error!("entered a protected route without a user loaded in the request");
-            return Err(e.to_json_error(StatusCode::INTERNAL_SERVER_ERROR));
+        Err(_) => {
+            return Err(error_with_log_id(
+                "entered a protected route without a user loaded in the request",
+                "Authentication error",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            ));
         }
     };
 

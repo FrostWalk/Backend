@@ -1,12 +1,12 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{database_error, JsonError, ToJsonError};
+use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
+use crate::database::repositories::admins_repository;
 use crate::jwt::token::create_admin_token;
-use crate::models::admin::Admin;
+use crate::logging::payload_capture::capture_response_status;
 use actix_web::cookie::time::Duration;
 use actix_web::http::StatusCode;
-use actix_web::web::Data;
-use actix_web::{web, HttpResponse};
-use log::error;
+use actix_web::web::{Data, Json};
+use actix_web::HttpResponse;
 use password_auth::verify_password;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -15,7 +15,7 @@ use welds::state::DbState;
 const WRONG_CREDENTIALS: &str = "Incorrect email or password";
 
 /// Represents data needed for login
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub(crate) struct LoginAdminsSchema {
     #[schema(example = "user@example.com")]
     email: String,
@@ -47,27 +47,29 @@ pub(crate) struct LoginAdminsResponse {
     tag = "Admin authentication"
 )]
 pub(crate) async fn admins_login_handler(
-    req: web::Json<LoginAdminsSchema>, data: Data<AppData>,
+    req: Json<LoginAdminsSchema>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // common unauthorized response
     let unauthorized = Err(WRONG_CREDENTIALS.to_json_error(StatusCode::UNAUTHORIZED));
 
-    // find the user by email (Vec<DbState<Admin>>)
-    let mut rows = Admin::where_col(|a| a.email.equal(&req.email))
-        .run(&data.db)
+    // find the user by email
+    let admin_state = admins_repository::get_by_email(&data.db, &req.email)
         .await
         .map_err(|e| {
-            error!("unable to fetch admin from database: {}", e);
-            database_error()
+            error_with_log_id_and_payload(
+                format!("unable to fetch admin from database: {}", e),
+                "Authentication failed",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &req,
+            )
         })?;
 
     // 2) not found -> unauthorized
-    let state = match rows.pop() {
-        Some(s) => s,
+    let user = match admin_state {
+        Some(state) => DbState::into_inner(state),
         None => return unauthorized,
     };
-
-    let user: Admin = DbState::into_inner(state);
 
     // 3) wrong password
     if verify_password(&req.password, &user.password_hash).is_err() {
@@ -81,10 +83,18 @@ pub(crate) async fn admins_login_handler(
         data.config.jwt_secret().as_bytes(),
         Duration::days(data.config.jwt_validity_days()).whole_seconds(),
     )
-        .map_err(|e| {
-            error!("unable to create admin jwt token: {}", e);
-            "unable to create jwt token".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
-        })?;
+    .map_err(|e| {
+        error_with_log_id_and_payload(
+            format!("unable to create admin jwt token: {}", e),
+            "Authentication failed",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+            &req,
+        )
+    })?;
+
+    // Capture successful response status
+    capture_response_status(200);
 
     Ok(HttpResponse::Ok().json(LoginAdminsResponse { token }))
 }

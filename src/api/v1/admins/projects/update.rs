@@ -1,14 +1,13 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{JsonError, ToJsonError};
-use crate::models::project::Project;
+use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
+use crate::database::repositories::projects_repository;
 use actix_web::http::StatusCode;
-use actix_web::web::{Data, Json};
-use actix_web::{web, HttpResponse};
-use log::error;
-use serde::Deserialize;
+use actix_web::web::{Data, Json, Path};
+use actix_web::HttpResponse;
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub struct UpdateProjectScheme {
     pub name: Option<String>,
     pub max_student_uploads: Option<i32>,
@@ -29,42 +28,51 @@ pub struct UpdateProjectScheme {
     security(("AdminAuth" = [])),
     tag = "Projects management",
 )]
+/// Update a project details
 pub(in crate::api::v1) async fn update_project_handler(
-    path: web::Path<i32>, payload: Json<UpdateProjectScheme>, data: Data<AppData>,
+    path: Path<i32>, req: Json<UpdateProjectScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
-    let scheme = payload.into_inner();
 
-    let mut rows = Project::where_col(|p| p.project_id.equal(id))
-        .run(&data.db)
+    let state_opt = projects_repository::get_by_id(&data.db, id)
         .await
         .map_err(|e| {
-            error!("unable to load project {}: {}", id, e);
-            "database error".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+            error_with_log_id_and_payload(
+                format!("unable to load project {}: {}", id, e),
+                "Failed to update project",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &req,
+            )
         })?;
 
-    let mut state = match rows.pop() {
+    let mut state = match state_opt {
         Some(s) => s,
-        None => return Err("project not found".to_json_error(StatusCode::NOT_FOUND)),
+        None => return Err("Project not found".to_json_error(StatusCode::NOT_FOUND)),
     };
 
     // 2) Apply only provided fields
-    if let Some(v) = scheme.name {
+    if let Some(v) = req.name.clone() {
         state.name = v;
     }
-    if let Some(v) = scheme.max_student_uploads {
+    if let Some(v) = req.max_student_uploads {
         state.max_student_uploads = v;
     }
-    if let Some(v) = scheme.max_group_size {
+    if let Some(v) = req.max_group_size {
         state.max_group_size = v;
     }
-    if let Some(v) = scheme.active {
+    if let Some(v) = req.active {
         state.active = v;
     }
 
     state.save(&data.db).await.map_err(|e| {
-        error!("unable to update project {}: {}", id, e);
-        "unable to update project scheme".to_json_error(StatusCode::INTERNAL_SERVER_ERROR)
+        error_with_log_id_and_payload(
+            format!("unable to update project {}: {}", id, e),
+            "Failed to update project",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+            &req,
+        )
     })?;
 
     Ok(HttpResponse::Ok().json((*state).clone()))

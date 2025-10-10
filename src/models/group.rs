@@ -1,7 +1,10 @@
 use crate::models::project::Project;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use welds::WeldsModel;
 
-#[derive(Debug, Clone, WeldsModel)]
+#[derive(Debug, Clone, WeldsModel, Serialize, Deserialize, ToSchema)]
 #[welds(schema = "public", table = "groups")]
 #[welds(BelongsTo(project, Project, "project_id"))]
 pub struct Group {
@@ -10,4 +13,5 @@ pub struct Group {
     #[welds(foreign_key = "projects.project_id")]
     pub project_id: i32,
     pub name: String,
+    pub created_at: DateTime<Utc>,
 }

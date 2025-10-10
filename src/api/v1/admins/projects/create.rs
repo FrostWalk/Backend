@@ -1,15 +1,14 @@
 use crate::app_data::AppData;
-use crate::common::json_error::{database_error, JsonError, ToJsonError};
+use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
 use crate::models::project::Project;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
-use chrono::{Datelike, Local};
-use log::error;
+use chrono::{DateTime, Datelike, Local, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub(crate) struct CreateProjectScheme {
     #[schema(example = "Project Name")]
     pub name: String,
@@ -17,6 +16,8 @@ pub(crate) struct CreateProjectScheme {
     pub max_student_uploads: i32,
     #[schema(example = 4)]
     pub max_group_size: i32,
+    #[schema(value_type = Option<String>, example = "2025-12-15T23:59:59Z")]
+    pub deliverable_selection_deadline: Option<DateTime<Utc>>,
     #[schema(example = true)]
     pub active: bool,
 }
@@ -38,32 +39,36 @@ pub(crate) struct CreateProjectResponse {
 )]
 /// Create a project
 pub(in crate::api::v1) async fn create_project_handler(
-    payload: Json<CreateProjectScheme>, data: Data<AppData>,
+    req: Json<CreateProjectScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let scheme = payload.into_inner();
-
-    if scheme.name.is_empty() {
+    if req.name.is_empty() {
         return Err("Name field is mandatory".to_json_error(StatusCode::BAD_REQUEST));
-    } else if scheme.max_student_uploads < 1 {
+    } else if req.max_student_uploads < 1 {
         return Err(
             "Max student uploads must be greater than 0".to_json_error(StatusCode::BAD_REQUEST)
         );
-    } else if scheme.max_group_size < 2 {
+    } else if req.max_group_size < 2 {
         return Err("Max group size must be greater than 1".to_json_error(StatusCode::BAD_REQUEST));
     }
 
     let mut p = Project::new();
-    p.name = scheme.name;
+    p.name = req.name.clone();
     p.year = Local::now().year();
-    p.max_student_uploads = scheme.max_student_uploads;
-    p.max_group_size = scheme.max_group_size;
-    p.active = scheme.active;
+    p.max_student_uploads = req.max_student_uploads;
+    p.max_group_size = req.max_group_size;
+    p.deliverable_selection_deadline = req.deliverable_selection_deadline;
+    p.active = req.active;
 
     match p.save(&data.db).await {
         Ok(_) => {}
         Err(e) => {
-            error!("unable to insert project {:?} in database. Error: {e}", p);
-            return Err(database_error());
+            return Err(error_with_log_id_and_payload(
+                format!("unable to insert project {:?} in database: {}", p, e),
+                "Failed to create project",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &req,
+            ));
         }
     }
 
