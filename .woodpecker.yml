@@ -97,3 +97,18 @@ steps: # ---------- DEV IMAGE (ferris-store:dev) ----------
       - event: tag
       - event: manual
         branch: main
+
+  # ---------- TRIGGER UPGRADE ----------
+  trigger-watchtower:
+    image: curlimages/curl:latest
+    environment:
+      WT_URL: https://wt.advancedprogramming.ovh/v1/update
+      WT_TOKEN: 
+        from_secret: WATCHTOWER_TOKEN 
+    commands:
+      - 'curl -fsS -X POST -H "Authorization: Bearer $${WT_TOKEN}" "$WT_URL"'
+    when:
+      - event: manual
+      - event: tag
+      - event: push
+        branch: [ development, main ]
