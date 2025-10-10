@@ -46,14 +46,32 @@ pub const RUSTC_VERSION: &str = \"{}\";
 }
 
 fn get_git_tag() -> String {
-    // First, try to get from CI environment variable
-    if let Ok(ci_tag) = env::var("CI_GIT_TAG") {
+    // First, try to get from Woodpecker CI environment variable
+    if let Ok(ci_tag) = env::var("CI_COMMIT_TAG") {
         if !ci_tag.is_empty() {
             return ci_tag;
         }
     }
     
-    // Fall back to git command for local builds
+    // If in CI but no tag, try to get the latest tag from history
+    if env::var("CI_COMMIT_SHA").is_ok() {
+        // We're in CI, try to get the latest tag
+        if let Ok(output) = Command::new("git")
+            .args(&["describe", "--tags", "--abbrev=0"])
+            .output()
+        {
+            if output.status.success() {
+                let tag = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                if !tag.is_empty() {
+                    return tag;
+                }
+            }
+        }
+        // If no tags found at all, use a default version
+        return "0.1.0".to_string();
+    }
+    
+    // Fall back to git describe for local builds (includes commit info and dirty status)
     match Command::new("git")
         .args(&["describe", "--tags", "--always", "--dirty"])
         .output()
@@ -70,8 +88,8 @@ fn get_git_tag() -> String {
 }
 
 fn get_git_commit() -> String {
-    // First, try to get from CI environment variable
-    if let Ok(ci_commit) = env::var("CI_GIT_COMMIT") {
+    // First, try to get from Woodpecker CI environment variable
+    if let Ok(ci_commit) = env::var("CI_COMMIT_SHA") {
         if !ci_commit.is_empty() {
             return ci_commit;
         }
