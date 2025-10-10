@@ -30,6 +30,22 @@ pub(crate) struct Config {
     default_admin_password: String,
     /// Application default admin account email
     default_admin_email: String,
+    /// Host of smtp server
+    smtp_host: String,
+    /// Port of smtp server
+    smtp_port: u16,
+    /// Username of the smtp server
+    smtp_username: String,
+    /// Password of the smtp server
+    smtp_password: String,
+    /// Application base url
+    app_base_url: String,
+    /// Email domains with which you can create an account
+    allowed_signup_domains: Vec<String>,
+    /// Email sender pretty name
+    email_from: String,
+    /// Key used to encrypt and decrypt tokens sent via email
+    email_token_secret: String,
 }
 impl Config {
     /// Loads and validates the application configuration from multiple sources.
@@ -56,6 +72,6 @@ impl Config {
             .extract();
 
         // in case it fails, panic with a message and specific error
-        res.unwrap_or_else(|e| panic!("unable to load config: {:?}", e))
+        res.unwrap_or_else(|e| panic!("unable to load config:\n{:?}", e))
     }
 }

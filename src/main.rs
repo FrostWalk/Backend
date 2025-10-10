@@ -1,7 +1,10 @@
 use crate::api::configure_endpoints;
 use crate::app_data::AppData;
 use crate::config::Config;
+use crate::database::repositories::admins_repository::create_default_admin;
 use crate::logging::logger::init_mongo_logger;
+use crate::logging::middleware::RequestContextMiddleware;
+use crate::mail::Mailer;
 use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
@@ -15,6 +18,7 @@ mod config;
 mod database;
 mod jwt;
 mod logging;
+mod mail;
 mod models;
 
 #[actix_web::main]
@@ -24,27 +28,43 @@ async fn main() -> std::io::Result<()> {
 
     if let Err(e) = init_mongo_logger(app_config.logs_mongo_uri(), app_config.logs_db_name()).await
     {
-        eprintln!("Failed to initialize MongoDB logger: {}", e);
+        eprintln!("failed to initialize MongoDB logger: {}", e);
         std::process::exit(1);
     }
     let client = match connect(app_config.db_url()).await {
         Ok(client) => client,
         Err(e) => {
-            error!("Failed to connect to DB: {}", e);
+            error!("failed to connect to DB: {}", e);
             std::process::exit(1);
         }
     };
 
-    let app_data = AppData::new(app_config.clone(), client.clone()).await;
+    let mailer = match Mailer::from_config(&app_config) {
+        Ok(mailer) => mailer,
+        Err(e) => {
+            error!("failed to initialize mailer: {}", e);
+            std::process::exit(1);
+        }
+    };
 
-    info!("Migrating database schema");
+    let app_data = AppData::new(app_config.clone(), client.clone(), mailer).await;
+
+    info!("migrating database schema");
     sqlx::migrate!().run(client.as_sqlx_pool()).await.expect("");
 
-    info!("Starting server");
+    create_default_admin(
+        &client,
+        app_config.default_admin_email().clone(),
+        app_config.default_admin_password().clone(),
+    )
+    .await;
+
+    info!("starting server");
     HttpServer::new(move || {
         App::new()
             .app_data(Data::new(app_data.clone())) //add application state with repositories and config
             .wrap(Logger::default()) // add logging middleware
+            .wrap(RequestContextMiddleware) // add request context middleware
             .configure(configure_endpoints) // add scopes and routes
     })
     .workers(app_config.workers()) // normally 1 worker per thread

@@ -4,24 +4,36 @@ services:
     container_name: postgres
     ports:
       - "5432:5432"
+    volumes:
+    - db_data:/var/lib/postgresql
     environment:
       - POSTGRES_PASSWORD=password
-      - TZ=Europe/rome
-    volumes:
-      - db_data:/var/lib/postgresql/data
+      - TZ=Europe/Rome
     restart: unless-stopped
 
-#  mongodb:
-#    image: mongo:latest
-#    container_name: mongodb
-#    ports:
-#      - "27017:27017"
-#    environment:
-#      - TZ=Europe/rome
-#    volumes:
-#      - mongodb_data:/data/db
-#    restart: unless-stopped
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - TZ=Europe/Rome
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    restart: unless-stopped
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    environment:
+      - TZ=Europe/Rome
+    restart: unless-stopped
 
 volumes:
   db_data:
   mongodb_data:
+  mongodb_config:

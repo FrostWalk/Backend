@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
+<div style="max-width:520px;margin:auto;padding:24px;">
+    <h2 style="margin:0 0 12px;">Welcome to the Advanced Programming Administration</h2>
+    <p style="margin:0 0 16px;">Hi {{ user_name }},</p>
+    <p style="margin:0 0 16px;">
+        An admin account has been created for you. Below are your login credentials:
+    </p>
+    <div style="background-color:#f5f5f5;padding:16px;border-radius:6px;margin:16px 0;">
+        <p style="margin:0 0 8px;"><strong>Login URL:</strong></p>
+        <p style="margin:0 0 16px;"><a href="{{ login_url }}">{{ login_url }}</a></p>
+        <p style="margin:0 0 8px;"><strong>Email:</strong> {{ email }}</p>
+        <p style="margin:0;"><strong>Password:</strong> <code style="background-color:#fff;padding:4px 8px;border-radius:4px;font-family:monospace;">{{ password }}</code></p>
+    </div>
+    <p style="margin:16px 0;">
+        Please log in and change your password as soon as possible.
+    </p>
+    <p style="margin:24px 0;">
+        <a href="{{ login_url }}"
+           style="display:inline-block;padding:12px 18px;text-decoration:none;border-radius:6px;border:1px solid #0b57d0;">
+            Go to Login
+        </a>
+    </p>
+    <hr style="margin:24px 0;border:none;border-top:1px solid #eee;">
+    <p style="font-size:12px;color:#777;margin:0;">
+        If you did not expect this account, please contact the professor immediately.
+    </p>
+</div>
+</body>
+</html>
+

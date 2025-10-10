@@ -1,8 +1,8 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{database_error, ToJsonError};
-use crate::database::repositories::admins_repository::AdminRole;
 use crate::jwt::token::decode_token;
 use crate::models::admin::Admin;
+use crate::models::admin_role::AvailableAdminRole;
 use crate::models::student::Student;
 use actix_web::dev::{Service, ServiceRequest, ServiceResponse};
 use actix_web::http::StatusCode;
@@ -22,16 +22,16 @@ pub(crate) struct AuthMiddleware<const N: usize, S> {
     pub(super) service: Rc<S>,
     pub(super) require_admin: bool,
     pub(super) authentication_only: bool,
-    pub(super) allowed_roles: Rc<[AdminRole; N]>,
+    pub(super) allowed_roles: Rc<[AvailableAdminRole; N]>,
 }
 
 impl<const N: usize, S> Service<ServiceRequest> for AuthMiddleware<N, S>
 where
     S: Service<
-        ServiceRequest,
-        Response=ServiceResponse<actix_web::body::BoxBody>,
-        Error=actix_web::Error,
-    > + 'static,
+            ServiceRequest,
+            Response = ServiceResponse<actix_web::body::BoxBody>,
+            Error = actix_web::Error,
+        > + 'static,
 {
     type Response = ServiceResponse<actix_web::body::BoxBody>;
     type Error = actix_web::Error;
@@ -103,7 +103,7 @@ where
                     return Err(INVALID_TOKEN.to_json_error(StatusCode::UNAUTHORIZED).into());
                 }
 
-                let role: AdminRole = match token.rl.try_into() {
+                let role: AvailableAdminRole = match token.rl.try_into() {
                     Ok(role) => role,
                     Err(_) => {
                         return Err(INVALID_TOKEN.to_json_error(StatusCode::UNAUTHORIZED).into())
@@ -124,7 +124,7 @@ where
                     Ok(mut rows) => match rows.pop() {
                         Some(state) => DbState::into_inner(state),
                         None => {
-                            warn!("login attempt with non existing admin");
+                            warn!("login attempt with non-existing admin");
                             return Err(INVALID_TOKEN
                                 .to_json_error(StatusCode::UNAUTHORIZED)
                                 .into());
@@ -148,7 +148,7 @@ where
                     Ok(mut rows) => match rows.pop() {
                         Some(state) => DbState::into_inner(state),
                         None => {
-                            warn!("login attempt with non existing student");
+                            warn!("login attempt with non-existing student");
                             return Err(INVALID_TOKEN
                                 .to_json_error(StatusCode::UNAUTHORIZED)
                                 .into());
@@ -166,6 +166,6 @@ where
             // Call the wrapped service
             srv.call(req).await
         }
-            .boxed_local()
+        .boxed_local()
     }
 }
