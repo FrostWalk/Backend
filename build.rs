@@ -5,7 +5,13 @@ use std::process::Command;
 
 fn main() {
     // Get git tag (latest tag)
-    let git_tag = get_git_tag();
+    let mut git_tag = get_git_tag();
+
+    // Check if we're building in dev profile and append "-dev" suffix
+    let profile = env::var("PROFILE").unwrap_or_else(|_| "release".to_string());
+    if profile == "dev" {
+        git_tag = format!("{}-dev", git_tag);
+    }
 
     // Get git commit hash
     let git_commit = get_git_commit();
@@ -40,6 +46,14 @@ pub const RUSTC_VERSION: &str = \"{}\";
 }
 
 fn get_git_tag() -> String {
+    // First, try to get from CI environment variable
+    if let Ok(ci_tag) = env::var("CI_GIT_TAG") {
+        if !ci_tag.is_empty() {
+            return ci_tag;
+        }
+    }
+    
+    // Fall back to git command for local builds
     match Command::new("git")
         .args(&["describe", "--tags", "--always", "--dirty"])
         .output()
@@ -56,6 +70,14 @@ fn get_git_tag() -> String {
 }
 
 fn get_git_commit() -> String {
+    // First, try to get from CI environment variable
+    if let Ok(ci_commit) = env::var("CI_GIT_COMMIT") {
+        if !ci_commit.is_empty() {
+            return ci_commit;
+        }
+    }
+    
+    // Fall back to git command for local builds
     match Command::new("git").args(&["rev-parse", "HEAD"]).output() {
         Ok(output) => {
             if output.status.success() {

@@ -41,7 +41,7 @@ pub async fn version_info() -> Result<HttpResponse> {
         .as_secs();
 
     let version_response = VersionResponse {
-        version: env!("CARGO_PKG_VERSION").to_string(),
+        version: GIT_TAG.to_string(),
         git_tag: GIT_TAG.to_string(),
         git_commit: GIT_COMMIT.to_string(),
         build_time: BUILD_TIME.to_string(),
