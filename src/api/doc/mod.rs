@@ -224,8 +224,11 @@ pub(crate) fn open_api() -> SwaggerUi {
     let mut doc = ApiDoc::openapi();
     doc.info.title = String::from("Ferris store api v1");
     doc.info.version = String::from("0.1.0");
-    doc.servers = Some(vec![Server::new("http://localhost:8080/")]);
-    SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", doc)
+    doc.servers = Some(vec![
+        Server::new("https://dev.advancedprogramming.ovh/api"),
+        Server::new("http://localhost:8080/"),
+    ]);
+    SwaggerUi::new("/swagger/{_:.*}").url("/swagger-openapi.json", doc)
 }
 
 #[derive(Default)]
