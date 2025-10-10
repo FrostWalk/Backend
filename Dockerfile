@@ -1,6 +1,6 @@
 # Buil stage
 FROM rust:slim AS builder
-RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y curl musl-tools build-essential pkg-config
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y curl musl-tools build-essential pkg-config git
 RUN rustup target add x86_64-unknown-linux-musl
 
 WORKDIR /app
@@ -8,6 +8,11 @@ COPY ./ ./
 
 # compile a static musl binary
 ARG PROFILE=release
+ARG GIT_COMMIT=""
+ARG GIT_TAG=""
+ENV PROFILE=${PROFILE}
+ENV CI_GIT_COMMIT=${GIT_COMMIT}
+ENV CI_GIT_TAG=${GIT_TAG}
 RUN cargo install --path . --root /out --profile ${PROFILE} --target x86_64-unknown-linux-musl
 
 # Runtime Stage
