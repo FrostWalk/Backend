@@ -1,10 +1,14 @@
 use confirm_email::generate_token;
-use lettre::message::{header::ContentType, Mailbox, Message, MultiPart, SinglePart};
+use lettre::message::{
+    header::{ContentTransferEncoding, ContentType},
+    Mailbox, Message, MultiPart, SinglePart,
+};
 use lettre::{
     transport::smtp::authentication::Credentials, AsyncSmtpTransport, AsyncTransport,
     Tokio1Executor,
 };
 use url::Url;
+use uuid::Uuid;
 
 use super::template::TemplateEngine;
 use crate::config::Config;
@@ -41,10 +45,17 @@ impl Mailer {
     ) -> Result<Self> {
         let creds = Credentials::new(username.to_owned(), password.to_owned());
 
+        // Configure SMTP transport with RFC 5322 compliance
+        // - Uses STARTTLS for secure connection (required by Google)
+        // - Sets timeouts for reliable delivery
         let mut builder = AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(smtp_host)?;
-        builder = builder.port(port);
+        builder = builder
+            .port(port)
+            .credentials(creds)
+            // Set connection timeout (30 seconds) for reliable delivery
+            .timeout(Some(std::time::Duration::from_secs(30)));
 
-        let transport = builder.credentials(creds).build();
+        let transport = builder.build();
 
         let from = Mailbox::new(Some(from_name.to_owned()), username.parse()?);
         let base_url = Url::parse(app_base_url)?;
@@ -65,6 +76,15 @@ impl Mailer {
         Ok(url)
     }
 
+    /// Generate a RFC 5322 compliant Message-ID header
+    /// Format: <unique-id@domain>
+    /// Uses the sender's email address domain
+    fn generate_message_id(&self) -> String {
+        let unique_id = Uuid::new_v4();
+        let domain = self.from.email.domain();
+        format!("<{}@{}>", unique_id, domain)
+    }
+
     async fn send_templated(
         &self, to_email: String, to_name: String, subject: &str, html_template_name: &str,
         text_template_name: &str, ctx: JinjaValue,
@@ -74,20 +94,35 @@ impl Mailer {
         let html_body = self.templates.render(html_template_name, ctx.clone())?;
         let text_body = self.templates.render(text_template_name, ctx)?;
 
+        // Generate RFC 5322 compliant Message-ID using sender's email domain
+        let message_id = self.generate_message_id();
+
+        // Build email with RFC 5322 compliant structure
+        // The lettre library automatically adds required headers:
+        // - Date header (current time)
+        // - MIME-Version (when using MultiPart)
+        // We explicitly add:
+        // - Message-ID (format: <unique-id@sender-domain>)
+        // Using QuotedPrintable encoding ensures RFC 5322 line length limits (998 chars/line)
         let email = Message::builder()
             .from(self.from.clone())
             .to(to)
             .subject(subject)
+            .message_id(Some(message_id))
             .multipart(
+                // MultiPart::alternative with text/plain first, then text/html
+                // This is the RFC 2046 recommended order
                 MultiPart::alternative()
                     .singlepart(
                         SinglePart::builder()
-                            .header(ContentType::parse("text/plain; charset=utf-8").unwrap())
+                            .header(ContentType::TEXT_PLAIN)
+                            .header(ContentTransferEncoding::QuotedPrintable)
                             .body(text_body),
                     )
                     .singlepart(
                         SinglePart::builder()
-                            .header(ContentType::parse("text/html; charset=utf-8").unwrap())
+                            .header(ContentType::TEXT_HTML)
+                            .header(ContentTransferEncoding::QuotedPrintable)
                             .body(html_body),
                     ),
             )?;
