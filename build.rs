@@ -7,10 +7,18 @@ fn main() {
     // Get git tag (latest tag)
     let mut git_tag = get_git_tag();
 
-    // Check if we're building in dev profile and append "-dev" suffix
-    let profile = env::var("PROFILE").unwrap_or_else(|_| "release".to_string());
-    if profile == "dev" {
+    // Check if we're building in dev/debug profile and append "-dev" suffix
+    // BUILD_PROFILE is set by Dockerfile (takes precedence)
+    // PROFILE is Cargo's built-in profile name during build
+    let profile = env::var("BUILD_PROFILE")
+        .or_else(|_| env::var("PROFILE"))
+        .unwrap_or_else(|_| "release".to_string());
+
+    println!("cargo:warning=Building with profile: {}", profile);
+
+    if profile == "dev" || profile == "debug" {
         git_tag = format!("{}-dev", git_tag);
+        println!("cargo:warning=Applied -dev suffix to version: {}", git_tag);
     }
 
     // Get git commit hash
