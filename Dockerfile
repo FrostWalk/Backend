@@ -12,11 +12,14 @@ ARG PROFILE=release
 ARG CI_COMMIT_SHA=""
 ARG CI_COMMIT_TAG=""
 ARG CI_COMMIT_BRANCH=""
-# Pass them to build environment
-ENV PROFILE=${PROFILE}
+# Pass them to build environment so build.rs can access them
+# Use BUILD_PROFILE to avoid conflicts with Cargo's internal PROFILE variable
+ENV BUILD_PROFILE=${PROFILE}
 ENV CI_COMMIT_SHA=${CI_COMMIT_SHA}
 ENV CI_COMMIT_TAG=${CI_COMMIT_TAG}
 ENV CI_COMMIT_BRANCH=${CI_COMMIT_BRANCH}
+# Build with the specified profile
+# Note: BUILD_PROFILE env var will be available to build.rs during compilation
 RUN cargo install --path . --root /out --profile ${PROFILE} --target x86_64-unknown-linux-musl
 
 # Runtime Stage

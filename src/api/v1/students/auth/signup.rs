@@ -1,5 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
+use crate::database::repositories::students_repository;
 use crate::logging::payload_capture::capture_response_status;
 use crate::mail::Mailer;
 use crate::models::student::Student;
@@ -39,6 +40,7 @@ pub(crate) struct StudentSignupResponse {
     responses(
         (status = 202, description = "Account created successfully", body = StudentSignupResponse),
         (status = 400, description = "Invalid data in request", body = JsonError),
+        (status = 409, description = "Student with this email or university ID already exists", body = JsonError),
         (status = 500, description = "Internal server error occurred", body = JsonError),
         (status = 503, description = "Account created email was not sent", body = JsonError)
     ),
@@ -72,6 +74,43 @@ pub(super) async fn student_signup_handler(
         }
     } else {
         return Err("Invalid email format".to_json_error(StatusCode::BAD_REQUEST));
+    }
+
+    // Check if email already exists
+    let email_exists = students_repository::email_exists(&data.db, &req.email)
+        .await
+        .map_err(|e| {
+            error_with_log_id_and_payload(
+                format!("unable to check if email exists: {}", e),
+                "Account creation failed",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &req,
+            )
+        })?;
+
+    if email_exists {
+        return Err("User with this email already exists".to_json_error(StatusCode::CONFLICT));
+    }
+
+    // Check if university ID already exists
+    let university_id_exists =
+        students_repository::university_id_exists(&data.db, req.university_id)
+            .await
+            .map_err(|e| {
+                error_with_log_id_and_payload(
+                    format!("unable to check if university ID exists: {}", e),
+                    "Account creation failed",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                    &req,
+                )
+            })?;
+
+    if university_id_exists {
+        return Err(
+            "User with this university ID already exists".to_json_error(StatusCode::CONFLICT)
+        );
     }
 
     let mut result = DbState::new_uncreated(Student {
