@@ -65,7 +65,7 @@ use crate::api::v1::admins::users::read::__path_get_all_admins_handler;
 use crate::api::v1::admins::users::read::__path_get_one_admin_handler;
 use crate::api::v1::admins::users::update::__path_update_admin_handler;
 use crate::api::v1::students::auth::{
-    confirm::__path_confirm_student_handler,
+    allowed_domains::__path_allowed_domains_handler, confirm::__path_confirm_student_handler,
     forgot_password::__path_forgot_password_handler as __path_students_forgot_password_handler,
     login::__path_students_login_handler,
     reset_password::__path_reset_password_handler as __path_students_reset_password_handler,
@@ -104,6 +104,7 @@ use utoipa_swagger_ui::SwaggerUi;
         health_check,
         liveness_check,
         version_info,
+        allowed_domains_handler,
         students_login_handler,
         confirm_student_handler,
         student_signup_handler,
