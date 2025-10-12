@@ -69,10 +69,10 @@ pub(crate) async fn forgot_password_handler(
             )
         })?;
 
-        // Create the reset URL with the token
+        // Create the reset URL with the token (frontend URL)
         let reset_url = format!(
-            "{}/v1/students/auth/reset-password?t={}",
-            data.config.app_base_url(),
+            "{}/forgot-password/reset?t={}",
+            data.config.frontend_base_url(),
             token
         );
 
