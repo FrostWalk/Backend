@@ -46,6 +46,8 @@ pub(crate) struct Config {
     email_from: String,
     /// Key used to encrypt and decrypt tokens sent via email
     email_token_secret: String,
+    /// Skip email confirmation for student accounts (when true, accounts are immediately active)
+    skip_email_confirmation: bool,
 }
 impl Config {
     /// Loads and validates the application configuration from multiple sources.

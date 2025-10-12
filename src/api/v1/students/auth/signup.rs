@@ -113,6 +113,9 @@ pub(super) async fn student_signup_handler(
         );
     }
 
+    // Determine if account should be immediately active or pending confirmation
+    let is_pending = !data.config.skip_email_confirmation();
+
     let mut result = DbState::new_uncreated(Student {
         student_id: 0,
         first_name: req.first_name.clone(),
@@ -120,7 +123,7 @@ pub(super) async fn student_signup_handler(
         email: req.email.clone(),
         university_id: req.university_id,
         password_hash: generate_hash(req.password.clone()),
-        is_pending: true,
+        is_pending,
     });
 
     if let Err(e) = result.save(&data.db).await {
@@ -133,35 +136,38 @@ pub(super) async fn student_signup_handler(
         ));
     }
 
-    let mailer = match Mailer::from_config(&data.config) {
-        Ok(m) => m,
-        Err(e) => {
+    // Only send confirmation email if email confirmation is not skipped
+    if !data.config.skip_email_confirmation() {
+        let mailer = match Mailer::from_config(&data.config) {
+            Ok(m) => m,
+            Err(e) => {
+                return Err(error_with_log_id_and_payload(
+                    format!("unable to create instance of Mailer: {}", e),
+                    "Account creation failed",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                    &req,
+                ));
+            }
+        };
+
+        let name = format!("{} {}", &result.first_name, &result.last_name);
+        if let Err(e) = mailer
+            .send_account_confirmation(
+                result.email.clone(),
+                name,
+                data.config.email_token_secret().clone(),
+            )
+            .await
+        {
             return Err(error_with_log_id_and_payload(
-                format!("unable to create instance of Mailer: {}", e),
-                "Account creation failed",
-                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to send confirmation email: {}", e),
+                "Account created but confirmation email could not be sent",
+                StatusCode::SERVICE_UNAVAILABLE,
                 log::Level::Error,
                 &req,
             ));
         }
-    };
-
-    let name = format!("{} {}", &result.first_name, &result.last_name);
-    if let Err(e) = mailer
-        .send_account_confirmation(
-            result.email.clone(),
-            name,
-            data.config.email_token_secret().clone(),
-        )
-        .await
-    {
-        return Err(error_with_log_id_and_payload(
-            format!("failed to send confirmation email: {}", e),
-            "Account created but confirmation email could not be sent",
-            StatusCode::SERVICE_UNAVAILABLE,
-            log::Level::Error,
-            &req,
-        ));
     }
 
     info!("new student account created: {:?}", result);

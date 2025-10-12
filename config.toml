@@ -17,3 +17,4 @@ smtp_password = "password"
 email_from = "Advanced Programming"
 email_token_secret = "secret_token"
 app_base_url = "http://localhost:8080"
+skip_email_confirmation = false
