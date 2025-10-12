@@ -35,7 +35,7 @@ pub(crate) struct GetStudentProjects {
         (status = 200, description = "Successfully retrieved student's projects with deliverables and components", body = GetStudentProjects),
         (status = 500, description = "Internal server error during serialization or database query", body = JsonError)
     ),
-    security(("UserAuth" = [])),
+    security(("StudentAuth" = [])),
     tag = "Projects management",
 )]
 /// Get all the projects of student with deliverables and components

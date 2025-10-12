@@ -252,7 +252,7 @@ impl Modify for SecurityAddon {
 
         let user = ApiKeyValue::with_description(STUDENT_HEADER_NAME, "User token authentication");
         components.security_schemes.insert(
-            "UserAuth".to_string(),
+            "StudentAuth".to_string(),
             SecurityScheme::ApiKey(ApiKey::Header(user)),
         );
     }

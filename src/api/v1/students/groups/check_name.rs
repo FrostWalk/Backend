@@ -28,7 +28,7 @@ pub(crate) struct CheckNameResponse {
         (status = 401, description = "Authentication required", body = JsonError),
         (status = 500, description = "Internal server error", body = JsonError)
     ),
-    security(("UserAuth" = [])),
+    security(("StudentAuth" = [])),
     tag = "Groups management",
 )]
 /// Check if a group name already exists in a project

@@ -28,7 +28,7 @@ pub(crate) struct GetMeStudentResponse {
         (status = 404, description = "User not found in request context", body = JsonError),
         (status = 500, description = "Internal server error during serialization or database query", body = JsonError)
     ),
-    security(("UserAuth" = [])),
+    security(("StudentAuth" = [])),
     tag = "Student users management",
 )]
 /// Retrieves the profile information of the currently authenticated student.
