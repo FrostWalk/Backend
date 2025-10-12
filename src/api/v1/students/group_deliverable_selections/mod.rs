@@ -9,21 +9,21 @@ pub(crate) mod read;
 pub(crate) mod update;
 
 pub(super) fn group_deliverable_selections_scope() -> Scope {
-    web::scope("/groups")
+    web::scope("/group-deliverable-selections")
         .route(
-            "/{group_id}/deliverable-selection",
+            "/{group_id}",
             web::post()
                 .to(create_group_deliverable_selection)
                 .wrap(Student::require_auth()),
         )
         .route(
-            "/{group_id}/deliverable-selection",
+            "/{group_id}",
             web::get()
                 .to(get_group_deliverable_selection)
                 .wrap(Student::require_auth()),
         )
         .route(
-            "/{group_id}/deliverable-selection",
+            "/{group_id}",
             web::patch()
                 .to(update_group_deliverable_selection)
                 .wrap(Student::require_auth()),
