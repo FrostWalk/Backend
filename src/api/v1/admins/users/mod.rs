@@ -3,6 +3,7 @@ use crate::api::v1::admins::users::delete::delete_admin_handler;
 use crate::api::v1::admins::users::me::admins_me_handler;
 use crate::api::v1::admins::users::read::{get_all_admins_handler, get_one_admin_handler};
 use crate::api::v1::admins::users::update::update_admin_handler;
+use crate::api::v1::admins::users::update_me::update_me_admin_handler;
 use crate::jwt::admin_auth_factory::Admin;
 use crate::models::admin;
 use crate::models::admin_role::{AvailableAdminRole, ALL};
@@ -15,6 +16,7 @@ pub(crate) mod delete;
 pub(crate) mod me;
 pub(crate) mod read;
 pub(crate) mod update;
+pub(crate) mod update_me;
 
 pub(super) fn users_scope() -> Scope {
     web::scope("/users")
@@ -22,6 +24,12 @@ pub(super) fn users_scope() -> Scope {
             "/me",
             web::get()
                 .to(admins_me_handler)
+                .wrap(Admin::require_roles(ALL)),
+        )
+        .route(
+            "/me",
+            web::patch()
+                .to(update_me_admin_handler)
                 .wrap(Admin::require_roles(ALL)),
         )
         .route(

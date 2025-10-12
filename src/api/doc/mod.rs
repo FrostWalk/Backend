@@ -64,6 +64,7 @@ use crate::api::v1::admins::users::me::__path_admins_me_handler;
 use crate::api::v1::admins::users::read::__path_get_all_admins_handler;
 use crate::api::v1::admins::users::read::__path_get_one_admin_handler;
 use crate::api::v1::admins::users::update::__path_update_admin_handler;
+use crate::api::v1::admins::users::update_me::__path_update_me_admin_handler;
 use crate::api::v1::students::auth::{
     allowed_domains::__path_allowed_domains_handler, confirm::__path_confirm_student_handler,
     forgot_password::__path_forgot_password_handler as __path_students_forgot_password_handler,
@@ -90,6 +91,7 @@ use crate::api::v1::students::student_deliverable_selections::{
     update::__path_update_student_deliverable_selection,
 };
 use crate::api::v1::students::users::me::__path_students_me_handler;
+use crate::api::v1::students::users::update_me::__path_update_me_student_handler;
 use crate::api::version::__path_version_info;
 use crate::jwt::auth_middleware::{ADMIN_HEADER_NAME, STUDENT_HEADER_NAME};
 use utoipa::openapi::security::SecurityScheme;
@@ -111,12 +113,14 @@ use utoipa_swagger_ui::SwaggerUi;
         students_forgot_password_handler,
         students_reset_password_handler,
         students_me_handler,
+        update_me_student_handler,
         admins_login_handler,
         forgot_password_handler,
         reset_password_handler,
         get_one_admin_handler,
         get_all_admins_handler,
         admins_me_handler,
+        update_me_admin_handler,
         create_admin_handler,
         update_admin_handler,
         delete_admin_handler,
