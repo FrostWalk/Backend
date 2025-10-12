@@ -35,7 +35,7 @@ pub(crate) struct GroupMemberInfo {
         (status = 404, description = "Group not found", body = JsonError),
         (status = 500, description = "Internal server error", body = JsonError)
     ),
-    security(("UserAuth" = [])),
+    security(("StudentAuth" = [])),
     tag = "Group management",
 )]
 /// List all members of a group with their roles

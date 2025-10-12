@@ -38,7 +38,7 @@ pub(crate) struct CreateGroupResponse {
         (status = 409, description = "User already has a group for this project", body = JsonError),
         (status = 500, description = "Internal server error", body = JsonError)
     ),
-    security(("UserAuth" = [])),
+    security(("StudentAuth" = [])),
     tag = "Groups management",
 )]
 /// Create a new group for a project
