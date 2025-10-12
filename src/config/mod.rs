@@ -38,8 +38,8 @@ pub(crate) struct Config {
     smtp_username: String,
     /// Password of the smtp server
     smtp_password: String,
-    /// Application base url
-    app_base_url: String,
+    /// Frontend base url (for email links)
+    frontend_base_url: String,
     /// Email domains with which you can create an account
     allowed_signup_domains: Vec<String>,
     /// Email sender pretty name

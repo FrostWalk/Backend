@@ -17,13 +17,13 @@ use minijinja::Value as JinjaValue;
 type DynError = Box<dyn std::error::Error + Send + Sync + 'static>;
 type Result<T> = std::result::Result<T, DynError>;
 
-const CONFIRMATION_URL: &str = "/v1/students/auth/confirm";
+const CONFIRMATION_URL: &str = "/confirm";
 
 #[derive(Clone)]
 pub struct Mailer {
     transport: AsyncSmtpTransport<Tokio1Executor>,
     from: Mailbox,
-    base_url: Url,
+    frontend_base_url: Url,
     templates: TemplateEngine,
 }
 
@@ -35,13 +35,13 @@ impl Mailer {
             config.smtp_username(),
             config.smtp_password(),
             config.email_from(),
-            config.app_base_url(),
+            config.frontend_base_url(),
         )
     }
 
     pub fn new(
         smtp_host: &str, port: u16, username: &str, password: &str, from_name: &str,
-        app_base_url: &str,
+        frontend_base_url: &str,
     ) -> Result<Self> {
         let creds = Credentials::new(username.to_owned(), password.to_owned());
 
@@ -58,12 +58,12 @@ impl Mailer {
         let transport = builder.build();
 
         let from = Mailbox::new(Some(from_name.to_owned()), username.parse()?);
-        let base_url = Url::parse(app_base_url)?;
+        let frontend_base_url = Url::parse(frontend_base_url)?;
 
         Ok(Self {
             transport,
             from,
-            base_url,
+            frontend_base_url,
             templates: TemplateEngine::new()?,
         })
     }
@@ -71,7 +71,7 @@ impl Mailer {
     fn confirmation_link(&self, email: String, key: String) -> Result<Url> {
         let token = generate_token(email, key)?;
 
-        let mut url = self.base_url.join(CONFIRMATION_URL)?;
+        let mut url = self.frontend_base_url.join(CONFIRMATION_URL)?;
         url.query_pairs_mut().append_pair("t", token.as_str());
         Ok(url)
     }
@@ -174,7 +174,7 @@ impl Mailer {
     pub async fn send_admin_welcome(
         &self, to_email: String, to_name: String, password: String,
     ) -> Result<()> {
-        let login_url = self.base_url.to_string();
+        let login_url = self.frontend_base_url.join("/admin/login")?.to_string();
 
         let ctx = minijinja::context! {
             user_name => to_name,
