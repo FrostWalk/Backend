@@ -85,7 +85,6 @@ async fn seed_admin_roles(db: &impl welds::Client) -> welds::errors::Result<()> 
     let roles: &[(i32, &str)] = &[
         (AvailableAdminRole::Root as i32, "Root"),
         (AvailableAdminRole::Professor as i32, "Professor"),
-        (AvailableAdminRole::Tutor as i32, "Tutor"),
         (AvailableAdminRole::Coordinator as i32, "Coordinator"),
     ];
 

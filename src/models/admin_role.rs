@@ -16,12 +16,10 @@ pub struct AdminRole {
 pub(crate) enum AvailableAdminRole {
     Root = 1,
     Professor = 2,
-    Tutor = 3,
-    Coordinator = 4,
+    Coordinator = 3,
 }
-pub(crate) const ALL: [AvailableAdminRole; 4] = [
+pub(crate) const ALL: [AvailableAdminRole; 3] = [
     AvailableAdminRole::Root,
     AvailableAdminRole::Professor,
-    AvailableAdminRole::Tutor,
     AvailableAdminRole::Coordinator,
 ];
