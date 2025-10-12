@@ -24,7 +24,7 @@ where
 {
     type Response = ServiceResponse<actix_web::body::BoxBody>;
     type Error = actix_web::Error;
-    type Transform = AuthMiddleware<4, S>;
+    type Transform = AuthMiddleware<3, S>;
     type InitError = ();
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 

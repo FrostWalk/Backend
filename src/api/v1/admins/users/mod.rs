@@ -31,7 +31,6 @@ pub(super) fn users_scope() -> Scope {
                 .wrap(Admin::require_roles([
                     AvailableAdminRole::Root,
                     AvailableAdminRole::Professor,
-                    AvailableAdminRole::Tutor,
                 ])),
         )
         .route(
@@ -59,7 +58,6 @@ pub(super) fn users_scope() -> Scope {
                 .wrap(Admin::require_roles([
                     AvailableAdminRole::Root,
                     AvailableAdminRole::Professor,
-                    AvailableAdminRole::Tutor,
                 ])),
         )
         .route(
