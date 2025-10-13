@@ -16,11 +16,6 @@ use utoipa::ToSchema;
 use welds::state::DbState;
 
 #[derive(Debug, Deserialize, ToSchema)]
-pub(crate) struct AdminRemoveMemberRequest {
-    pub student_id: i32,
-}
-
-#[derive(Debug, Deserialize, ToSchema)]
 pub(crate) struct TransferLeadershipRequest {
     pub new_leader_student_id: i32,
     pub remove_old_leader: bool,

@@ -8,7 +8,7 @@ logs_mongo_uri = "mongodb://localhost:27017"
 logs_db_name = "logs"
 default_admin_password = "password"
 default_admin_email = "root"
-allowed_signup_domains = ["studenti.unitn.it", "unitn.it"]
+allowed_signup_domains = ["studenti.unitn.it"]
 
 smtp_host = "localhost"
 smtp_port = 1025
@@ -16,4 +16,5 @@ smtp_username = "user@locahost"
 smtp_password = "password"
 email_from = "Advanced Programming"
 email_token_secret = "secret_token"
-app_base_url = "http://localhost:8080"
+frontend_base_url = "http://localhost:3000"
+skip_email_confirmation = false

@@ -1,10 +1,14 @@
 use confirm_email::generate_token;
-use lettre::message::{header::ContentType, Mailbox, Message, MultiPart, SinglePart};
+use lettre::message::{
+    header::{ContentTransferEncoding, ContentType},
+    Mailbox, Message, MultiPart, SinglePart,
+};
 use lettre::{
     transport::smtp::authentication::Credentials, AsyncSmtpTransport, AsyncTransport,
     Tokio1Executor,
 };
 use url::Url;
+use uuid::Uuid;
 
 use super::template::TemplateEngine;
 use crate::config::Config;
@@ -13,13 +17,13 @@ use minijinja::Value as JinjaValue;
 type DynError = Box<dyn std::error::Error + Send + Sync + 'static>;
 type Result<T> = std::result::Result<T, DynError>;
 
-const CONFIRMATION_URL: &str = "/v1/students/auth/confirm";
+const CONFIRMATION_URL: &str = "/confirm";
 
 #[derive(Clone)]
 pub struct Mailer {
     transport: AsyncSmtpTransport<Tokio1Executor>,
     from: Mailbox,
-    base_url: Url,
+    frontend_base_url: Url,
     templates: TemplateEngine,
 }
 
@@ -31,28 +35,35 @@ impl Mailer {
             config.smtp_username(),
             config.smtp_password(),
             config.email_from(),
-            config.app_base_url(),
+            config.frontend_base_url(),
         )
     }
 
     pub fn new(
         smtp_host: &str, port: u16, username: &str, password: &str, from_name: &str,
-        app_base_url: &str,
+        frontend_base_url: &str,
     ) -> Result<Self> {
         let creds = Credentials::new(username.to_owned(), password.to_owned());
 
+        // Configure SMTP transport with RFC 5322 compliance
+        // - Uses STARTTLS for secure connection (required by Google)
+        // - Sets timeouts for reliable delivery
         let mut builder = AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(smtp_host)?;
-        builder = builder.port(port);
+        builder = builder
+            .port(port)
+            .credentials(creds)
+            // Set connection timeout (30 seconds) for reliable delivery
+            .timeout(Some(std::time::Duration::from_secs(30)));
 
-        let transport = builder.credentials(creds).build();
+        let transport = builder.build();
 
         let from = Mailbox::new(Some(from_name.to_owned()), username.parse()?);
-        let base_url = Url::parse(app_base_url)?;
+        let frontend_base_url = Url::parse(frontend_base_url)?;
 
         Ok(Self {
             transport,
             from,
-            base_url,
+            frontend_base_url,
             templates: TemplateEngine::new()?,
         })
     }
@@ -60,9 +71,18 @@ impl Mailer {
     fn confirmation_link(&self, email: String, key: String) -> Result<Url> {
         let token = generate_token(email, key)?;
 
-        let mut url = self.base_url.join(CONFIRMATION_URL)?;
+        let mut url = self.frontend_base_url.join(CONFIRMATION_URL)?;
         url.query_pairs_mut().append_pair("t", token.as_str());
         Ok(url)
+    }
+
+    /// Generate a RFC 5322 compliant Message-ID header
+    /// Format: <unique-id@domain>
+    /// Uses the sender's email address domain
+    fn generate_message_id(&self) -> String {
+        let unique_id = Uuid::new_v4();
+        let domain = self.from.email.domain();
+        format!("<{}@{}>", unique_id, domain)
     }
 
     async fn send_templated(
@@ -74,20 +94,35 @@ impl Mailer {
         let html_body = self.templates.render(html_template_name, ctx.clone())?;
         let text_body = self.templates.render(text_template_name, ctx)?;
 
+        // Generate RFC 5322 compliant Message-ID using sender's email domain
+        let message_id = self.generate_message_id();
+
+        // Build email with RFC 5322 compliant structure
+        // The lettre library automatically adds required headers:
+        // - Date header (current time)
+        // - MIME-Version (when using MultiPart)
+        // We explicitly add:
+        // - Message-ID (format: <unique-id@sender-domain>)
+        // Using QuotedPrintable encoding ensures RFC 5322 line length limits (998 chars/line)
         let email = Message::builder()
             .from(self.from.clone())
             .to(to)
             .subject(subject)
+            .message_id(Some(message_id))
             .multipart(
+                // MultiPart::alternative with text/plain first, then text/html
+                // This is the RFC 2046 recommended order
                 MultiPart::alternative()
                     .singlepart(
                         SinglePart::builder()
-                            .header(ContentType::parse("text/plain; charset=utf-8").unwrap())
+                            .header(ContentType::TEXT_PLAIN)
+                            .header(ContentTransferEncoding::QuotedPrintable)
                             .body(text_body),
                     )
                     .singlepart(
                         SinglePart::builder()
-                            .header(ContentType::parse("text/html; charset=utf-8").unwrap())
+                            .header(ContentType::TEXT_HTML)
+                            .header(ContentTransferEncoding::QuotedPrintable)
                             .body(html_body),
                     ),
             )?;
@@ -139,7 +174,7 @@ impl Mailer {
     pub async fn send_admin_welcome(
         &self, to_email: String, to_name: String, password: String,
     ) -> Result<()> {
-        let login_url = self.base_url.to_string();
+        let login_url = self.frontend_base_url.join("/admin/login")?.to_string();
 
         let ctx = minijinja::context! {
             user_name => to_name,

@@ -59,6 +59,7 @@ pub(super) fn group_deliverables_scope() -> Scope {
                 .wrap(Admin::require_roles([
                     AvailableAdminRole::Root,
                     AvailableAdminRole::Professor,
+                    AvailableAdminRole::Coordinator,
                 ])),
         )
         .route(

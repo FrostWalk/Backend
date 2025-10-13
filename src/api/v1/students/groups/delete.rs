@@ -21,7 +21,7 @@ pub(crate) struct DeleteGroupResponse {
         (status = 403, description = "Insufficient permissions", body = JsonError),
         (status = 500, description = "Internal server error", body = JsonError)
     ),
-    security(("UserAuth" = [])),
+    security(("StudentAuth" = [])),
     tag = "Groups management",
 )]
 /// Delete a group

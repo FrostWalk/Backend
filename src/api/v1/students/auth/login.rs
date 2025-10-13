@@ -43,6 +43,7 @@ pub(crate) struct LoginStudentsResponse {
     responses(
         (status = 200, description = "Login successful", body = LoginStudentsResponse),
         (status = 401, description = "Wrong credentials", body = JsonError),
+        (status = 403, description = "Account pending email confirmation", body = JsonError),
         (status = 500, description = "Internal server error", body = JsonError)
     ),
     tag = "Student authentication",
@@ -75,6 +76,14 @@ pub(crate) async fn students_login_handler(
     // 3) wrong password
     if verify_password(&req.password, &user.password_hash).is_err() {
         return unauthorized;
+    }
+
+    // 4) check if account is pending email confirmation
+    if user.is_pending {
+        return Err(
+            "Account pending email confirmation. Please check your email to confirm your account."
+                .to_json_error(StatusCode::FORBIDDEN),
+        );
     }
 
     // create JWT

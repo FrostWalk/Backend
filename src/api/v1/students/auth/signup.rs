@@ -1,5 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
+use crate::database::repositories::students_repository;
 use crate::logging::payload_capture::capture_response_status;
 use crate::mail::Mailer;
 use crate::models::student::Student;
@@ -39,6 +40,7 @@ pub(crate) struct StudentSignupResponse {
     responses(
         (status = 202, description = "Account created successfully", body = StudentSignupResponse),
         (status = 400, description = "Invalid data in request", body = JsonError),
+        (status = 409, description = "Student with this email or university ID already exists", body = JsonError),
         (status = 500, description = "Internal server error occurred", body = JsonError),
         (status = 503, description = "Account created email was not sent", body = JsonError)
     ),
@@ -74,6 +76,46 @@ pub(super) async fn student_signup_handler(
         return Err("Invalid email format".to_json_error(StatusCode::BAD_REQUEST));
     }
 
+    // Check if email already exists
+    let email_exists = students_repository::email_exists(&data.db, &req.email)
+        .await
+        .map_err(|e| {
+            error_with_log_id_and_payload(
+                format!("unable to check if email exists: {}", e),
+                "Account creation failed",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &req,
+            )
+        })?;
+
+    if email_exists {
+        return Err("User with this email already exists".to_json_error(StatusCode::CONFLICT));
+    }
+
+    // Check if university ID already exists
+    let university_id_exists =
+        students_repository::university_id_exists(&data.db, req.university_id)
+            .await
+            .map_err(|e| {
+                error_with_log_id_and_payload(
+                    format!("unable to check if university ID exists: {}", e),
+                    "Account creation failed",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                    &req,
+                )
+            })?;
+
+    if university_id_exists {
+        return Err(
+            "User with this university ID already exists".to_json_error(StatusCode::CONFLICT)
+        );
+    }
+
+    // Determine if account should be immediately active or pending confirmation
+    let is_pending = !data.config.skip_email_confirmation();
+
     let mut result = DbState::new_uncreated(Student {
         student_id: 0,
         first_name: req.first_name.clone(),
@@ -81,7 +123,7 @@ pub(super) async fn student_signup_handler(
         email: req.email.clone(),
         university_id: req.university_id,
         password_hash: generate_hash(req.password.clone()),
-        is_pending: true,
+        is_pending,
     });
 
     if let Err(e) = result.save(&data.db).await {
@@ -94,35 +136,38 @@ pub(super) async fn student_signup_handler(
         ));
     }
 
-    let mailer = match Mailer::from_config(&data.config) {
-        Ok(m) => m,
-        Err(e) => {
+    // Only send confirmation email if email confirmation is not skipped
+    if !data.config.skip_email_confirmation() {
+        let mailer = match Mailer::from_config(&data.config) {
+            Ok(m) => m,
+            Err(e) => {
+                return Err(error_with_log_id_and_payload(
+                    format!("unable to create instance of Mailer: {}", e),
+                    "Account creation failed",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                    &req,
+                ));
+            }
+        };
+
+        let name = format!("{} {}", &result.first_name, &result.last_name);
+        if let Err(e) = mailer
+            .send_account_confirmation(
+                result.email.clone(),
+                name,
+                data.config.email_token_secret().clone(),
+            )
+            .await
+        {
             return Err(error_with_log_id_and_payload(
-                format!("unable to create instance of Mailer: {}", e),
-                "Account creation failed",
-                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to send confirmation email: {}", e),
+                "Account created but confirmation email could not be sent",
+                StatusCode::SERVICE_UNAVAILABLE,
                 log::Level::Error,
                 &req,
             ));
         }
-    };
-
-    let name = format!("{} {}", &result.first_name, &result.last_name);
-    if let Err(e) = mailer
-        .send_account_confirmation(
-            result.email.clone(),
-            name,
-            data.config.email_token_secret().clone(),
-        )
-        .await
-    {
-        return Err(error_with_log_id_and_payload(
-            format!("failed to send confirmation email: {}", e),
-            "Account created but confirmation email could not be sent",
-            StatusCode::SERVICE_UNAVAILABLE,
-            log::Level::Error,
-            &req,
-        ));
     }
 
     info!("new student account created: {:?}", result);

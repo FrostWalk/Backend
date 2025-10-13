@@ -8,11 +8,18 @@ COPY ./ ./
 
 # compile a static musl binary
 ARG PROFILE=release
-ARG GIT_COMMIT=""
-ARG GIT_TAG=""
-ENV PROFILE=${PROFILE}
-ENV CI_GIT_COMMIT=${GIT_COMMIT}
-ENV CI_GIT_TAG=${GIT_TAG}
+# Accept Woodpecker CI variables (when build_args_from_env is used)
+ARG CI_COMMIT_SHA=""
+ARG CI_COMMIT_TAG=""
+ARG CI_COMMIT_BRANCH=""
+# Pass them to build environment so build.rs can access them
+# Use BUILD_PROFILE to avoid conflicts with Cargo's internal PROFILE variable
+ENV BUILD_PROFILE=${PROFILE}
+ENV CI_COMMIT_SHA=${CI_COMMIT_SHA}
+ENV CI_COMMIT_TAG=${CI_COMMIT_TAG}
+ENV CI_COMMIT_BRANCH=${CI_COMMIT_BRANCH}
+# Build with the specified profile
+# Note: BUILD_PROFILE env var will be available to build.rs during compilation
 RUN cargo install --path . --root /out --profile ${PROFILE} --target x86_64-unknown-linux-musl
 
 # Runtime Stage
@@ -39,14 +46,15 @@ ENV LOGS_MONGO_URI=""
 ENV LOGS_DB_NAME=""
 ENV DEFAULT_ADMIN_PASSWORD=""
 ENV DEFAULT_ADMIN_EMAIL="federico"
-ENV ALLOWED_SIGNUP_DOMAINS="[\"studenti.unitn.it\", \"unitn.it\"]"
+ENV ALLOWED_SIGNUP_DOMAINS="[\"studenti.unitn.it\"]"
 
 ENV SMTP_HOST=""
 ENV SMTP_PORT=587
 ENV SMTP_USERNAME=""
 ENV SMTP_PASSWORD=""
-ENV APP_BASE_URL=""
+ENV FRONTEND_BASE_URL=""
 ENV EMAIL_FROM="Advanced Programming"
 ENV EMAIL_TOKEN_SECRET=""
+ENV SKIP_EMAIL_CONFIRMATION=false
 
 ENTRYPOINT ["/app/backend"]
