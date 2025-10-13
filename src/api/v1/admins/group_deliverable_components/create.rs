@@ -14,6 +14,8 @@ pub(crate) struct CreateGroupComponentScheme {
     pub project_id: i32,
     #[schema(example = "Robot")]
     pub name: String,
+    #[schema(example = "true")]
+    pub sellable: bool,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -24,6 +26,8 @@ pub(crate) struct CreateGroupComponentResponse {
     pub project_id: i32,
     #[schema(example = "Robot")]
     pub name: String,
+    #[schema(example = "true")]
+    pub sellable: bool,
 }
 
 #[utoipa::path(
@@ -70,6 +74,7 @@ pub(super) async fn create_group_component_handler(
         group_deliverable_component_id: 0,
         project_id: req.project_id,
         name: req.name.clone(),
+        sellable: req.sellable,
     });
 
     if let Err(e) = state.save(&data.db).await {
@@ -86,5 +91,6 @@ pub(super) async fn create_group_component_handler(
         group_deliverable_component_id: state.group_deliverable_component_id,
         project_id: req.project_id,
         name: req.name.clone(),
+        sellable: req.sellable,
     }))
 }

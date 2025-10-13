@@ -18,6 +18,8 @@ pub(crate) struct GroupComponentResponse {
     pub project_id: i32,
     #[schema(example = "Resistor")]
     pub name: String,
+    #[schema(example = "true")]
+    pub sellable: bool,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -82,6 +84,7 @@ pub(super) async fn get_all_group_components_handler(
             group_deliverable_component_id: component.group_deliverable_component_id,
             project_id: component.project_id,
             name: component.name,
+            sellable: component.sellable,
         })
         .collect();
 
@@ -133,6 +136,7 @@ pub(super) async fn get_group_components_for_project_handler(
             group_deliverable_component_id: component_data.group_deliverable_component_id,
             project_id: component_data.project_id,
             name: component_data.name,
+            sellable: component_data.sellable,
         });
     }
 
@@ -186,6 +190,7 @@ pub(super) async fn get_group_component_handler(
         group_deliverable_component_id: component.group_deliverable_component_id,
         project_id: component.project_id,
         name: component.name,
+        sellable: component.sellable,
     }))
 }
 
