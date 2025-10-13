@@ -1,0 +1,58 @@
+# Development Pipeline - builds and deploys dev image
+
+# Fetch full history + tags
+clone:
+  git:
+    image: woodpeckerci/plugin-git
+    settings:
+      depth: 0
+      tags: true
+    when:
+      - event: manual
+      - event: push
+        branch: development
+
+steps:
+  # ---------- DEV IMAGE (ferris-store:dev) ----------
+  docker-build-dev:
+    image: woodpeckerci/plugin-docker-buildx
+    settings: # Publish to GHCR
+      registry: ghcr.io
+      repo: ghcr.io/frostwalk/ferris-store
+      tags: dev
+      dockerfile: Dockerfile
+      # Build in dev profile, Alpine final image
+      build_args:
+        PROFILE: dev
+      build_args_from_env: true
+      # Link image to the source repository (OCI label)
+      labels:
+        - org.opencontainers.image.source=https://github.com/FrostWalk/Ferris-Store
+        - org.opencontainers.image.licenses=MIT
+      # Also add the plugin's default git-derived labels (version, revision, etc.)
+      default_labels: true
+      # GHCR auth
+      username:
+        from_secret: GHCR_USERNAME
+      password:
+        from_secret: GHCR_TOKEN
+    when: # Build on pushes to the development branch…
+      - event: push
+        branch: development
+      # …and also when run manually.
+      - event: manual
+
+  # ---------- TRIGGER UPGRADE ----------
+  trigger-watchtower:
+    image: curlimages/curl:latest
+    environment:
+      WT_URL: https://wt.advancedprogramming.ovh/v1/update
+      WT_TOKEN: 
+        from_secret: WATCHTOWER_TOKEN 
+    commands:
+      - 'curl -fsS -X POST -H "Authorization: Bearer $${WT_TOKEN}" "$WT_URL"'
+    when:
+      - event: manual
+      - event: push
+        branch: development
+
