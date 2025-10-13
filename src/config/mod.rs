@@ -38,14 +38,16 @@ pub(crate) struct Config {
     smtp_username: String,
     /// Password of the smtp server
     smtp_password: String,
-    /// Application base url
-    app_base_url: String,
+    /// Frontend base url (for email links)
+    frontend_base_url: String,
     /// Email domains with which you can create an account
     allowed_signup_domains: Vec<String>,
     /// Email sender pretty name
     email_from: String,
     /// Key used to encrypt and decrypt tokens sent via email
     email_token_secret: String,
+    /// Skip email confirmation for student accounts (when true, accounts are immediately active)
+    skip_email_confirmation: bool,
 }
 impl Config {
     /// Loads and validates the application configuration from multiple sources.

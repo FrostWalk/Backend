@@ -24,7 +24,7 @@ pub(crate) struct UpdateGroupDeliverableSelectionResponse {
 
 #[utoipa::path(
     patch,
-    path = "/v1/students/groups/{group_id}/deliverable-selection",
+    path = "/v1/students/group-deliverable-selections/{group_id}",
     request_body = UpdateGroupDeliverableSelectionRequest,
     responses(
         (status = 200, description = "Selection updated successfully", body = UpdateGroupDeliverableSelectionResponse),

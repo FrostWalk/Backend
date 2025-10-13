@@ -37,7 +37,7 @@ pub(crate) struct ProjectInfo {
         (status = 401, description = "Authentication required", body = JsonError),
         (status = 500, description = "Internal server error", body = JsonError)
     ),
-    security(("UserAuth" = [])),
+    security(("StudentAuth" = [])),
     tag = "Security codes management",
 )]
 /// Validate a security code and return project information

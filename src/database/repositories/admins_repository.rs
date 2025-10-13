@@ -1,5 +1,6 @@
+use crate::database::seed::seed_all_roles;
 use crate::models::admin::Admin;
-use crate::models::admin_role::{AdminRole, AvailableAdminRole};
+use crate::models::admin_role::AvailableAdminRole;
 use log::{error, info};
 use password_auth::generate_hash;
 use welds::connections::postgres::PostgresClient;
@@ -58,10 +59,10 @@ pub(crate) async fn create_default_admin(db: &PostgresClient, email: String, pas
         return;
     }
 
-    match seed_admin_roles(db).await {
+    match seed_all_roles(db).await {
         Ok(_) => {}
         Err(e) => {
-            panic!("unable to create admin roles {e}");
+            panic!("unable to seed roles: {e}");
         }
     };
 
@@ -79,36 +80,4 @@ pub(crate) async fn create_default_admin(db: &PostgresClient, email: String, pas
             panic!("unable to create default admin {:?} error: {}", admin, e)
         }
     }
-}
-
-async fn seed_admin_roles(db: &impl welds::Client) -> welds::errors::Result<()> {
-    let roles: &[(i32, &str)] = &[
-        (AvailableAdminRole::Root as i32, "Root"),
-        (AvailableAdminRole::Professor as i32, "Professor"),
-        (AvailableAdminRole::Tutor as i32, "Tutor"),
-        (AvailableAdminRole::Coordinator as i32, "Coordinator"),
-    ];
-
-    for (id, name) in roles {
-        let mut rows = AdminRole::where_col(|r| r.admin_role_id.equal(*id))
-            .limit(1)
-            .run(db)
-            .await?;
-
-        if let Some(mut state) = rows.pop() {
-            if state.name != *name {
-                state.name = (*name).to_string();
-                state.save(db).await?;
-            }
-        } else {
-            // not exists: insert
-            let mut state = DbState::new_uncreated(AdminRole {
-                admin_role_id: *id,
-                name: (*name).to_string(),
-            });
-            state.save(db).await?;
-        }
-    }
-
-    Ok(())
 }

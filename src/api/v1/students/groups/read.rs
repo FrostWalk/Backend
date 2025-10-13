@@ -30,7 +30,7 @@ pub(crate) struct GroupWithProject {
         (status = 401, description = "Authentication required", body = JsonError),
         (status = 500, description = "Internal server error", body = JsonError)
     ),
-    security(("UserAuth" = [])),
+    security(("StudentAuth" = [])),
     tag = "Groups management",
 )]
 /// Get all groups where the student is a member

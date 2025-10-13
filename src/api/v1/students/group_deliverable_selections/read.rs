@@ -21,7 +21,7 @@ pub(crate) struct GroupDeliverableSelectionResponse {
 
 #[utoipa::path(
     get,
-    path = "/v1/students/groups/{group_id}/deliverable-selection",
+    path = "/v1/students/group-deliverable-selections/{group_id}",
     responses(
         (status = 200, description = "Deliverable selection found", body = GroupDeliverableSelectionResponse),
         (status = 404, description = "No deliverable selected yet or group not found", body = JsonError),

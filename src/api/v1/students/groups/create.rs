@@ -38,7 +38,7 @@ pub(crate) struct CreateGroupResponse {
         (status = 409, description = "User already has a group for this project", body = JsonError),
         (status = 500, description = "Internal server error", body = JsonError)
     ),
-    security(("UserAuth" = [])),
+    security(("StudentAuth" = [])),
     tag = "Groups management",
 )]
 /// Create a new group for a project
@@ -95,8 +95,6 @@ pub(crate) async fn create_group(
             log::Level::Warn,
         ));
     }
-
-    // Security codes are only given to Group Leaders, so no role validation needed
 
     // Check if the student already has a group for this project
     let in_project = groups_repository::is_student_in_project(

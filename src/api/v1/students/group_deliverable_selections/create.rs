@@ -31,7 +31,7 @@ pub(crate) struct CreateGroupDeliverableSelectionResponse {
 
 #[utoipa::path(
     post,
-    path = "/v1/students/groups/{group_id}/deliverable-selection",
+    path = "/v1/students/group-deliverable-selections/{group_id}",
     request_body = CreateGroupDeliverableSelectionRequest,
     responses(
         (status = 201, description = "Deliverable selected successfully", body = CreateGroupDeliverableSelectionResponse),
