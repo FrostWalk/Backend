@@ -16,4 +16,5 @@ pub struct GroupDeliverableComponent {
     #[welds(foreign_key = "projects.project_id")]
     pub project_id: i32,
     pub name: String,
+    pub sellable: bool,
 }
