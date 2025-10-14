@@ -12,6 +12,8 @@ use utoipa::ToSchema;
 pub(crate) struct UpdateGroupComponentScheme {
     #[schema(example = "Updated Resistor")]
     pub name: String,
+    #[schema(example = "true")]
+    pub sellable: bool,
 }
 
 #[utoipa::path(
@@ -79,8 +81,9 @@ pub(super) async fn update_group_component_handler(
             .to_json_error(StatusCode::CONFLICT));
     }
 
-    // Update the name
+    // Update the name and sellable
     component_state.name = req.name.clone();
+    component_state.sellable = req.sellable;
 
     component_state.save(&data.db).await.map_err(|e| {
         error_with_log_id_and_payload(

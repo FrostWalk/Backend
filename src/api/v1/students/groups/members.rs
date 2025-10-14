@@ -26,13 +26,6 @@ pub(crate) struct RemoveMemberRequest {
 }
 
 #[derive(Debug, Serialize, ToSchema)]
-pub(crate) struct MemberResponse {
-    pub success: bool,
-    pub message: String,
-    pub member: Option<MemberInfo>,
-}
-
-#[derive(Debug, Serialize, ToSchema)]
 pub(crate) struct MemberInfo {
     pub student_id: i32,
     pub email: String,
@@ -46,11 +39,12 @@ pub(crate) struct MemberInfo {
     path = "/v1/students/groups/{group_id}/members",
     request_body = AddMemberRequest,
     responses(
-        (status = 200, description = "Member added successfully", body = MemberResponse),
-        (status = 400, description = "Invalid request data or business rule violation", body = JsonError),
+        (status = 200, description = "Member added successfully", body = MemberInfo),
+        (status = 400, description = "Student email not confirmed or group at maximum capacity", body = JsonError),
         (status = 401, description = "Authentication required", body = JsonError),
         (status = 403, description = "Insufficient permissions", body = JsonError),
-        (status = 404, description = "Group not found", body = JsonError),
+        (status = 404, description = "Group or student not found", body = JsonError),
+        (status = 409, description = "Student is already in a group for this project", body = JsonError),
         (status = 500, description = "Internal server error", body = JsonError)
     ),
     security(("StudentAuth" = [])),
@@ -115,21 +109,26 @@ pub(super) async fn add_member(
     let student = match student_state {
         Some(state) => DbState::into_inner(state),
         None => {
-            return Ok(HttpResponse::Ok().json(MemberResponse {
-                success: false,
-                message: format!("Student with email '{}' not found", body.email),
-                member: None,
-            }));
+            return Err(error_with_log_id(
+                format!("student with email '{}' not found", body.email),
+                format!("Student with email '{}' not found", body.email),
+                StatusCode::NOT_FOUND,
+                log::Level::Info,
+            ));
         }
     };
 
     // Verify the student has confirmed their email
     if student.is_pending {
-        return Ok(HttpResponse::Ok().json(MemberResponse {
-            success: false,
-            message: "Student must confirm their email before joining a group".to_string(),
-            member: None,
-        }));
+        return Err(error_with_log_id(
+            format!(
+                "student {} has not confirmed their email",
+                student.student_id
+            ),
+            "Student must confirm their email before joining a group",
+            StatusCode::BAD_REQUEST,
+            log::Level::Info,
+        ));
     }
 
     // Get the group and check if the student is already in a group for this project
@@ -172,11 +171,15 @@ pub(super) async fn add_member(
             })?;
 
     if in_project {
-        return Ok(HttpResponse::Ok().json(MemberResponse {
-            success: false,
-            message: "Student is already in a group for this project".to_string(),
-            member: None,
-        }));
+        return Err(error_with_log_id(
+            format!(
+                "student {} is already in a group for project {}",
+                student.student_id, group.project_id
+            ),
+            "Student is already in a group for this project",
+            StatusCode::CONFLICT,
+            log::Level::Info,
+        ));
     }
 
     // Check if adding this member would exceed the maximum group size
@@ -215,14 +218,18 @@ pub(super) async fn add_member(
         })?;
 
     if current_member_count >= project.max_group_size {
-        return Ok(HttpResponse::Ok().json(MemberResponse {
-            success: false,
-            message: format!(
+        return Err(error_with_log_id(
+            format!(
+                "group {} has reached maximum size of {} members",
+                group_id, project.max_group_size
+            ),
+            format!(
                 "Group has reached the maximum size of {} members for this project",
                 project.max_group_size
             ),
-            member: None,
-        }));
+            StatusCode::BAD_REQUEST,
+            log::Level::Info,
+        ));
     }
 
     // Add the student as a group member with Member role
@@ -235,16 +242,12 @@ pub(super) async fn add_member(
     });
 
     match member_state.save(&data.db).await {
-        Ok(_) => Ok(HttpResponse::Ok().json(MemberResponse {
-            success: true,
-            message: format!("Student '{}' added to group successfully", body.email),
-            member: Some(MemberInfo {
-                student_id: student.student_id,
-                email: student.email,
-                first_name: student.first_name,
-                last_name: student.last_name,
-                role: "Member".to_string(),
-            }),
+        Ok(_) => Ok(HttpResponse::Ok().json(MemberInfo {
+            student_id: student.student_id,
+            email: student.email,
+            first_name: student.first_name,
+            last_name: student.last_name,
+            role: "Member".to_string(),
         })),
         Err(e) => Err(error_with_log_id(
             format!(
@@ -263,8 +266,8 @@ pub(super) async fn add_member(
     path = "/v1/students/groups/{group_id}/members",
     request_body = RemoveMemberRequest,
     responses(
-        (status = 200, description = "Member removed successfully", body = MemberResponse),
-        (status = 400, description = "Invalid request data or business rule violation", body = JsonError),
+        (status = 204, description = "Member removed successfully"),
+        (status = 400, description = "Cannot remove the group leader", body = JsonError),
         (status = 401, description = "Authentication required", body = JsonError),
         (status = 403, description = "Insufficient permissions", body = JsonError),
         (status = 404, description = "Group or member not found", body = JsonError),
@@ -344,21 +347,29 @@ pub(super) async fn remove_member(
     let member = match member {
         Some(member) => member,
         None => {
-            return Ok(HttpResponse::Ok().json(MemberResponse {
-                success: false,
-                message: "Member not found in this group".to_string(),
-                member: None,
-            }));
+            return Err(error_with_log_id(
+                format!(
+                    "member with student_id {} not found in group {}",
+                    body.student_id, group_id
+                ),
+                "Member not found in this group",
+                StatusCode::NOT_FOUND,
+                log::Level::Info,
+            ));
         }
     };
 
     // Don't allow removing the GroupLeader
     if member.student_role_id == AvailableStudentRole::GroupLeader as i32 {
-        return Ok(HttpResponse::Ok().json(MemberResponse {
-            success: false,
-            message: "Cannot remove the group leader".to_string(),
-            member: None,
-        }));
+        return Err(error_with_log_id(
+            format!(
+                "attempt to remove group leader (student_id {}) from group {}",
+                member.student_id, group_id
+            ),
+            "Cannot remove the group leader",
+            StatusCode::BAD_REQUEST,
+            log::Level::Info,
+        ));
     }
 
     // Get the group to find the project_id for deliverable selection deletion
@@ -407,11 +418,7 @@ pub(super) async fn remove_member(
         .delete(&data.db)
         .await
     {
-        Ok(_) => Ok(HttpResponse::Ok().json(MemberResponse {
-            success: true,
-            message: "Member removed from group successfully".to_string(),
-            member: None,
-        })),
+        Ok(_) => Ok(HttpResponse::NoContent().finish()),
         Err(e) => Err(error_with_log_id(
             format!("unable to remove member from group: {}", e),
             "Database error",
