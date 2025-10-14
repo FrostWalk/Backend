@@ -48,7 +48,9 @@ steps:
     environment:
       WT_URL: https://wt.advancedprogramming.ovh/v1/update
       WT_TOKEN: 
-        from_secret: WATCHTOWER_TOKEN 
+        from_secret: WATCHTOWER_TOKEN
+    depends_on:
+      - docker-build-dev
     commands:
       - 'curl -fsS -X POST -H "Authorization: Bearer $${WT_TOKEN}" "$WT_URL"'
     when:
