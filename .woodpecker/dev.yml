@@ -13,12 +13,12 @@ clone:
         branch: development
 
 steps:
-  # ---------- DEV IMAGE (ferris-store:dev) ----------
+  # ---------- DEV IMAGE (backend:dev) ----------
   docker-build-dev:
     image: woodpeckerci/plugin-docker-buildx
     settings: # Publish to GHCR
       registry: ghcr.io
-      repo: ghcr.io/frostwalk/ferris-store
+      repo: ghcr.io/frostwalk/backend
       tags: dev
       dockerfile: Dockerfile
       # Build in dev profile, Alpine final image
@@ -27,7 +27,7 @@ steps:
       build_args_from_env: true
       # Link image to the source repository (OCI label)
       labels:
-        - org.opencontainers.image.source=https://github.com/FrostWalk/Ferris-Store
+        - org.opencontainers.image.source=https://github.com/FrostWalk/Backend
         - org.opencontainers.image.licenses=MIT
       # Also add the plugin's default git-derived labels (version, revision, etc.)
       default_labels: true

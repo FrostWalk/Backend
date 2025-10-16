@@ -217,9 +217,9 @@ use utoipa_swagger_ui::SwaggerUi;
     ),
     modifiers(&SecurityAddon),
     info(
-        title = "Ferris store API",
+        title = "Advanced Programming Application Backend API",
         version = "0.1.0",
-        description = "Backend of Ferris store",
+        description = "This is the description of the APIs exposed by the backend of the advanced programming application",
         license(name = "MIT", identifier = "MIT")
     ),
 )]
@@ -227,7 +227,7 @@ pub(in crate::api) struct ApiDoc;
 
 pub(crate) fn open_api() -> SwaggerUi {
     let mut doc = ApiDoc::openapi();
-    doc.info.title = String::from("Ferris store api v1");
+    doc.info.title = String::from("Advanced Programming Application Backend API v1");
     doc.info.version = String::from("0.1.0");
     doc.servers = Some(vec![
         Server::new("https://dev.advancedprogramming.ovh/api"),
