@@ -71,7 +71,7 @@ pub(crate) async fn forgot_password_handler(
 
         // Create the reset URL with the token (frontend URL)
         let reset_url = format!(
-            "{}/forgot-password/reset?t={}",
+            "{}/password-reset?t={}",
             data.config.frontend_base_url(),
             token
         );
