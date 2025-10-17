@@ -194,3 +194,204 @@ impl Mailer {
         .await
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_utils::*;
+
+    #[test]
+    fn test_confirmation_link_generation() {
+        let mailer = create_test_mailer().unwrap();
+        let email = TEST_STUDENT_EMAIL.to_string();
+        let key = "test-confirmation-key".to_string();
+
+        let result = mailer.confirmation_link(email.clone(), key.clone());
+        assert!(result.is_ok());
+
+        let url = result.unwrap();
+        assert!(url.as_str().contains(TEST_FRONTEND_URL));
+        assert!(url.as_str().contains("/confirm"));
+        assert!(url.as_str().contains("t="));
+
+        // Verify the token can be extracted
+        let query_pairs: std::collections::HashMap<_, _> = url.query_pairs().collect();
+        assert!(query_pairs.contains_key("t"));
+    }
+
+    #[test]
+    fn test_confirmation_link_with_different_emails() {
+        let mailer = create_test_mailer().unwrap();
+        let key = "test-key".to_string();
+
+        let email1 = "user1@test.com".to_string();
+        let email2 = "user2@test.com".to_string();
+
+        let url1 = mailer.confirmation_link(email1, key.clone()).unwrap();
+        let url2 = mailer.confirmation_link(email2, key).unwrap();
+
+        // Different emails should generate different tokens
+        let query1: std::collections::HashMap<_, _> = url1.query_pairs().collect();
+        let query2: std::collections::HashMap<_, _> = url2.query_pairs().collect();
+
+        assert_ne!(query1.get("t"), query2.get("t"));
+    }
+
+    #[test]
+    fn test_confirmation_link_with_different_keys() {
+        let mailer = create_test_mailer().unwrap();
+        let email = TEST_STUDENT_EMAIL.to_string();
+
+        let key1 = "key1".to_string();
+        let key2 = "key2".to_string();
+
+        let url1 = mailer.confirmation_link(email.clone(), key1).unwrap();
+        let url2 = mailer.confirmation_link(email, key2).unwrap();
+
+        // Different keys should generate different tokens
+        let query1: std::collections::HashMap<_, _> = url1.query_pairs().collect();
+        let query2: std::collections::HashMap<_, _> = url2.query_pairs().collect();
+
+        assert_ne!(query1.get("t"), query2.get("t"));
+    }
+
+    #[test]
+    fn test_generate_message_id_format() {
+        let mailer = create_test_mailer().unwrap();
+        let message_id = mailer.generate_message_id();
+
+        // Should be in format <uuid@domain>
+        assert!(message_id.starts_with('<'));
+        assert!(message_id.ends_with('>'));
+        assert!(message_id.contains('@'));
+
+        // Should contain the sender's domain
+        assert!(message_id.contains("test.com"));
+    }
+
+    #[test]
+    fn test_generate_message_id_uniqueness() {
+        let mailer = create_test_mailer().unwrap();
+
+        let id1 = mailer.generate_message_id();
+        let id2 = mailer.generate_message_id();
+
+        // Should generate unique IDs
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn test_generate_message_id_domain_extraction() {
+        let mailer = create_test_mailer().unwrap();
+        let message_id = mailer.generate_message_id();
+
+        // Extract domain from message ID
+        let domain_part = message_id.split('@').nth(1).unwrap().trim_end_matches('>');
+        assert_eq!(domain_part, "test.com");
+    }
+
+    #[test]
+    fn test_mailer_new_success() {
+        let result = Mailer::new(
+            TEST_SMTP_HOST,
+            587,
+            TEST_SMTP_USERNAME,
+            "testpassword",
+            "Test Sender",
+            TEST_FRONTEND_URL,
+        );
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_mailer_new_invalid_smtp_host() {
+        let result = Mailer::new(
+            "invalid-host-that-does-not-exist",
+            587,
+            TEST_SMTP_USERNAME,
+            "testpassword",
+            "Test Sender",
+            TEST_FRONTEND_URL,
+        );
+
+        // This might succeed or fail depending on network, but should not panic
+        // The important thing is that it handles the error gracefully
+        let _ = result; // Don't assert, just ensure it doesn't panic
+    }
+
+    #[test]
+    fn test_mailer_new_invalid_frontend_url() {
+        let result = Mailer::new(
+            TEST_SMTP_HOST,
+            587,
+            TEST_SMTP_USERNAME,
+            "testpassword",
+            "Test Sender",
+            "not-a-valid-url",
+        );
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_mailer_from_config() {
+        let config = create_test_config();
+        let result = Mailer::from_config(&config);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_mailer_is_cloneable() {
+        let mailer1 = create_test_mailer().unwrap();
+        let mailer2 = mailer1.clone();
+
+        // Both should work independently
+        let email = TEST_STUDENT_EMAIL.to_string();
+        let key = "test-key".to_string();
+
+        let result1 = mailer1.confirmation_link(email.clone(), key.clone());
+        let result2 = mailer2.confirmation_link(email, key);
+
+        assert!(result1.is_ok());
+        assert!(result2.is_ok());
+    }
+
+    #[test]
+    fn test_confirmation_link_with_special_characters() {
+        let mailer = create_test_mailer().unwrap();
+        let email = "test+tag@example.com".to_string();
+        let key = "key-with-special-chars!@#$%".to_string();
+
+        let result = mailer.confirmation_link(email, key);
+        assert!(result.is_ok());
+
+        let url = result.unwrap();
+        assert!(url.as_str().contains("/confirm"));
+    }
+
+    #[test]
+    fn test_confirmation_link_with_unicode() {
+        let mailer = create_test_mailer().unwrap();
+        let email = "тест@example.com".to_string();
+        let key = "ключ-с-кириллицей".to_string();
+
+        let result = mailer.confirmation_link(email, key);
+        assert!(result.is_ok());
+
+        let url = result.unwrap();
+        assert!(url.as_str().contains("/confirm"));
+    }
+
+    fn create_test_mailer() -> Result<Mailer> {
+        Mailer::new(
+            TEST_SMTP_HOST,
+            587,
+            TEST_SMTP_USERNAME,
+            "testpassword",
+            "Test Sender",
+            TEST_FRONTEND_URL,
+        )
+    }
+}

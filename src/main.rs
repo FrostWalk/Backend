@@ -21,6 +21,12 @@ mod logging;
 mod mail;
 mod models;
 
+#[cfg(test)]
+mod test_utils;
+
+#[cfg(test)]
+mod password_tests;
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // load config from env or file
