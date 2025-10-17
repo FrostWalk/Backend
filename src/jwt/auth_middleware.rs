@@ -169,3 +169,396 @@ where
         .boxed_local()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::jwt::token::{create_admin_token, create_student_token};
+    use crate::models::admin::Admin;
+    use crate::models::admin_role::AvailableAdminRole;
+    use crate::models::student::Student;
+    use crate::test_utils::*;
+    use actix_http::header::HeaderName;
+    use actix_web::dev::ServiceRequest;
+    use actix_web::test::TestRequest;
+    use actix_web::HttpResponse;
+
+    // Mock service for testing
+    struct MockService;
+    impl Service<ServiceRequest> for MockService {
+        type Response = ServiceResponse<actix_web::body::BoxBody>;
+        type Error = actix_web::Error;
+        type Future = futures_util::future::Ready<Result<Self::Response, Self::Error>>;
+
+        fn poll_ready(&self, _: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+            Poll::Ready(Ok(()))
+        }
+
+        fn call(&self, req: ServiceRequest) -> Self::Future {
+            let response = if req.extensions().get::<Admin>().is_some() {
+                HttpResponse::Ok().body("admin_authenticated")
+            } else if req.extensions().get::<Student>().is_some() {
+                HttpResponse::Ok().body("student_authenticated")
+            } else {
+                HttpResponse::Ok().body("no_auth")
+            };
+            futures_util::future::ready(Ok(ServiceResponse::new(req.into_parts().0, response)))
+        }
+    }
+
+    fn create_test_request() -> ServiceRequest {
+        TestRequest::default().to_srv_request()
+    }
+
+    #[actix_web::test]
+    async fn test_auth_middleware_no_token_returns_unauthorized() {
+        let middleware = AuthMiddleware {
+            service: Rc::new(MockService),
+            require_admin: true,
+            authentication_only: false,
+            allowed_roles: Rc::new([AvailableAdminRole::Root]),
+        };
+
+        let req = create_test_request();
+        let result = middleware.call(req).await;
+
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert_eq!(
+            error.as_response_error().status_code(),
+            StatusCode::UNAUTHORIZED
+        );
+    }
+
+    #[actix_web::test]
+    async fn test_auth_middleware_invalid_token_returns_unauthorized() {
+        let middleware = AuthMiddleware {
+            service: Rc::new(MockService),
+            require_admin: true,
+            authentication_only: false,
+            allowed_roles: Rc::new([AvailableAdminRole::Root]),
+        };
+
+        let mut req = create_test_request();
+        req.headers_mut().insert(
+            HeaderName::from_static(ADMIN_HEADER_NAME),
+            "invalid_token".parse().unwrap(),
+        );
+
+        let result = middleware.call(req).await;
+
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert_eq!(
+            error.as_response_error().status_code(),
+            StatusCode::UNAUTHORIZED
+        );
+    }
+
+    #[actix_web::test]
+    async fn test_auth_middleware_admin_token_with_wrong_secret_returns_unauthorized() {
+        let middleware = AuthMiddleware {
+            service: Rc::new(MockService),
+            require_admin: true,
+            authentication_only: false,
+            allowed_roles: Rc::new([AvailableAdminRole::Root]),
+        };
+
+        // Create token with wrong secret
+        let token = create_admin_token(
+            TEST_ADMIN_ID,
+            TEST_ADMIN_ROLE_ID,
+            b"wrong_secret_key_for_jwt_tokens_32_chars",
+            TEST_JWT_VALIDITY_SECONDS,
+        )
+        .unwrap();
+
+        let mut req = create_test_request();
+        req.headers_mut().insert(
+            HeaderName::from_static(ADMIN_HEADER_NAME),
+            token.parse().unwrap(),
+        );
+
+        let result = middleware.call(req).await;
+
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert_eq!(
+            error.as_response_error().status_code(),
+            StatusCode::UNAUTHORIZED
+        );
+    }
+
+    #[actix_web::test]
+    async fn test_auth_middleware_student_token_when_admin_required_returns_unauthorized() {
+        let middleware = AuthMiddleware {
+            service: Rc::new(MockService),
+            require_admin: true,
+            authentication_only: false,
+            allowed_roles: Rc::new([AvailableAdminRole::Root]),
+        };
+
+        let token =
+            create_student_token(TEST_STUDENT_ID, TEST_JWT_SECRET, TEST_JWT_VALIDITY_SECONDS)
+                .unwrap();
+
+        let mut req = create_test_request();
+        req.headers_mut().insert(
+            HeaderName::from_static(STUDENT_HEADER_NAME),
+            token.parse().unwrap(),
+        );
+
+        let result = middleware.call(req).await;
+
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert_eq!(
+            error.as_response_error().status_code(),
+            StatusCode::UNAUTHORIZED
+        );
+    }
+
+    #[actix_web::test]
+    async fn test_auth_middleware_admin_token_wrong_role_returns_forbidden() {
+        let middleware = AuthMiddleware {
+            service: Rc::new(MockService),
+            require_admin: true,
+            authentication_only: false,
+            allowed_roles: Rc::new([AvailableAdminRole::Root]), // Only allow SuperAdmin
+        };
+
+        // Create token with different role (assuming role 2 is not SuperAdmin)
+        let token = create_admin_token(
+            TEST_ADMIN_ID,
+            2, // Different role
+            TEST_JWT_SECRET,
+            TEST_JWT_VALIDITY_SECONDS,
+        )
+        .unwrap();
+
+        let mut req = create_test_request();
+        req.headers_mut().insert(
+            HeaderName::from_static(ADMIN_HEADER_NAME),
+            token.parse().unwrap(),
+        );
+
+        let result = middleware.call(req).await;
+
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert_eq!(
+            error.as_response_error().status_code(),
+            StatusCode::FORBIDDEN
+        );
+    }
+
+    #[actix_web::test]
+    async fn test_auth_middleware_authentication_only_mode_accepts_any_valid_token() {
+        let middleware = AuthMiddleware {
+            service: Rc::new(MockService),
+            require_admin: false, // This should be ignored in authentication_only mode
+            authentication_only: true,
+            allowed_roles: Rc::new([AvailableAdminRole::Root]), // This should be ignored
+        };
+
+        // Test with student token
+        let token =
+            create_student_token(TEST_STUDENT_ID, TEST_JWT_SECRET, TEST_JWT_VALIDITY_SECONDS)
+                .unwrap();
+
+        let mut req = create_test_request();
+        req.headers_mut().insert(
+            HeaderName::from_static(STUDENT_HEADER_NAME),
+            token.parse().unwrap(),
+        );
+
+        let result = middleware.call(req).await;
+
+        assert!(result.is_ok());
+        let response = result.unwrap();
+        // Should call the mock service successfully
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[actix_web::test]
+    async fn test_auth_middleware_authentication_only_mode_accepts_admin_token() {
+        let middleware = AuthMiddleware {
+            service: Rc::new(MockService),
+            require_admin: false, // This should be ignored in authentication_only mode
+            authentication_only: true,
+            allowed_roles: Rc::new([AvailableAdminRole::Root]), // This should be ignored
+        };
+
+        // Test with admin token
+        let token = create_admin_token(
+            TEST_ADMIN_ID,
+            TEST_ADMIN_ROLE_ID,
+            TEST_JWT_SECRET,
+            TEST_JWT_VALIDITY_SECONDS,
+        )
+        .unwrap();
+
+        let mut req = create_test_request();
+        req.headers_mut().insert(
+            HeaderName::from_static(ADMIN_HEADER_NAME),
+            token.parse().unwrap(),
+        );
+
+        let result = middleware.call(req).await;
+
+        assert!(result.is_ok());
+        let response = result.unwrap();
+        // Should call the mock service successfully
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[actix_web::test]
+    async fn test_auth_middleware_student_mode_accepts_student_token() {
+        let middleware = AuthMiddleware {
+            service: Rc::new(MockService),
+            require_admin: false,
+            authentication_only: false,
+            allowed_roles: Rc::new([]), // No roles needed for students
+        };
+
+        let token =
+            create_student_token(TEST_STUDENT_ID, TEST_JWT_SECRET, TEST_JWT_VALIDITY_SECONDS)
+                .unwrap();
+
+        let mut req = create_test_request();
+        req.headers_mut().insert(
+            HeaderName::from_static(STUDENT_HEADER_NAME),
+            token.parse().unwrap(),
+        );
+
+        let result = middleware.call(req).await;
+
+        assert!(result.is_ok());
+        let response = result.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[actix_web::test]
+    async fn test_auth_middleware_student_mode_rejects_admin_token() {
+        let middleware = AuthMiddleware {
+            service: Rc::new(MockService),
+            require_admin: false,
+            authentication_only: false,
+            allowed_roles: Rc::new([]),
+        };
+
+        let token = create_admin_token(
+            TEST_ADMIN_ID,
+            TEST_ADMIN_ROLE_ID,
+            TEST_JWT_SECRET,
+            TEST_JWT_VALIDITY_SECONDS,
+        )
+        .unwrap();
+
+        let mut req = create_test_request();
+        req.headers_mut().insert(
+            HeaderName::from_static(ADMIN_HEADER_NAME),
+            token.parse().unwrap(),
+        );
+
+        let result = middleware.call(req).await;
+
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert_eq!(
+            error.as_response_error().status_code(),
+            StatusCode::UNAUTHORIZED
+        );
+    }
+
+    #[actix_web::test]
+    async fn test_auth_middleware_checks_admin_header_when_admin_required() {
+        let middleware = AuthMiddleware {
+            service: Rc::new(MockService),
+            require_admin: true,
+            authentication_only: false,
+            allowed_roles: Rc::new([AvailableAdminRole::Root]),
+        };
+
+        let token = create_admin_token(
+            TEST_ADMIN_ID,
+            TEST_ADMIN_ROLE_ID,
+            TEST_JWT_SECRET,
+            TEST_JWT_VALIDITY_SECONDS,
+        )
+        .unwrap();
+
+        let mut req = create_test_request();
+        // Put token in student header instead of admin header
+        req.headers_mut().insert(
+            HeaderName::from_static(STUDENT_HEADER_NAME),
+            token.parse().unwrap(),
+        );
+
+        let result = middleware.call(req).await;
+
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert_eq!(
+            error.as_response_error().status_code(),
+            StatusCode::UNAUTHORIZED
+        );
+    }
+
+    #[actix_web::test]
+    async fn test_auth_middleware_checks_student_header_when_student_required() {
+        let middleware = AuthMiddleware {
+            service: Rc::new(MockService),
+            require_admin: false,
+            authentication_only: false,
+            allowed_roles: Rc::new([]),
+        };
+
+        let token =
+            create_student_token(TEST_STUDENT_ID, TEST_JWT_SECRET, TEST_JWT_VALIDITY_SECONDS)
+                .unwrap();
+
+        let mut req = create_test_request();
+        // Put token in admin header instead of student header
+        req.headers_mut().insert(
+            HeaderName::from_static(ADMIN_HEADER_NAME),
+            token.parse().unwrap(),
+        );
+
+        let result = middleware.call(req).await;
+
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert_eq!(
+            error.as_response_error().status_code(),
+            StatusCode::UNAUTHORIZED
+        );
+    }
+
+    #[actix_web::test]
+    async fn test_auth_middleware_authentication_only_checks_both_headers() {
+        let middleware = AuthMiddleware {
+            service: Rc::new(MockService),
+            require_admin: false,
+            authentication_only: true,
+            allowed_roles: Rc::new([]),
+        };
+
+        let token =
+            create_student_token(TEST_STUDENT_ID, TEST_JWT_SECRET, TEST_JWT_VALIDITY_SECONDS)
+                .unwrap();
+
+        let mut req = create_test_request();
+        // Put token in admin header - should still work in authentication_only mode
+        req.headers_mut().insert(
+            HeaderName::from_static(ADMIN_HEADER_NAME),
+            token.parse().unwrap(),
+        );
+
+        let result = middleware.call(req).await;
+
+        assert!(result.is_ok());
+        let response = result.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+}
