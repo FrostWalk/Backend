@@ -17,10 +17,6 @@ use welds::state::DbState;
 pub(crate) struct CreateGroupDeliverableSelectionRequest {
     #[schema(example = 5)]
     pub group_deliverable_id: i32,
-    #[schema(example = "https://github.com/group1/project")]
-    pub link: String,
-    #[schema(example = "# Our project approach\n\nWe plan to...")]
-    pub markdown_text: String,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -61,20 +57,7 @@ pub(in crate::api::v1) async fn create_group_deliverable_selection(
         )
     })?;
 
-    // Validate input
-    if body.link.trim().is_empty() {
-        return Err(JsonError::new(
-            "Link field is mandatory",
-            StatusCode::BAD_REQUEST,
-        ));
-    }
-
-    if body.markdown_text.trim().is_empty() {
-        return Err(JsonError::new(
-            "Markdown text field is mandatory",
-            StatusCode::BAD_REQUEST,
-        ));
-    }
+    // Validate input - no additional validation needed for simplified request
 
     // 1. Verify the user is a Group Leader of the group
     let is_leader = groups_repository::is_group_leader(&data.db, user.student_id, group_id)
@@ -143,29 +126,7 @@ pub(in crate::api::v1) async fn create_group_deliverable_selection(
         ));
     }
 
-    // 4. Verify the link is unique
-    let link_exists = group_deliverable_selections_repository::link_exists(&data.db, &body.link)
-        .await
-        .map_err(|e| {
-            error_with_log_id(
-                format!("Database error checking link uniqueness: {}", e),
-                "Database error",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                log::Level::Error,
-            )
-        })?;
-
-    if link_exists {
-        return Err(error_with_log_id_and_payload(
-            format!("Link '{}' is already in use", body.link),
-            "This link is already in use by another group",
-            StatusCode::CONFLICT,
-            log::Level::Warn,
-            &body,
-        ));
-    }
-
-    // 5. Verify the group_deliverable_id exists and belongs to the same project
+    // 4. Verify the group_deliverable_id exists and belongs to the same project
     let mut deliverable_rows =
         GroupDeliverable::where_col(|gd| gd.group_deliverable_id.equal(body.group_deliverable_id))
             .run(&data.db)
@@ -202,7 +163,7 @@ pub(in crate::api::v1) async fn create_group_deliverable_selection(
         ));
     }
 
-    // 6. Verify the project's deliverable_selection_deadline has not passed (if set)
+    // 5. Verify the project's deliverable_selection_deadline has not passed (if set)
     let mut project_rows = Project::where_col(|p| p.project_id.equal(group.project_id))
         .run(&data.db)
         .await
@@ -245,8 +206,6 @@ pub(in crate::api::v1) async fn create_group_deliverable_selection(
         group_deliverable_selection_id: 0,
         group_id,
         group_deliverable_id: body.group_deliverable_id,
-        link: body.link.clone(),
-        markdown_text: body.markdown_text.clone(),
         created_at: Utc::now(),
         updated_at: Utc::now(),
     });

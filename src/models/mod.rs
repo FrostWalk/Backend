@@ -21,6 +21,7 @@ pub mod group_member;
 pub mod fair;
 
 // Group deliverables and components
+pub mod group_component_implementation_detail;
 pub mod group_deliverable;
 pub mod group_deliverable_component;
 pub mod group_deliverable_selection;
