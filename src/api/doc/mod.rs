@@ -72,10 +72,14 @@ use crate::api::v1::students::auth::{
     reset_password::__path_reset_password_handler as __path_students_reset_password_handler,
     signup::__path_student_signup_handler,
 };
+use crate::api::v1::students::group_component_implementation_details::{
+    create::__path_create_component_implementation_detail,
+    delete::__path_delete_component_implementation_detail,
+    read::__path_get_component_implementation_details,
+    update::__path_update_component_implementation_detail,
+};
 use crate::api::v1::students::group_deliverable_selections::{
-    create::__path_create_group_deliverable_selection,
-    read::__path_get_group_deliverable_selection,
-    update::__path_update_group_deliverable_selection,
+    create::__path_create_group_deliverable_selection, read::__path_get_group_deliverable_selection,
 };
 use crate::api::v1::students::groups::{
     check_name::__path_check_name, create::__path_create_group, delete::__path_delete_group,
@@ -190,7 +194,10 @@ use utoipa_swagger_ui::SwaggerUi;
         list_group_members,
         create_group_deliverable_selection,
         get_group_deliverable_selection,
-        update_group_deliverable_selection,
+        create_component_implementation_detail,
+        get_component_implementation_details,
+        update_component_implementation_detail,
+        delete_component_implementation_detail,
         create_student_deliverable_selection,
         get_student_deliverable_selection,
         update_student_deliverable_selection,

@@ -21,33 +21,6 @@ pub(crate) async fn has_selection(
     Ok(selection.is_some())
 }
 
-/// Check if a link is already in use by another group
-pub(crate) async fn link_exists(db: &PostgresClient, link: &str) -> welds::errors::Result<bool> {
-    let rows = GroupDeliverableSelection::where_col(|gds| gds.link.equal(link))
-        .run(db)
-        .await?;
-
-    Ok(!rows.is_empty())
-}
-
-/// Check if a link is in use by another group (excluding the specified group)
-pub(crate) async fn link_exists_for_other_group(
-    db: &PostgresClient, link: &str, group_id: i32,
-) -> welds::errors::Result<bool> {
-    let rows = GroupDeliverableSelection::where_col(|gds| gds.link.equal(link))
-        .run(db)
-        .await?;
-
-    for row_state in rows {
-        let row = DbState::into_inner(row_state);
-        if row.group_id != group_id {
-            return Ok(true);
-        }
-    }
-
-    Ok(false)
-}
-
 /// Get all group deliverable selections for a project
 pub(crate) async fn get_by_project_id(
     db: &PostgresClient, project_id: i32,
