@@ -14,8 +14,6 @@ pub struct GroupDeliverableSelection {
     pub group_id: i32,
     #[welds(foreign_key = "group_deliverables.group_deliverable_id")]
     pub group_deliverable_id: i32,
-    pub link: String,
-    pub markdown_text: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }

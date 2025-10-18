@@ -3,7 +3,6 @@ use crate::common::json_error::{error_with_log_id, JsonError};
 use crate::database::repositories::{
     group_component_implementation_details_repository, group_deliverable_selections_repository,
 };
-use crate::models::group_deliverable::GroupDeliverable;
 use crate::models::group_deliverable_component::GroupDeliverableComponent;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};
@@ -13,7 +12,7 @@ use utoipa::ToSchema;
 use welds::state::DbState;
 
 #[derive(Debug, Serialize, ToSchema)]
-pub(crate) struct ComponentImplementationDetail {
+pub(crate) struct ComponentImplementationDetailResponse {
     pub id: i32,
     pub group_deliverable_component_id: i32,
     pub component_name: String,
@@ -24,32 +23,28 @@ pub(crate) struct ComponentImplementationDetail {
 }
 
 #[derive(Debug, Serialize, ToSchema)]
-pub(crate) struct GroupDeliverableSelectionResponse {
-    pub group_deliverable_selection_id: i32,
-    pub group_id: i32,
-    pub group_deliverable_id: i32,
-    pub group_deliverable_name: String,
-    pub component_implementation_details: Vec<ComponentImplementationDetail>,
+pub(crate) struct GetComponentImplementationDetailsResponse {
+    pub details: Vec<ComponentImplementationDetailResponse>,
 }
 
 #[utoipa::path(
     get,
-    path = "/v1/students/group-deliverable-selections/{group_id}",
+    path = "/v1/students/group-component-implementation-details/{group_id}",
     responses(
-        (status = 200, description = "Deliverable selection found", body = GroupDeliverableSelectionResponse),
-        (status = 404, description = "No deliverable selected yet or group not found", body = JsonError),
+        (status = 200, description = "Component implementation details found", body = GetComponentImplementationDetailsResponse),
+        (status = 404, description = "Group or selection not found", body = JsonError),
         (status = 500, description = "Internal server error", body = JsonError)
     ),
     security(("StudentAuth" = [])),
-    tag = "Group Deliverable Selections",
+    tag = "Group Component Implementation Details",
 )]
-/// Get the deliverable selection for a group
-pub(in crate::api::v1) async fn get_group_deliverable_selection(
+/// Get all implementation details for a group's selection
+pub(in crate::api::v1) async fn get_component_implementation_details(
     group_id: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let group_id = group_id.into_inner();
 
-    // Get the selection
+    // 1. Verify the group has selected a deliverable
     let selection_state =
         group_deliverable_selections_repository::get_by_group_id(&data.db, group_id)
             .await
@@ -64,45 +59,15 @@ pub(in crate::api::v1) async fn get_group_deliverable_selection(
             .ok_or_else(|| {
                 error_with_log_id(
                     format!("No deliverable selection found for group {}", group_id),
-                    "No deliverable selected yet",
+                    "Group must select a deliverable first",
                     StatusCode::NOT_FOUND,
-                    log::Level::Info,
+                    log::Level::Warn,
                 )
             })?;
 
     let selection = DbState::into_inner(selection_state);
 
-    // Get the deliverable name
-    let mut deliverable_rows = GroupDeliverable::where_col(|gd| {
-        gd.group_deliverable_id
-            .equal(selection.group_deliverable_id)
-    })
-    .run(&data.db)
-    .await
-    .map_err(|e| {
-        error_with_log_id(
-            format!("Database error fetching deliverable: {}", e),
-            "Database error",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-        )
-    })?;
-
-    let deliverable_state = deliverable_rows.pop().ok_or_else(|| {
-        error_with_log_id(
-            format!(
-                "Deliverable {} not found for selection",
-                selection.group_deliverable_id
-            ),
-            "Deliverable not found",
-            StatusCode::NOT_FOUND,
-            log::Level::Error,
-        )
-    })?;
-
-    let deliverable = DbState::into_inner(deliverable_state);
-
-    // Get component implementation details
+    // 2. Get all implementation details for this selection
     let details_states = group_component_implementation_details_repository::get_by_selection_id(
         &data.db,
         selection.group_deliverable_selection_id,
@@ -117,7 +82,7 @@ pub(in crate::api::v1) async fn get_group_deliverable_selection(
         )
     })?;
 
-    let mut component_implementation_details = Vec::new();
+    let mut details = Vec::new();
 
     for detail_state in details_states {
         let detail = DbState::into_inner(detail_state);
@@ -148,7 +113,7 @@ pub(in crate::api::v1) async fn get_group_deliverable_selection(
             )
         };
 
-        component_implementation_details.push(ComponentImplementationDetail {
+        details.push(ComponentImplementationDetailResponse {
             id: detail.id,
             group_deliverable_component_id: detail.group_deliverable_component_id,
             component_name,
@@ -159,11 +124,5 @@ pub(in crate::api::v1) async fn get_group_deliverable_selection(
         });
     }
 
-    Ok(HttpResponse::Ok().json(GroupDeliverableSelectionResponse {
-        group_deliverable_selection_id: selection.group_deliverable_selection_id,
-        group_id: selection.group_id,
-        group_deliverable_id: selection.group_deliverable_id,
-        group_deliverable_name: deliverable.name,
-        component_implementation_details,
-    }))
+    Ok(HttpResponse::Ok().json(GetComponentImplementationDetailsResponse { details }))
 }

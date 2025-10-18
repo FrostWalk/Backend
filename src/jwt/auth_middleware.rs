@@ -319,10 +319,6 @@ mod tests {
         );
     }
 
-
-
-
-
     #[actix_web::test]
     async fn test_auth_middleware_student_mode_rejects_admin_token() {
         let middleware = AuthMiddleware {
@@ -405,5 +401,4 @@ mod tests {
             StatusCode::UNAUTHORIZED
         );
     }
-
 }
