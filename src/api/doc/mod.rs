@@ -37,7 +37,9 @@ use crate::api::v1::admins::projects::read::__path_get_all_projects_handler;
 use crate::api::v1::admins::projects::read::__path_get_one_project_handler;
 use crate::api::v1::admins::projects::update::__path_update_project_handler;
 use crate::api::v1::admins::security_codes::create::__path_create_code_handler;
+use crate::api::v1::admins::security_codes::delete::__path_delete_code_handler;
 use crate::api::v1::admins::security_codes::read::__path_get_all_codes_handler;
+use crate::api::v1::admins::security_codes::update::__path_update_code_handler;
 use crate::api::v1::admins::student_deliverable_components::create::__path_create_student_component_handler;
 use crate::api::v1::admins::student_deliverable_components::delete::__path_delete_student_component_handler;
 use crate::api::v1::admins::student_deliverable_components::read::__path_get_all_student_components_handler;
@@ -146,6 +148,8 @@ use utoipa_swagger_ui::SwaggerUi;
         get_student_projects,
         create_code_handler,
         get_all_codes_handler,
+        update_code_handler,
+        delete_code_handler,
         create_group_component_handler,
         get_all_group_components_handler,
         get_group_component_handler,
