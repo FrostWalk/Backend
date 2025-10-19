@@ -34,9 +34,11 @@ pub(crate) struct DeleteCodeResponse {
 ///
 /// Coordinators can only delete codes for projects they are assigned to. Professors/Root can delete codes for any project.
 pub(in crate::api::v1) async fn delete_code_handler(
-    http_req: HttpRequest, path: Path<i32>, data: Data<AppData>,
+    req: HttpRequest, 
+    path: Path<i32>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let user = match http_req.extensions().get_admin() {
+    let user = match req.extensions().get_admin() {
         Ok(user) => user,
         Err(e) => {
             error!("entered a protected route without a user loaded in the request");

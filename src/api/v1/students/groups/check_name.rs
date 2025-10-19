@@ -36,7 +36,9 @@ pub(crate) struct CheckNameResponse {
 /// This endpoint allows students to check if a group name is already taken
 /// within a specific project before creating a group.
 pub(super) async fn check_name(
-    req: HttpRequest, data: Data<AppData>, body: Json<CheckNameRequest>,
+    req: HttpRequest, 
+    body: Json<CheckNameRequest>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _user = match req.extensions().get_student() {
         Ok(user) => user,

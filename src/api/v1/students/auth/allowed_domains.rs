@@ -1,5 +1,6 @@
 use crate::app_data::AppData;
-use actix_web::{web, HttpResponse, Result};
+use actix_web::{HttpResponse, Result};
+use actix_web::web::Data;
 use serde::Serialize;
 use utoipa::ToSchema;
 
@@ -25,8 +26,8 @@ pub(crate) struct AllowedDomainsResponse {
     summary = "Get allowed email domains for registration",
     description = "Returns a list of email domains that can be used to create student accounts. This endpoint does not require authentication."
 )]
-pub(super) async fn allowed_domains_handler(app_data: web::Data<AppData>) -> Result<HttpResponse> {
-    let domains = app_data.config.allowed_signup_domains().clone();
+pub(super) async fn allowed_domains_handler(data: Data<AppData>) -> Result<HttpResponse> {
+    let domains = data.config.allowed_signup_domains().clone();
 
     let response = AllowedDomainsResponse { domains };
 

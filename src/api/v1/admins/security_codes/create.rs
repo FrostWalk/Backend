@@ -65,9 +65,11 @@ pub(crate) struct CreateCodeResponse {
 ///
 /// Coordinators can only create codes for projects they are assigned to. Professors/Root can create codes for any project.
 pub(in crate::api::v1) async fn create_code_handler(
-    http_req: HttpRequest, req: Json<CreateCodeScheme>, data: Data<AppData>,
+    req: HttpRequest, 
+    body: Json<CreateCodeScheme>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let user = match http_req.extensions().get_admin() {
+    let user = match req.extensions().get_admin() {
         Ok(user) => user,
         Err(e) => {
             error!("entered a protected route without a user loaded in the request");
@@ -78,9 +80,9 @@ pub(in crate::api::v1) async fn create_code_handler(
     let skew = Duration::days(1);
     let now = Utc::now() - skew;
 
-    if req.project_id <= 0 {
+    if body.project_id <= 0 {
         return Err("Project id field is mandatory".to_json_error(StatusCode::BAD_REQUEST));
-    } else if req.expiration <= now {
+    } else if body.expiration <= now {
         return Err("Expiration must be grater than one day".to_json_error(StatusCode::BAD_REQUEST));
     }
 
@@ -88,7 +90,7 @@ pub(in crate::api::v1) async fn create_code_handler(
     let is_coordinator = user.admin_role_id == AvailableAdminRole::Coordinator as i32;
     if is_coordinator {
         let is_assigned =
-            coordinator_projects_repository::is_assigned(&data.db, user.admin_id, req.project_id)
+            coordinator_projects_repository::is_assigned(&data.db, user.admin_id, body.project_id)
                 .await
                 .map_err(|e| {
                     error_with_log_id(
@@ -120,7 +122,7 @@ pub(in crate::api::v1) async fn create_code_handler(
                     "Failed to create security code",
                     StatusCode::INTERNAL_SERVER_ERROR,
                     log::Level::Error,
-                    &req,
+                    &body,
                 ));
             }
         }
@@ -129,9 +131,9 @@ pub(in crate::api::v1) async fn create_code_handler(
     // Create and save the security code to the database
     let mut security_code_state = DbState::new_uncreated(SecurityCode {
         security_code_id: 0,
-        project_id: req.project_id,
+        project_id: body.project_id,
         code: code.clone(),
-        expiration: req.expiration,
+        expiration: body.expiration,
     });
 
     match security_code_state.save(&data.db).await {
@@ -141,7 +143,7 @@ pub(in crate::api::v1) async fn create_code_handler(
             "Failed to create security code",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &req,
+            &body,
         )),
     }
 }

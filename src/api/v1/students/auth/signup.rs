@@ -50,21 +50,22 @@ pub(crate) struct StudentSignupResponse {
 ///
 /// This endpoint allows students to register to the app.
 pub(super) async fn student_signup_handler(
-    req: Json<StudentSignupScheme>, data: Data<AppData>,
+    body: Json<StudentSignupScheme>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // Validate that all fields are not empty or default values
-    if req.first_name.trim().is_empty() {
+    if body.first_name.trim().is_empty() {
         return Err("First name cannot be empty".to_json_error(StatusCode::BAD_REQUEST));
-    } else if req.last_name.trim().is_empty() {
+    } else if body.last_name.trim().is_empty() {
         return Err("Last name cannot be empty".to_json_error(StatusCode::BAD_REQUEST));
-    } else if req.email.trim().is_empty() {
+    } else if body.email.trim().is_empty() {
         return Err("Email cannot be empty".to_json_error(StatusCode::BAD_REQUEST));
-    } else if req.password.trim().is_empty() {
+    } else if body.password.trim().is_empty() {
         return Err("Password cannot be empty".to_json_error(StatusCode::BAD_REQUEST));
     }
 
     // check that email domain is valid
-    let email_domain = req.email.split('@').nth(1);
+    let email_domain = body.email.split('@').nth(1);
     if let Some(domain) = email_domain {
         let allowed_domains = data.config.allowed_signup_domains();
         if !allowed_domains.contains(&domain.to_string()) {
@@ -77,7 +78,7 @@ pub(super) async fn student_signup_handler(
     }
 
     // Check if email already exists
-    let email_exists = students_repository::email_exists(&data.db, &req.email)
+    let email_exists = students_repository::email_exists(&data.db, &body.email)
         .await
         .map_err(|e| {
             error_with_log_id_and_payload(
@@ -85,7 +86,7 @@ pub(super) async fn student_signup_handler(
                 "Account creation failed",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &req,
+                &body,
             )
         })?;
 
@@ -95,7 +96,7 @@ pub(super) async fn student_signup_handler(
 
     // Check if university ID already exists
     let university_id_exists =
-        students_repository::university_id_exists(&data.db, req.university_id)
+        students_repository::university_id_exists(&data.db, body.university_id)
             .await
             .map_err(|e| {
                 error_with_log_id_and_payload(
@@ -103,7 +104,7 @@ pub(super) async fn student_signup_handler(
                     "Account creation failed",
                     StatusCode::INTERNAL_SERVER_ERROR,
                     log::Level::Error,
-                    &req,
+                    &body,
                 )
             })?;
 
@@ -118,11 +119,11 @@ pub(super) async fn student_signup_handler(
 
     let mut result = DbState::new_uncreated(Student {
         student_id: 0,
-        first_name: req.first_name.clone(),
-        last_name: req.last_name.clone(),
-        email: req.email.clone(),
-        university_id: req.university_id,
-        password_hash: generate_hash(req.password.clone()),
+        first_name: body.first_name.clone(),
+        last_name: body.last_name.clone(),
+        email: body.email.clone(),
+        university_id: body.university_id,
+        password_hash: generate_hash(body.password.clone()),
         is_pending,
     });
 
@@ -132,7 +133,7 @@ pub(super) async fn student_signup_handler(
             "Account creation failed",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &req,
+            &body,
         ));
     }
 
@@ -146,7 +147,7 @@ pub(super) async fn student_signup_handler(
                     "Account creation failed",
                     StatusCode::INTERNAL_SERVER_ERROR,
                     log::Level::Error,
-                    &req,
+                    &body,
                 ));
             }
         };
@@ -165,7 +166,7 @@ pub(super) async fn student_signup_handler(
                 "Account created but confirmation email could not be sent",
                 StatusCode::SERVICE_UNAVAILABLE,
                 log::Level::Error,
-                &req,
+                &body,
             ));
         }
     }

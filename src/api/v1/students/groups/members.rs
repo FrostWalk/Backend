@@ -54,7 +54,10 @@ pub(crate) struct MemberInfo {
 ///
 /// This endpoint allows GroupLeaders to add new members to their group.
 pub(super) async fn add_member(
-    req: HttpRequest, data: Data<AppData>, path: Path<i32>, body: Json<AddMemberRequest>,
+    req: HttpRequest, 
+    path: Path<i32>, 
+    body: Json<AddMemberRequest>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_student() {
         Ok(user) => user,
@@ -280,7 +283,10 @@ pub(super) async fn add_member(
 ///
 /// This endpoint allows GroupLeaders to remove members from their group.
 pub(super) async fn remove_member(
-    req: HttpRequest, data: Data<AppData>, path: Path<i32>, body: Json<RemoveMemberRequest>,
+    req: HttpRequest, 
+    path: Path<i32>, 
+    body: Json<RemoveMemberRequest>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_student() {
         Ok(user) => user,

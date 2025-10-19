@@ -44,7 +44,9 @@ pub(crate) struct CreateStudentDeliverableSelectionResponse {
 )]
 /// Create a student deliverable selection (requires group membership)
 pub(in crate::api::v1) async fn create_student_deliverable_selection(
-    req: HttpRequest, body: Json<CreateStudentDeliverableSelectionRequest>, data: Data<AppData>,
+    req: HttpRequest, 
+    body: Json<CreateStudentDeliverableSelectionRequest>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // Get the logged-in user
     let user = req.extensions().get_student().map_err(|_| {

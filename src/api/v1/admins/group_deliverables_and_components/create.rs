@@ -48,15 +48,16 @@ pub(crate) struct CreateGroupDeliverableComponentResponse {
 ///
 /// This endpoint allows authenticated admins to add components to group deliverables with specified quantities.
 pub(super) async fn create_group_deliverable_component_handler(
-    req: Json<CreateGroupDeliverableComponentScheme>, data: Data<AppData>,
+    body: Json<CreateGroupDeliverableComponentScheme>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // Check if relationship already exists
     let existing = GroupDeliverablesComponent::where_col(|gdc| {
-        gdc.group_deliverable_id.equal(req.group_deliverable_id)
+        gdc.group_deliverable_id.equal(body.group_deliverable_id)
     })
     .where_col(|gdc| {
         gdc.group_deliverable_component_id
-            .equal(req.group_deliverable_component_id)
+            .equal(body.group_deliverable_component_id)
     })
     .run(&data.db)
     .await
@@ -66,7 +67,7 @@ pub(super) async fn create_group_deliverable_component_handler(
             "Failed to create relationship",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &req,
+            &body,
         )
     })?;
 
@@ -76,9 +77,9 @@ pub(super) async fn create_group_deliverable_component_handler(
 
     let mut state = DbState::new_uncreated(GroupDeliverablesComponent {
         id: 0,
-        group_deliverable_id: req.group_deliverable_id,
-        group_deliverable_component_id: req.group_deliverable_component_id,
-        quantity: req.quantity,
+        group_deliverable_id: body.group_deliverable_id,
+        group_deliverable_component_id: body.group_deliverable_component_id,
+        quantity: body.quantity,
     });
 
     if let Err(e) = state.save(&data.db).await {
@@ -90,16 +91,16 @@ pub(super) async fn create_group_deliverable_component_handler(
             "Failed to create relationship",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &req,
+            &body,
         ));
     }
 
     Ok(
         HttpResponse::Ok().json(CreateGroupDeliverableComponentResponse {
             id: state.id,
-            group_deliverable_id: req.group_deliverable_id,
-            group_deliverable_component_id: req.group_deliverable_component_id,
-            quantity: req.quantity,
+            group_deliverable_id: body.group_deliverable_id,
+            group_deliverable_component_id: body.group_deliverable_component_id,
+            quantity: body.quantity,
         }),
     )
 }

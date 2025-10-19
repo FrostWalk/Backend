@@ -33,7 +33,9 @@ pub(crate) struct UpdateStudentDeliverableScheme {
 ///
 /// This endpoint allows authenticated admins to modify the name of a student deliverable by ID.
 pub(super) async fn update_student_deliverable_handler(
-    path: Path<i32>, req: Json<UpdateStudentDeliverableScheme>, data: Data<AppData>,
+    path: Path<i32>, 
+    body: Json<UpdateStudentDeliverableScheme>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 
@@ -47,7 +49,7 @@ pub(super) async fn update_student_deliverable_handler(
                 "Failed to update deliverable",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &req,
+                &body,
             )
         })?;
 
@@ -59,7 +61,7 @@ pub(super) async fn update_student_deliverable_handler(
     // Check if another deliverable with this name already exists for the same project
     let existing =
         StudentDeliverable::where_col(|sp| sp.project_id.equal(deliverable_state.project_id))
-            .where_col(|sp| sp.name.equal(&req.name))
+            .where_col(|sp| sp.name.equal(&body.name))
             .where_col(|sp| sp.student_deliverable_id.not_equal(id))
             .run(&data.db)
             .await
@@ -69,7 +71,7 @@ pub(super) async fn update_student_deliverable_handler(
                     "Failed to update deliverable",
                     StatusCode::INTERNAL_SERVER_ERROR,
                     log::Level::Error,
-                    &req,
+                    &body,
                 )
             })?;
 
@@ -79,7 +81,7 @@ pub(super) async fn update_student_deliverable_handler(
     }
 
     // Update the name
-    deliverable_state.name = req.name.clone();
+    deliverable_state.name = body.name.clone();
 
     deliverable_state.save(&data.db).await.map_err(|e| {
         error_with_log_id_and_payload(
@@ -87,7 +89,7 @@ pub(super) async fn update_student_deliverable_handler(
             "Failed to update deliverable",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &req,
+            &body,
         )
     })?;
 

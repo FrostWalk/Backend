@@ -40,9 +40,10 @@ pub(crate) struct GetComponentImplementationDetailsResponse {
 )]
 /// Get all implementation details for a group's selection
 pub(in crate::api::v1) async fn get_component_implementation_details(
-    group_id: Path<i32>, data: Data<AppData>,
+    path: Path<i32>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let group_id = group_id.into_inner();
+    let group_id = path.into_inner();
 
     // 1. Verify the group has selected a deliverable
     let selection_state =

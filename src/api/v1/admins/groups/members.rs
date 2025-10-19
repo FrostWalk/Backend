@@ -73,7 +73,9 @@ pub(crate) struct LeaderChangeInfo {
 /// This endpoint allows admins and coordinators to remove any member from a group,
 /// including the Group Leader. Must delete the student's deliverable selection when removed.
 pub(super) async fn remove_member(
-    req: HttpRequest, data: Data<AppData>, path: Path<(i32, i32)>,
+    req: HttpRequest, 
+    path: Path<(i32, i32)>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _admin = match req.extensions().get_admin() {
         Ok(admin) => admin,
@@ -237,8 +239,10 @@ pub(super) async fn remove_member(
 /// This endpoint allows admins and coordinators to change the Group Leader of a group.
 /// Can optionally remove the old leader or demote them to member.
 pub(super) async fn transfer_leadership(
-    req: HttpRequest, data: Data<AppData>, group_id: Path<i32>,
-    body: Json<TransferLeadershipRequest>,
+    req: HttpRequest, 
+    path: Path<i32>,
+    body: Json<TransferLeadershipRequest>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _admin = match req.extensions().get_admin() {
         Ok(admin) => admin,
@@ -252,8 +256,10 @@ pub(super) async fn transfer_leadership(
         }
     };
 
+    let group_id = path.into_inner();
+
     // Verify the group exists
-    let group_state = groups_repository::get_by_id(&data.db, *group_id)
+    let group_state = groups_repository::get_by_id(&data.db, group_id)
         .await
         .map_err(|e| {
             error_with_log_id(
@@ -277,7 +283,7 @@ pub(super) async fn transfer_leadership(
     };
 
     // Get all group members
-    let members = groups_repository::get_group_members(&data.db, *group_id)
+    let members = groups_repository::get_group_members(&data.db, group_id)
         .await
         .map_err(|e| {
             error_with_log_id(
@@ -507,7 +513,10 @@ pub(super) async fn transfer_leadership(
 /// This endpoint allows admins and coordinators to manually add students to groups.
 /// Can add students as members or group leaders.
 pub(super) async fn add_member(
-    req: HttpRequest, data: Data<AppData>, group_id: Path<i32>, body: Json<AdminAddMemberRequest>,
+    req: HttpRequest, 
+    path: Path<i32>, 
+    body: Json<AdminAddMemberRequest>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _admin = match req.extensions().get_admin() {
         Ok(admin) => admin,
@@ -521,8 +530,10 @@ pub(super) async fn add_member(
         }
     };
 
+    let group_id = path.into_inner();
+
     // Verify the group exists
-    let group_state = groups_repository::get_by_id(&data.db, *group_id)
+    let group_state = groups_repository::get_by_id(&data.db, group_id)
         .await
         .map_err(|e| {
             error_with_log_id(
@@ -629,7 +640,7 @@ pub(super) async fn add_member(
     };
 
     // Check group size limit
-    let current_member_count = groups_repository::count_members(&data.db, *group_id)
+    let current_member_count = groups_repository::count_members(&data.db, group_id)
         .await
         .map_err(|e| {
             error_with_log_id(
@@ -654,7 +665,7 @@ pub(super) async fn add_member(
 
     // If adding as Group Leader, check if there's already a leader
     if body.role_id == AvailableStudentRole::GroupLeader as i32 {
-        let is_leader = groups_repository::is_group_leader(&data.db, student.student_id, *group_id)
+        let is_leader = groups_repository::is_group_leader(&data.db, student.student_id, group_id)
             .await
             .map_err(|e| {
                 error_with_log_id(
@@ -678,7 +689,7 @@ pub(super) async fn add_member(
     // Add the student as a group member
     let mut member_state = DbState::new_uncreated(GroupMember {
         group_member_id: 0,
-        group_id: *group_id,
+        group_id: group_id,
         student_id: student.student_id,
         student_role_id: body.role_id,
         joined_at: Utc::now(),

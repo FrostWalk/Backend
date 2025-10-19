@@ -42,10 +42,12 @@ pub(crate) struct CreateGroupDeliverableSelectionResponse {
 )]
 /// Create a group deliverable selection (Group Leaders only)
 pub(in crate::api::v1) async fn create_group_deliverable_selection(
-    req: HttpRequest, body: Json<CreateGroupDeliverableSelectionRequest>, group_id: Path<i32>,
+    req: HttpRequest, 
+    path: Path<i32>,
+    body: Json<CreateGroupDeliverableSelectionRequest>, 
     data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let group_id = group_id.into_inner();
+    let group_id = path.into_inner();
 
     // Get the logged-in user
     let user = req.extensions().get_student().map_err(|_| {

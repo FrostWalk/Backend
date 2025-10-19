@@ -44,11 +44,12 @@ pub(crate) struct CreateGroupDeliverableResponse {
 ///
 /// This endpoint allows authenticated admins to create a new group deliverable for a specific project.
 pub(super) async fn create_group_deliverable_handler(
-    req: Json<CreateGroupDeliverableScheme>, data: Data<AppData>,
+    body: Json<CreateGroupDeliverableScheme>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // Check if deliverable with this name already exists for the project
-    let existing = GroupDeliverable::where_col(|gd| gd.project_id.equal(req.project_id))
-        .where_col(|gd| gd.name.equal(&req.name))
+    let existing = GroupDeliverable::where_col(|gd| gd.project_id.equal(body.project_id))
+        .where_col(|gd| gd.name.equal(&body.name))
         .run(&data.db)
         .await
         .map_err(|e| {
@@ -57,7 +58,7 @@ pub(super) async fn create_group_deliverable_handler(
                 "Failed to create deliverable",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &req,
+                &body,
             )
         })?;
 
@@ -68,8 +69,8 @@ pub(super) async fn create_group_deliverable_handler(
 
     let mut state = DbState::new_uncreated(GroupDeliverable {
         group_deliverable_id: 0,
-        project_id: req.project_id,
-        name: req.name.clone(),
+        project_id: body.project_id,
+        name: body.name.clone(),
     });
 
     if let Err(e) = state.save(&data.db).await {
@@ -78,13 +79,13 @@ pub(super) async fn create_group_deliverable_handler(
             "Failed to create deliverable",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &req,
+            &body,
         ));
     }
 
     Ok(HttpResponse::Ok().json(CreateGroupDeliverableResponse {
         group_deliverable_id: state.group_deliverable_id,
-        project_id: req.project_id,
-        name: req.name.clone(),
+        project_id: body.project_id,
+        name: body.name.clone(),
     }))
 }

@@ -44,11 +44,12 @@ pub(crate) struct CreateStudentComponentResponse {
 ///
 /// This endpoint allows authenticated admins to create a new student component for a specific project.
 pub(super) async fn create_student_component_handler(
-    req: Json<CreateStudentComponentScheme>, data: Data<AppData>,
+    body: Json<CreateStudentComponentScheme>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // Check if component with this name already exists for the project
-    let existing = StudentDeliverableComponent::where_col(|sc| sc.project_id.equal(req.project_id))
-        .where_col(|sc| sc.name.equal(&req.name))
+    let existing = StudentDeliverableComponent::where_col(|sc| sc.project_id.equal(body.project_id))
+        .where_col(|sc| sc.name.equal(&body.name))
         .run(&data.db)
         .await
         .map_err(|e| {
@@ -57,7 +58,7 @@ pub(super) async fn create_student_component_handler(
                 "Failed to create component",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &req,
+                &body,
             )
         })?;
 
@@ -68,8 +69,8 @@ pub(super) async fn create_student_component_handler(
 
     let mut state = DbState::new_uncreated(StudentDeliverableComponent {
         student_deliverable_component_id: 0,
-        project_id: req.project_id,
-        name: req.name.clone(),
+        project_id: body.project_id,
+        name: body.name.clone(),
     });
 
     if let Err(e) = state.save(&data.db).await {
@@ -78,13 +79,13 @@ pub(super) async fn create_student_component_handler(
             "Failed to create component",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &req,
+            &body,
         ));
     }
 
     Ok(HttpResponse::Ok().json(CreateStudentComponentResponse {
         student_deliverable_component_id: state.student_deliverable_component_id,
-        project_id: req.project_id,
-        name: req.name.clone(),
+        project_id: body.project_id,
+        name: body.name.clone(),
     }))
 }

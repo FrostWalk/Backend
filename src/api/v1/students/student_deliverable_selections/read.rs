@@ -32,9 +32,11 @@ pub(crate) struct StudentDeliverableSelectionResponse {
 )]
 /// Get the student's deliverable selection for a project
 pub(in crate::api::v1) async fn get_student_deliverable_selection(
-    req: HttpRequest, project_id: Path<i32>, data: Data<AppData>,
+    req: HttpRequest, 
+    path: Path<i32>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let project_id = project_id.into_inner();
+    let project_id = path.into_inner();
 
     // Get the logged-in user
     let user = req.extensions().get_student().map_err(|_| {

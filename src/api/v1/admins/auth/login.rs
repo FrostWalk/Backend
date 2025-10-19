@@ -47,13 +47,14 @@ pub(crate) struct LoginAdminsResponse {
     tag = "Admin authentication"
 )]
 pub(crate) async fn admins_login_handler(
-    req: Json<LoginAdminsSchema>, data: Data<AppData>,
+    body: Json<LoginAdminsSchema>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // common unauthorized response
     let unauthorized = Err(WRONG_CREDENTIALS.to_json_error(StatusCode::UNAUTHORIZED));
 
     // find the user by email
-    let admin_state = admins_repository::get_by_email(&data.db, &req.email)
+    let admin_state = admins_repository::get_by_email(&data.db, &body.email)
         .await
         .map_err(|e| {
             error_with_log_id_and_payload(
@@ -61,7 +62,7 @@ pub(crate) async fn admins_login_handler(
                 "Authentication failed",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &req,
+                &body,
             )
         })?;
 
@@ -72,7 +73,7 @@ pub(crate) async fn admins_login_handler(
     };
 
     // 3) wrong password
-    if verify_password(&req.password, &user.password_hash).is_err() {
+    if verify_password(&body.password, &user.password_hash).is_err() {
         return unauthorized;
     }
 
@@ -89,7 +90,7 @@ pub(crate) async fn admins_login_handler(
             "Authentication failed",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &req,
+            &body,
         )
     })?;
 

@@ -48,7 +48,9 @@ pub(crate) struct CreateAdminResponse {
 /// This endpoint allows authenticated users to create new admin accounts. Only users with the root role can create other root users.
 /// A random password is automatically generated and sent to the admin via email.
 pub(super) async fn create_admin_handler(
-    req: HttpRequest, payload: Json<CreateAdminScheme>, data: Data<AppData>,
+    req: HttpRequest, 
+    body: Json<CreateAdminScheme>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_admin() {
         Ok(user) => user,
@@ -59,7 +61,7 @@ pub(super) async fn create_admin_handler(
     };
 
     if (user.admin_role_id != AvailableAdminRole::Root as i32)
-        && (payload.admin_role_id == AvailableAdminRole::Root as i32)
+        && (body.admin_role_id == AvailableAdminRole::Root as i32)
     {
         warn!("user {} tried to create a root user", user.email);
         return Err("Operation not permitted".to_json_error(StatusCode::FORBIDDEN));
@@ -77,11 +79,11 @@ pub(super) async fn create_admin_handler(
 
     let mut state = DbState::new_uncreated(Admin {
         admin_id: 0,
-        first_name: payload.first_name.clone(),
-        last_name: payload.last_name.clone(),
-        email: payload.email.clone(),
+        first_name: body.first_name.clone(),
+        last_name: body.last_name.clone(),
+        email: body.email.clone(),
         password_hash: generate_hash(&generated_password),
-        admin_role_id: payload.admin_role_id,
+        admin_role_id: body.admin_role_id,
     });
 
     if let Err(e) = state.save(&data.db).await {
@@ -90,18 +92,18 @@ pub(super) async fn create_admin_handler(
             "Failed to create user",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &payload,
+            &body,
         ));
     }
 
     // Send welcome email with credentials
-    let full_name = format!("{} {}", payload.first_name, payload.last_name);
+    let full_name = format!("{} {}", body.first_name, body.last_name);
     if let Err(e) = data
         .mailer
-        .send_admin_welcome(payload.email.clone(), full_name, generated_password)
+        .send_admin_welcome(body.email.clone(), full_name, generated_password)
         .await
     {
-        error!("Failed to send welcome email to {}: {}", payload.email, e);
+        error!("Failed to send welcome email to {}: {}", body.email, e);
         // Note: We continue even if email fails, as the admin was already created
         // The professor can manually share credentials if needed
     }

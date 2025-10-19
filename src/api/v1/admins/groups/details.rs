@@ -89,7 +89,9 @@ pub(crate) struct GroupDeliverableDetail {
 /// - The group's deliverable selection (if any)
 /// - Individual student deliverable selections for group members
 pub(super) async fn get_group_details(
-    req: HttpRequest, data: Data<AppData>, group_id: Path<i32>,
+    req: HttpRequest, 
+    path: Path<i32>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _admin = match req.extensions().get_admin() {
         Ok(admin) => admin,
@@ -103,7 +105,7 @@ pub(super) async fn get_group_details(
         }
     };
 
-    let group_id = group_id.into_inner();
+    let group_id = path.into_inner();
 
     // Get the group details
     let group_state = groups_repository::get_by_id(&data.db, group_id)

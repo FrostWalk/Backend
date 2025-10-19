@@ -30,7 +30,9 @@ pub struct UpdateProjectScheme {
 )]
 /// Update a project details
 pub(in crate::api::v1) async fn update_project_handler(
-    path: Path<i32>, req: Json<UpdateProjectScheme>, data: Data<AppData>,
+    path: Path<i32>, 
+    body: Json<UpdateProjectScheme>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 
@@ -42,7 +44,7 @@ pub(in crate::api::v1) async fn update_project_handler(
                 "Failed to update project",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &req,
+                &body,
             )
         })?;
 
@@ -52,16 +54,16 @@ pub(in crate::api::v1) async fn update_project_handler(
     };
 
     // 2) Apply only provided fields
-    if let Some(v) = req.name.clone() {
+    if let Some(v) = body.name.clone() {
         state.name = v;
     }
-    if let Some(v) = req.max_student_uploads {
+    if let Some(v) = body.max_student_uploads {
         state.max_student_uploads = v;
     }
-    if let Some(v) = req.max_group_size {
+    if let Some(v) = body.max_group_size {
         state.max_group_size = v;
     }
-    if let Some(v) = req.active {
+    if let Some(v) = body.active {
         state.active = v;
     }
 
@@ -71,7 +73,7 @@ pub(in crate::api::v1) async fn update_project_handler(
             "Failed to update project",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &req,
+            &body,
         )
     })?;
 

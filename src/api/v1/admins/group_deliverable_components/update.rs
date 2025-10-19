@@ -35,7 +35,9 @@ pub(crate) struct UpdateGroupComponentScheme {
 ///
 /// This endpoint allows authenticated admins to modify the name of a group component by ID.
 pub(super) async fn update_group_component_handler(
-    path: Path<i32>, req: Json<UpdateGroupComponentScheme>, data: Data<AppData>,
+    path: Path<i32>, 
+    body: Json<UpdateGroupComponentScheme>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 
@@ -50,7 +52,7 @@ pub(super) async fn update_group_component_handler(
                     "Failed to update component",
                     StatusCode::INTERNAL_SERVER_ERROR,
                     log::Level::Error,
-                    &req,
+                    &body,
                 )
             })?;
 
@@ -62,7 +64,7 @@ pub(super) async fn update_group_component_handler(
     // Check if another component with this name already exists for the same project
     let existing =
         GroupDeliverableComponent::where_col(|gc| gc.project_id.equal(component_state.project_id))
-            .where_col(|gc| gc.name.equal(&req.name))
+            .where_col(|gc| gc.name.equal(&body.name))
             .where_col(|gc| gc.group_deliverable_component_id.not_equal(id))
             .run(&data.db)
             .await
@@ -72,7 +74,7 @@ pub(super) async fn update_group_component_handler(
                     "Failed to update component",
                     StatusCode::INTERNAL_SERVER_ERROR,
                     log::Level::Error,
-                    &req,
+                    &body,
                 )
             })?;
 
@@ -82,8 +84,8 @@ pub(super) async fn update_group_component_handler(
     }
 
     // Update the name and sellable
-    component_state.name = req.name.clone();
-    component_state.sellable = req.sellable;
+    component_state.name = body.name.clone();
+    component_state.sellable = body.sellable;
 
     component_state.save(&data.db).await.map_err(|e| {
         error_with_log_id_and_payload(
@@ -91,7 +93,7 @@ pub(super) async fn update_group_component_handler(
             "Failed to update component",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &req,
+            &body,
         )
     })?;
 
