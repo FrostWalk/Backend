@@ -43,7 +43,9 @@ pub(crate) struct GroupMemberInfo {
 /// This endpoint allows students to view all members of a group with their roles.
 /// Any authenticated student can view group members.
 pub(super) async fn list_group_members(
-    req: HttpRequest, data: Data<AppData>, group_id: Path<i32>,
+    req: HttpRequest, 
+    path: Path<i32>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _user = match req.extensions().get_student() {
         Ok(user) => user,
@@ -57,8 +59,10 @@ pub(super) async fn list_group_members(
         }
     };
 
+    let group_id = path.into_inner();
+
     // Verify the group exists
-    let group_state = groups_repository::get_by_id(&data.db, *group_id)
+    let group_state = groups_repository::get_by_id(&data.db, group_id)
         .await
         .map_err(|e| {
             error_with_log_id(
@@ -82,7 +86,7 @@ pub(super) async fn list_group_members(
     };
 
     // Get all group members
-    let group_members = groups_repository::get_group_members(&data.db, *group_id)
+    let group_members = groups_repository::get_group_members(&data.db, group_id)
         .await
         .map_err(|e| {
             error_with_log_id(

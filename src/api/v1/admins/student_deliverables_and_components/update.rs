@@ -32,7 +32,9 @@ pub(crate) struct UpdateStudentDeliverableComponentScheme {
 ///
 /// This endpoint allows authenticated admins to modify the quantity of a component in a student deliverable by ID.
 pub(super) async fn update_student_deliverable_component_handler(
-    path: Path<i32>, req: Json<UpdateStudentDeliverableComponentScheme>, data: Data<AppData>,
+    path: Path<i32>, 
+    body: Json<UpdateStudentDeliverableComponentScheme>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
     // Find the existing relationship by ID
@@ -48,7 +50,7 @@ pub(super) async fn update_student_deliverable_component_handler(
                 "Failed to update relationship",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &req,
+                &body,
             )
         })?;
 
@@ -58,7 +60,7 @@ pub(super) async fn update_student_deliverable_component_handler(
     };
 
     // Update the quantity
-    relationship_state.quantity = req.quantity;
+    relationship_state.quantity = body.quantity;
 
     relationship_state.save(&data.db).await.map_err(|e| {
         error_with_log_id_and_payload(
@@ -69,7 +71,7 @@ pub(super) async fn update_student_deliverable_component_handler(
             "Failed to update relationship",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &req,
+            &body,
         )
     })?;
 

@@ -22,7 +22,8 @@ use actix_web::HttpResponse;
 ///
 /// This endpoint allows authenticated admins to remove a group deliverable by ID.
 pub(super) async fn delete_group_deliverable_handler(
-    path: Path<i32>, data: Data<AppData>,
+    path: Path<i32>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 

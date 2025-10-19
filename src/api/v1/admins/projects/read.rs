@@ -35,7 +35,8 @@ pub(crate) struct GetAllProjectsResponse {
 ///
 /// Returns all projects for Professors/Root, or only assigned projects for Coordinators
 pub(in crate::api::v1) async fn get_all_projects_handler(
-    req: HttpRequest, data: Data<AppData>,
+    req: HttpRequest, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_admin() {
         Ok(user) => user,
@@ -126,7 +127,9 @@ pub(crate) struct ProjectDetailsResponse {
 ///
 /// Coordinators can only view projects they are assigned to. Professors/Root can view any project.
 pub(in crate::api::v1) async fn get_one_project_handler(
-    req: HttpRequest, path: Path<i32>, data: Data<AppData>,
+    req: HttpRequest, 
+    path: Path<i32>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_admin() {
         Ok(user) => user,

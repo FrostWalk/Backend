@@ -60,7 +60,8 @@ pub(super) async fn get_all_admins_handler(data: Data<AppData>) -> Result<HttpRe
 /// Returns detailed information about a specific admin user
 /// without including sensitive fields like passwords.
 pub(super) async fn get_one_admin_handler(
-    path: Path<i32>, data: Data<AppData>,
+    path: Path<i32>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 

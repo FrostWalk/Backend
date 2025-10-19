@@ -1,5 +1,6 @@
 use crate::app_data::AppData;
-use actix_web::{web, HttpResponse, Result};
+use actix_web::{HttpResponse, Result};
+use actix_web::web::Data;
 use serde::Serialize;
 use std::time::{SystemTime, UNIX_EPOCH};
 use utoipa::ToSchema;
@@ -39,7 +40,7 @@ struct DatabaseStatus {
     summary = "Get application health status",
     description = "Comprehensive health check that includes database connectivity and application status"
 )]
-pub async fn health_check(app_data: web::Data<AppData>) -> Result<HttpResponse> {
+pub async fn health_check(data: Data<AppData>) -> Result<HttpResponse> {
     let start_time = SystemTime::now();
     let timestamp = start_time
         .duration_since(UNIX_EPOCH)
@@ -47,7 +48,7 @@ pub async fn health_check(app_data: web::Data<AppData>) -> Result<HttpResponse> 
         .as_secs();
 
     // Check database connectivity
-    let database_status = check_database_health(&app_data).await;
+    let database_status = check_database_health(&data).await;
 
     // Calculate uptime (simplified - in a real app you'd track start time)
     let uptime_seconds = timestamp; // This is a simplified uptime calculation

@@ -45,7 +45,9 @@ pub(crate) struct ResetPasswordSchema {
     tag = "Student authentication"
 )]
 pub(crate) async fn reset_password_handler(
-    query: Query<ResetPasswordQuery>, req: Json<ResetPasswordSchema>, data: Data<AppData>,
+    query: Query<ResetPasswordQuery>, 
+    body: Json<ResetPasswordSchema>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let token = &query.t;
 
@@ -69,7 +71,7 @@ pub(crate) async fn reset_password_handler(
                 "Password reset failed",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &req,
+                &body,
             )
         })?;
 
@@ -83,7 +85,7 @@ pub(crate) async fn reset_password_handler(
 
     // Update the password hash
     let mut student_state = student_state;
-    student_state.password_hash = generate_hash(&req.new_password);
+    student_state.password_hash = generate_hash(&body.new_password);
 
     if let Err(e) = student_state.save(&data.db).await {
         return Err(error_with_log_id_and_payload(
@@ -91,7 +93,7 @@ pub(crate) async fn reset_password_handler(
             "Password reset failed",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &req,
+            &body,
         ));
     }
 

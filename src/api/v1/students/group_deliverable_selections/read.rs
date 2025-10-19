@@ -45,9 +45,10 @@ pub(crate) struct GroupDeliverableSelectionResponse {
 )]
 /// Get the deliverable selection for a group
 pub(in crate::api::v1) async fn get_group_deliverable_selection(
-    group_id: Path<i32>, data: Data<AppData>,
+    path: Path<i32>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let group_id = group_id.into_inner();
+    let group_id = path.into_inner();
 
     // Get the selection
     let selection_state =

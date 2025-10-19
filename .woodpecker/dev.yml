@@ -23,7 +23,7 @@ steps:
       dockerfile: Dockerfile
       # Build in dev profile, Alpine final image
       build_args:
-        PROFILE: dev
+        PROFILE: release
       build_args_from_env: true
       # Link image to the source repository (OCI label)
       labels:

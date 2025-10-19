@@ -80,8 +80,10 @@ pub(crate) struct RemoveCoordinatorResponse {
 /// Only admins with the Coordinator role can be assigned.
 /// **Constraint**: At most one coordinator can be assigned per project.
 pub(super) async fn assign_coordinator(
-    req: HttpRequest, data: Data<AppData>, project_id: Path<i32>,
-    body: Json<AssignCoordinatorRequest>,
+    req: HttpRequest, 
+    path: Path<i32>,
+    body: Json<AssignCoordinatorRequest>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _admin = match req.extensions().get_admin() {
         Ok(admin) => admin,
@@ -95,7 +97,7 @@ pub(super) async fn assign_coordinator(
         }
     };
 
-    let project_id = project_id.into_inner();
+    let project_id = path.into_inner();
 
     // Verify the project exists
     let project_state = projects_repository::get_by_id(&data.db, project_id)
@@ -230,7 +232,9 @@ pub(super) async fn assign_coordinator(
 /// This endpoint allows admins to view the coordinator assigned to a specific project.
 /// Returns null if no coordinator is assigned.
 pub(super) async fn list_coordinators(
-    req: HttpRequest, data: Data<AppData>, project_id: Path<i32>,
+    req: HttpRequest, 
+    path: Path<i32>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _admin = match req.extensions().get_admin() {
         Ok(admin) => admin,
@@ -244,7 +248,7 @@ pub(super) async fn list_coordinators(
         }
     };
 
-    let project_id = project_id.into_inner();
+    let project_id = path.into_inner();
 
     // Verify the project exists
     let project_state = projects_repository::get_by_id(&data.db, project_id)
@@ -336,7 +340,9 @@ pub(super) async fn list_coordinators(
 ///
 /// This endpoint allows Professors and Root admins to remove coordinator assignments from projects.
 pub(super) async fn remove_coordinator(
-    req: HttpRequest, data: Data<AppData>, path: Path<(i32, i32)>,
+    req: HttpRequest, 
+    path: Path<(i32, i32)>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _admin = match req.extensions().get_admin() {
         Ok(admin) => admin,

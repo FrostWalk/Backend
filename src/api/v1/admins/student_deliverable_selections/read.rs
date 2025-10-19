@@ -46,7 +46,9 @@ pub(crate) struct StudentSelectionInfo {
 /// This endpoint allows admins to view all student deliverable selections for a specific project,
 /// including which deliverables each student has chosen.
 pub(super) async fn get_student_deliverable_selections(
-    req: HttpRequest, data: Data<AppData>, project_id: Path<i32>,
+    req: HttpRequest, 
+    path: Path<i32>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _admin = match req.extensions().get_admin() {
         Ok(admin) => admin,
@@ -60,7 +62,7 @@ pub(super) async fn get_student_deliverable_selections(
         }
     };
 
-    let project_id = project_id.into_inner();
+    let project_id = path.into_inner();
 
     // Verify the project exists
     let project_state = projects_repository::get_by_id(&data.db, project_id)

@@ -43,7 +43,9 @@ pub(crate) struct UpdateMeAdminScheme {
 ///
 /// This endpoint allows admins to update their own profile details including name, email, and password.
 pub(super) async fn update_me_admin_handler(
-    req: HttpRequest, payload: Json<UpdateMeAdminScheme>, data: Data<AppData>,
+    req: HttpRequest, 
+    body: Json<UpdateMeAdminScheme>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_admin() {
         Ok(user) => user,
@@ -58,7 +60,7 @@ pub(super) async fn update_me_admin_handler(
     };
 
     // Validate old password is not empty
-    if payload.old_password.trim().is_empty() {
+    if body.old_password.trim().is_empty() {
         return Err("Old password is required".to_json_error(StatusCode::BAD_REQUEST));
     }
 
@@ -71,7 +73,7 @@ pub(super) async fn update_me_admin_handler(
                 "Profile update failed",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &payload,
+                &body,
             )
         })?;
 
@@ -81,43 +83,43 @@ pub(super) async fn update_me_admin_handler(
     };
 
     // Verify old password
-    if verify_password(&payload.old_password, &admin_state.password_hash).is_err() {
+    if verify_password(&body.old_password, &admin_state.password_hash).is_err() {
         return Err("Incorrect password".to_json_error(StatusCode::UNAUTHORIZED));
     }
 
     // Validate that at least one field is being updated
-    if payload.first_name.is_none()
-        && payload.last_name.is_none()
-        && payload.email.is_none()
-        && payload.password.is_none()
+    if body.first_name.is_none()
+        && body.last_name.is_none()
+        && body.email.is_none()
+        && body.password.is_none()
     {
         return Err("At least one field must be provided".to_json_error(StatusCode::BAD_REQUEST));
     }
 
     // Validate that fields are not empty strings
-    if let Some(ref first_name) = payload.first_name {
+    if let Some(ref first_name) = body.first_name {
         if first_name.trim().is_empty() {
             return Err("First name cannot be empty".to_json_error(StatusCode::BAD_REQUEST));
         }
     }
-    if let Some(ref last_name) = payload.last_name {
+    if let Some(ref last_name) = body.last_name {
         if last_name.trim().is_empty() {
             return Err("Last name cannot be empty".to_json_error(StatusCode::BAD_REQUEST));
         }
     }
-    if let Some(ref email) = payload.email {
+    if let Some(ref email) = body.email {
         if email.trim().is_empty() {
             return Err("Email cannot be empty".to_json_error(StatusCode::BAD_REQUEST));
         }
     }
-    if let Some(ref password) = payload.password {
+    if let Some(ref password) = body.password {
         if password.trim().is_empty() {
             return Err("Password cannot be empty".to_json_error(StatusCode::BAD_REQUEST));
         }
     }
 
     // If email is being changed, check if it already exists (for another user)
-    if let Some(ref new_email) = payload.email {
+    if let Some(ref new_email) = body.email {
         if new_email != &user.email {
             let email_exists = admins_repository::get_by_email(&data.db, new_email)
                 .await
@@ -127,7 +129,7 @@ pub(super) async fn update_me_admin_handler(
                         "Profile update failed",
                         StatusCode::INTERNAL_SERVER_ERROR,
                         log::Level::Error,
-                        &payload,
+                        &body,
                     )
                 })?;
 
@@ -140,16 +142,16 @@ pub(super) async fn update_me_admin_handler(
     }
 
     // Apply only provided fields
-    if let Some(v) = payload.first_name.clone() {
+    if let Some(v) = body.first_name.clone() {
         admin_state.first_name = v;
     }
-    if let Some(v) = payload.last_name.clone() {
+    if let Some(v) = body.last_name.clone() {
         admin_state.last_name = v;
     }
-    if let Some(v) = payload.email.clone() {
+    if let Some(v) = body.email.clone() {
         admin_state.email = v;
     }
-    if let Some(v) = payload.password.clone() {
+    if let Some(v) = body.password.clone() {
         admin_state.password_hash = generate_hash(v);
     }
 
@@ -159,7 +161,7 @@ pub(super) async fn update_me_admin_handler(
             "Profile update failed",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &payload,
+            &body,
         )
     })?;
 

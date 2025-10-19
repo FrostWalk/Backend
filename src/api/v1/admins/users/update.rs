@@ -36,7 +36,9 @@ pub(crate) struct UpdateAdminScheme {
 ///
 /// This endpoint allows authenticated admins to update their own or other admin's details. Only root admins can modify roles.
 pub(super) async fn update_admin_handler(
-    path: Path<i32>, req: Json<UpdateAdminScheme>, data: Data<AppData>,
+    path: Path<i32>, 
+    body: Json<UpdateAdminScheme>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 
@@ -48,7 +50,7 @@ pub(super) async fn update_admin_handler(
                 "Failed to update user",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &req,
+                &body,
             )
         })?;
 
@@ -58,16 +60,16 @@ pub(super) async fn update_admin_handler(
     };
 
     // Apply only provided fields
-    if let Some(v) = req.first_name.clone() {
+    if let Some(v) = body.first_name.clone() {
         admin_state.first_name = v;
     }
-    if let Some(v) = req.last_name.clone() {
+    if let Some(v) = body.last_name.clone() {
         admin_state.last_name = v;
     }
-    if let Some(v) = req.email.clone() {
+    if let Some(v) = body.email.clone() {
         admin_state.email = v;
     }
-    if let Some(v) = req.password.clone() {
+    if let Some(v) = body.password.clone() {
         admin_state.password_hash = generate_hash(v);
     }
 
@@ -77,7 +79,7 @@ pub(super) async fn update_admin_handler(
             "Failed to update user",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &req,
+            &body,
         )
     })?;
 

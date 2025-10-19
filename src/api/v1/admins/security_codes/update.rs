@@ -74,9 +74,12 @@ pub(crate) struct UpdateCodeResponse {
 /// Coordinators can only update codes for projects they are assigned to. Professors/Root can update codes for any project.
 /// If code is provided, a new unique code will be generated. If expiration is provided, it must be greater than one day from now.
 pub(in crate::api::v1) async fn update_code_handler(
-    http_req: HttpRequest, path: Path<i32>, req: Json<UpdateCodeScheme>, data: Data<AppData>,
+    req: HttpRequest, 
+    path: Path<i32>, 
+    body: Json<UpdateCodeScheme>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let user = match http_req.extensions().get_admin() {
+    let user = match req.extensions().get_admin() {
         Ok(user) => user,
         Err(e) => {
             error!("entered a protected route without a user loaded in the request");
@@ -129,7 +132,7 @@ pub(in crate::api::v1) async fn update_code_handler(
     }
 
     // Validate expiration if provided
-    if let Some(expiration) = req.expiration {
+    if let Some(expiration) = body.expiration {
         let skew = Duration::days(1);
         let now = Utc::now() - skew;
 
@@ -141,7 +144,7 @@ pub(in crate::api::v1) async fn update_code_handler(
     }
 
     // Generate new code if requested
-    let new_code = if req.code.is_some() {
+    let new_code = if body.code.is_some() {
         let mut done = false;
         let mut code = String::new();
         while !done {
@@ -162,7 +165,7 @@ pub(in crate::api::v1) async fn update_code_handler(
                         "Failed to update security code",
                         StatusCode::INTERNAL_SERVER_ERROR,
                         log::Level::Error,
-                        &req,
+                        &body,
                     ));
                 }
             }
@@ -173,7 +176,7 @@ pub(in crate::api::v1) async fn update_code_handler(
     };
 
     // Update the security code
-    let final_expiration = req.expiration.unwrap_or(existing_code_data.expiration);
+    let final_expiration = body.expiration.unwrap_or(existing_code_data.expiration);
 
     match update_security_code(
         &data.db,
@@ -195,7 +198,7 @@ pub(in crate::api::v1) async fn update_code_handler(
             "Failed to update security code",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &req,
+            &body,
         )),
     }
 }

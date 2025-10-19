@@ -48,11 +48,12 @@ pub(crate) struct CreateGroupComponentResponse {
 ///
 /// This endpoint allows authenticated admins to create a new group component for a specific project.
 pub(super) async fn create_group_component_handler(
-    req: Json<CreateGroupComponentScheme>, data: Data<AppData>,
+    body: Json<CreateGroupComponentScheme>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // Check if component with this name already exists for the project
-    let existing = GroupDeliverableComponent::where_col(|gc| gc.project_id.equal(req.project_id))
-        .where_col(|gc| gc.name.equal(&req.name))
+    let existing = GroupDeliverableComponent::where_col(|gc| gc.project_id.equal(body.project_id))
+        .where_col(|gc| gc.name.equal(&body.name))
         .run(&data.db)
         .await
         .map_err(|e| {
@@ -61,7 +62,7 @@ pub(super) async fn create_group_component_handler(
                 "Failed to create component",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &req,
+                &body,
             )
         })?;
 
@@ -72,9 +73,9 @@ pub(super) async fn create_group_component_handler(
 
     let mut state = DbState::new_uncreated(GroupDeliverableComponent {
         group_deliverable_component_id: 0,
-        project_id: req.project_id,
-        name: req.name.clone(),
-        sellable: req.sellable,
+        project_id: body.project_id,
+        name: body.name.clone(),
+        sellable: body.sellable,
     });
 
     if let Err(e) = state.save(&data.db).await {
@@ -83,14 +84,14 @@ pub(super) async fn create_group_component_handler(
             "Failed to create component",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &req,
+            &body,
         ));
     }
 
     Ok(HttpResponse::Ok().json(CreateGroupComponentResponse {
         group_deliverable_component_id: state.group_deliverable_component_id,
-        project_id: req.project_id,
-        name: req.name.clone(),
-        sellable: req.sellable,
+        project_id: body.project_id,
+        name: body.name.clone(),
+        sellable: body.sellable,
     }))
 }

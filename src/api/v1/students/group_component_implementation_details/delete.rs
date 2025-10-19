@@ -38,10 +38,12 @@ pub(crate) struct DeleteComponentImplementationDetailResponse {
 )]
 /// Delete implementation details for a component (Group Leaders only)
 pub(in crate::api::v1) async fn delete_component_implementation_detail(
-    req: HttpRequest, body: Json<DeleteComponentImplementationDetailRequest>, group_id: Path<i32>,
+    req: HttpRequest, 
+    path: Path<i32>, 
+    body: Json<DeleteComponentImplementationDetailRequest>, 
     data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let group_id = group_id.into_inner();
+    let group_id = path.into_inner();
 
     // Get the logged-in user
     let user = req.extensions().get_student().map_err(|_| {

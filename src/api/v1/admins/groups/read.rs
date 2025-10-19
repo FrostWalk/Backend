@@ -59,7 +59,9 @@ pub(crate) struct DeliverableInfo {
 /// group leaders, and their chosen deliverables. Includes time_expired field for
 /// groups that haven't selected a deliverable by the deadline.
 pub(super) async fn get_project_groups(
-    req: HttpRequest, data: Data<AppData>, project_id: Path<i32>,
+    req: HttpRequest, 
+    path: Path<i32>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _admin = match req.extensions().get_admin() {
         Ok(admin) => admin,
@@ -73,8 +75,10 @@ pub(super) async fn get_project_groups(
         }
     };
 
+    let project_id = path.into_inner();
+
     // Verify the project exists
-    let project_state = projects_repository::get_by_id(&data.db, *project_id)
+    let project_state = projects_repository::get_by_id(&data.db, project_id)
         .await
         .map_err(|e| {
             error_with_log_id(
@@ -98,7 +102,7 @@ pub(super) async fn get_project_groups(
     };
 
     // Get all groups for this project
-    let groups = groups_repository::get_by_project_id(&data.db, *project_id)
+    let groups = groups_repository::get_by_project_id(&data.db, project_id)
         .await
         .map_err(|e| {
             error_with_log_id(

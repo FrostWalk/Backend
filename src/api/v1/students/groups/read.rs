@@ -37,7 +37,8 @@ pub(crate) struct GroupWithProject {
 ///
 /// This endpoint allows authenticated students to retrieve all groups they are members of.
 pub(crate) async fn get_groups(
-    req: HttpRequest, data: Data<AppData>,
+    req: HttpRequest, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_student() {
         Ok(user) => user,

@@ -34,10 +34,11 @@ pub(crate) struct ForgotPasswordSchema {
     tag = "Admin authentication"
 )]
 pub(crate) async fn forgot_password_handler(
-    req: Json<ForgotPasswordSchema>, data: Data<AppData>,
+    body: Json<ForgotPasswordSchema>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // Fetch the admin by email
-    let admin_state = admins_repository::get_by_email(&data.db, &req.email)
+    let admin_state = admins_repository::get_by_email(&data.db, &body.email)
         .await
         .map_err(|e| {
             error_with_log_id_and_payload(
@@ -45,7 +46,7 @@ pub(crate) async fn forgot_password_handler(
                 "Password reset request failed",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &req,
+                &body,
             )
         })?;
 
@@ -65,7 +66,7 @@ pub(crate) async fn forgot_password_handler(
                 "Password reset request failed",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &req,
+                &body,
             )
         })?;
 
@@ -85,7 +86,7 @@ pub(crate) async fn forgot_password_handler(
                     "Password reset request failed",
                     StatusCode::INTERNAL_SERVER_ERROR,
                     log::Level::Error,
-                    &req,
+                    &body,
                 ));
             }
         };
@@ -102,7 +103,7 @@ pub(crate) async fn forgot_password_handler(
                 "Password reset request failed",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &req,
+                &body,
             ));
         }
     }

@@ -33,7 +33,9 @@ pub(crate) struct UpdateGroupDeliverableScheme {
 ///
 /// This endpoint allows authenticated admins to modify the name of a group deliverable by ID.
 pub(super) async fn update_group_deliverable_handler(
-    path: Path<i32>, req: Json<UpdateGroupDeliverableScheme>, data: Data<AppData>,
+    path: Path<i32>, 
+    body: Json<UpdateGroupDeliverableScheme>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 
@@ -47,7 +49,7 @@ pub(super) async fn update_group_deliverable_handler(
                 "Failed to update deliverable",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
-                &req,
+                &body,
             )
         })?;
 
@@ -59,7 +61,7 @@ pub(super) async fn update_group_deliverable_handler(
     // Check if another deliverable with this name already exists for the same project
     let existing =
         GroupDeliverable::where_col(|gd| gd.project_id.equal(deliverable_state.project_id))
-            .where_col(|gd| gd.name.equal(&req.name))
+            .where_col(|gd| gd.name.equal(&body.name))
             .where_col(|gd| gd.group_deliverable_id.not_equal(id))
             .run(&data.db)
             .await
@@ -69,7 +71,7 @@ pub(super) async fn update_group_deliverable_handler(
                     "Failed to update deliverable",
                     StatusCode::INTERNAL_SERVER_ERROR,
                     log::Level::Error,
-                    &req,
+                    &body,
                 )
             })?;
 
@@ -79,7 +81,7 @@ pub(super) async fn update_group_deliverable_handler(
     }
 
     // Update the name
-    deliverable_state.name = req.name.clone();
+    deliverable_state.name = body.name.clone();
 
     deliverable_state.save(&data.db).await.map_err(|e| {
         error_with_log_id_and_payload(
@@ -87,7 +89,7 @@ pub(super) async fn update_group_deliverable_handler(
             "Failed to update deliverable",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
-            &req,
+            &body,
         )
     })?;
 

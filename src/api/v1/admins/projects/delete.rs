@@ -18,7 +18,8 @@ use actix_web::HttpResponse;
 )]
 /// Delete a project by id
 pub(in crate::api::v1) async fn delete_project_handler(
-    path: Path<i32>, data: Data<AppData>,
+    path: Path<i32>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let project_id = path.into_inner();
 

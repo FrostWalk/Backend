@@ -29,7 +29,9 @@ pub(crate) struct DeleteGroupResponse {
 /// This endpoint allows authenticated students to delete a group they lead.
 /// This will also remove all group members.
 pub(crate) async fn delete_group(
-    req: HttpRequest, data: Data<AppData>, path: Path<i32>,
+    req: HttpRequest, 
+    path: Path<i32>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_student() {
         Ok(user) => user,

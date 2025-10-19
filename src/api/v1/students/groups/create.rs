@@ -48,7 +48,9 @@ pub(crate) struct CreateGroupResponse {
 /// Each student can only create one group per project.
 /// The group creator becomes the GroupLeader automatically.
 pub(crate) async fn create_group(
-    req: HttpRequest, data: Data<AppData>, body: Json<CreateGroupRequest>,
+    req: HttpRequest, 
+    body: Json<CreateGroupRequest>, 
+    data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_student() {
         Ok(user) => user,
