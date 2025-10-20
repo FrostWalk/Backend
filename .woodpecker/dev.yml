@@ -27,9 +27,9 @@ steps:
       build_args_from_env: true
       # Link image to the source repository (OCI label)
       labels:
-        - org.opencontainers.image.source=https://github.com/FrostWalk/Backend
+        - org.opencontainers.image.source=https://github.com/frostwalk/backend
         - org.opencontainers.image.licenses=MIT
-      # Also add the plugin's default git-derived labels (version, revision, etc.)
+        - org.opencontainers.image.description="Development image of the backend"
       default_labels: true
       # GHCR auth
       username:
