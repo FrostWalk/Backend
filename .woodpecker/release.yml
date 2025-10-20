@@ -59,8 +59,9 @@ steps:
         PROFILE: release
       build_args_from_env: true
       labels:
-        - org.opencontainers.image.source=https://github.com/FrostWalk/Backend
+        - org.opencontainers.image.source=https://github.com/frostwalk/backend
         - org.opencontainers.image.licenses=MIT
+        - org.opencontainers.image.description="Release image of the backend"
       default_labels: true
       username:
         from_secret: GHCR_USERNAME
