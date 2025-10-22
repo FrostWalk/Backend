@@ -31,10 +31,9 @@ pub(crate) struct UpdateStudentDeliverableComponentScheme {
 /// Updates the quantity of a component in a student deliverable.
 ///
 /// This endpoint allows authenticated admins to modify the quantity of a component in a student deliverable by ID.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn update_student_deliverable_component_handler(
-    path: Path<i32>, 
-    body: Json<UpdateStudentDeliverableComponentScheme>, 
-    data: Data<AppData>,
+    path: Path<i32>, body: Json<UpdateStudentDeliverableComponentScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
     // Find the existing relationship by ID

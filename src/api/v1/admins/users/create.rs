@@ -47,10 +47,9 @@ pub(crate) struct CreateAdminResponse {
 ///
 /// This endpoint allows authenticated users to create new admin accounts. Only users with the root role can create other root users.
 /// A random password is automatically generated and sent to the admin via email.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn create_admin_handler(
-    req: HttpRequest, 
-    body: Json<CreateAdminScheme>, 
-    data: Data<AppData>,
+    req: HttpRequest, body: Json<CreateAdminScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_admin() {
         Ok(user) => user,

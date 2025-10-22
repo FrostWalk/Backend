@@ -28,10 +28,9 @@ pub(crate) struct DeleteGroupResponse {
 ///
 /// This endpoint allows authenticated students to delete a group they lead.
 /// This will also remove all group members.
+#[actix_web_grants::protect("ROLE_STUDENT")]
 pub(crate) async fn delete_group(
-    req: HttpRequest, 
-    path: Path<i32>, 
-    data: Data<AppData>,
+    req: HttpRequest, path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_student() {
         Ok(user) => user,

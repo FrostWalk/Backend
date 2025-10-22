@@ -43,9 +43,9 @@ pub(crate) struct CreateStudentDeliverableResponse {
 /// Creates a new student deliverable.
 ///
 /// This endpoint allows authenticated admins to create a new student deliverable for a specific project.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn create_student_deliverable_handler(
-    body: Json<CreateStudentDeliverableScheme>, 
-    data: Data<AppData>,
+    body: Json<CreateStudentDeliverableScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // Check if deliverable with this name already exists for the project
     let existing = StudentDeliverable::where_col(|sp| sp.project_id.equal(body.project_id))

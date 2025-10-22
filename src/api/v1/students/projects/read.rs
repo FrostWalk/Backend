@@ -42,9 +42,9 @@ pub(crate) struct GetStudentProjects {
 ///
 /// This endpoint allows authenticated students to retrieve all the projects in which they have a role,
 /// along with all deliverables and components for each project
+#[actix_web_grants::protect("ROLE_STUDENT")]
 pub(super) async fn get_student_projects(
-    req: HttpRequest, 
-    data: Data<AppData>,
+    req: HttpRequest, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_student() {
         Ok(user) => user,

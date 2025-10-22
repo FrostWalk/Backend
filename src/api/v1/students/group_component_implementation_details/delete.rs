@@ -37,10 +37,9 @@ pub(crate) struct DeleteComponentImplementationDetailResponse {
     tag = "Group Component Implementation Details",
 )]
 /// Delete implementation details for a component (Group Leaders only)
+#[actix_web_grants::protect("ROLE_STUDENT")]
 pub(in crate::api::v1) async fn delete_component_implementation_detail(
-    req: HttpRequest, 
-    path: Path<i32>, 
-    body: Json<DeleteComponentImplementationDetailRequest>, 
+    req: HttpRequest, path: Path<i32>, body: Json<DeleteComponentImplementationDetailRequest>,
     data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let group_id = path.into_inner();

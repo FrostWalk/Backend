@@ -43,10 +43,9 @@ pub(crate) struct CreateStudentDeliverableSelectionResponse {
     tag = "Student Deliverable Selections",
 )]
 /// Create a student deliverable selection (requires group membership)
+#[actix_web_grants::protect("ROLE_STUDENT")]
 pub(in crate::api::v1) async fn create_student_deliverable_selection(
-    req: HttpRequest, 
-    body: Json<CreateStudentDeliverableSelectionRequest>, 
-    data: Data<AppData>,
+    req: HttpRequest, body: Json<CreateStudentDeliverableSelectionRequest>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // Get the logged-in user
     let user = req.extensions().get_student().map_err(|_| {

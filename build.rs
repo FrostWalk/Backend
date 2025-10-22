@@ -4,22 +4,21 @@ use std::path::Path;
 use std::process::Command;
 
 fn main() {
-    // Get git tag (latest tag)
-    let mut git_tag = get_git_tag();
+    // Check if this is a dev build
+    let is_dev_build = env::var("IS_DEV_BUILD").unwrap_or_else(|_| "false".to_string()) == "true";
 
-    // Check if we're building in dev/debug profile and append "-dev" suffix
-    // BUILD_PROFILE is set by Dockerfile (takes precedence)
-    // PROFILE is Cargo's built-in profile name during build
-    let profile = env::var("BUILD_PROFILE")
-        .or_else(|_| env::var("PROFILE"))
-        .unwrap_or_else(|_| "release".to_string());
+    println!("cargo:warning=Is dev build: {}", is_dev_build);
 
-    println!("cargo:warning=Building with profile: {}", profile);
+    // Set git tag based on whether it's a dev build
+    // For dev pipeline, we use "dev" as git tag
+    // For release pipeline, we use the actual git tag
+    let git_tag = if is_dev_build {
+        "dev".to_string()
+    } else {
+        get_git_tag()
+    };
 
-    if profile == "dev" || profile == "debug" {
-        git_tag = format!("{}-dev", git_tag);
-        println!("cargo:warning=Applied -dev suffix to version: {}", git_tag);
-    }
+    println!("cargo:warning=Git tag: {}", git_tag);
 
     // Get git commit hash
     let git_commit = get_git_commit();
@@ -61,21 +60,8 @@ fn get_git_tag() -> String {
         }
     }
 
-    // If in CI but no tag, try to get the latest tag from history
+    // If in CI but no tag, use a default version
     if env::var("CI_COMMIT_SHA").is_ok() {
-        // We're in CI, try to get the latest tag
-        if let Ok(output) = Command::new("git")
-            .args(&["describe", "--tags", "--abbrev=0"])
-            .output()
-        {
-            if output.status.success() {
-                let tag = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                if !tag.is_empty() {
-                    return tag;
-                }
-            }
-        }
-        // If no tags found at all, use a default version
         return "0.1.0".to_string();
     }
 

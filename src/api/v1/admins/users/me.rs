@@ -20,6 +20,11 @@ use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 /// This endpoint is designed to return detailed information about the admin making the request.
 /// It extracts the admin's data from the request context, which should be populated by middleware
 /// responsible for authentication and authorization.
+#[actix_web_grants::protect(any(
+    "ROLE_ADMIN_ROOT",
+    "ROLE_ADMIN_PROFESSOR",
+    "ROLE_ADMIN_COORDINATOR"
+))]
 pub(super) async fn admins_me_handler(req: HttpRequest) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_admin() {
         Ok(user) => user,

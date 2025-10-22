@@ -41,10 +41,9 @@ pub(crate) struct UpdateComponentImplementationDetailResponse {
     tag = "Group Component Implementation Details",
 )]
 /// Update implementation details for a single component (Group Leaders only)
+#[actix_web_grants::protect("ROLE_STUDENT")]
 pub(in crate::api::v1) async fn update_component_implementation_detail(
-    req: HttpRequest, 
-    path: Path<i32>, 
-    body: Json<UpdateComponentImplementationDetailRequest>, 
+    req: HttpRequest, path: Path<i32>, body: Json<UpdateComponentImplementationDetailRequest>,
     data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let group_id = path.into_inner();

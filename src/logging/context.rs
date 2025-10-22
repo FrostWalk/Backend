@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use uuid::Uuid;
 
 thread_local! {
-    static REQUEST_CONTEXT: RefCell<Option<RequestContext>> = RefCell::new(None);
+    static REQUEST_CONTEXT: RefCell<Option<RequestContext>> = const { RefCell::new(None) };
 }
 
 /// Initialize the request context storage

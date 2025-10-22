@@ -45,9 +45,7 @@ pub(crate) struct ResetPasswordSchema {
     tag = "Student authentication"
 )]
 pub(crate) async fn reset_password_handler(
-    query: Query<ResetPasswordQuery>, 
-    body: Json<ResetPasswordSchema>, 
-    data: Data<AppData>,
+    query: Query<ResetPasswordQuery>, body: Json<ResetPasswordSchema>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let token = &query.t;
 

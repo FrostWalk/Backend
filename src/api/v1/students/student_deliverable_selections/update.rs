@@ -40,6 +40,7 @@ pub(crate) struct UpdateStudentDeliverableSelectionResponse {
     tag = "Student Deliverable Selections",
 )]
 /// Update a student deliverable selection
+#[actix_web_grants::protect("ROLE_STUDENT")]
 pub(in crate::api::v1) async fn update_student_deliverable_selection(
     req: HttpRequest, body: Json<UpdateStudentDeliverableSelectionRequest>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {

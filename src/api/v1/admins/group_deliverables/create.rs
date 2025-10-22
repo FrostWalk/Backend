@@ -43,9 +43,9 @@ pub(crate) struct CreateGroupDeliverableResponse {
 /// Creates a new group deliverable.
 ///
 /// This endpoint allows authenticated admins to create a new group deliverable for a specific project.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn create_group_deliverable_handler(
-    body: Json<CreateGroupDeliverableScheme>, 
-    data: Data<AppData>,
+    body: Json<CreateGroupDeliverableScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // Check if deliverable with this name already exists for the project
     let existing = GroupDeliverable::where_col(|gd| gd.project_id.equal(body.project_id))

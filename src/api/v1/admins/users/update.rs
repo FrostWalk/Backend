@@ -35,10 +35,9 @@ pub(crate) struct UpdateAdminScheme {
 /// Updates an existing admin user.
 ///
 /// This endpoint allows authenticated admins to update their own or other admin's details. Only root admins can modify roles.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn update_admin_handler(
-    path: Path<i32>, 
-    body: Json<UpdateAdminScheme>, 
-    data: Data<AppData>,
+    path: Path<i32>, body: Json<UpdateAdminScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 

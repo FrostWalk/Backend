@@ -36,9 +36,9 @@ pub(crate) struct GroupWithProject {
 /// Get all groups where the student is a member
 ///
 /// This endpoint allows authenticated students to retrieve all groups they are members of.
+#[actix_web_grants::protect("ROLE_STUDENT")]
 pub(crate) async fn get_groups(
-    req: HttpRequest, 
-    data: Data<AppData>,
+    req: HttpRequest, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_student() {
         Ok(user) => user,

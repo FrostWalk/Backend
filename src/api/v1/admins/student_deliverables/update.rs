@@ -32,10 +32,9 @@ pub(crate) struct UpdateStudentDeliverableScheme {
 /// Updates a student deliverable.
 ///
 /// This endpoint allows authenticated admins to modify the name of a student deliverable by ID.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn update_student_deliverable_handler(
-    path: Path<i32>, 
-    body: Json<UpdateStudentDeliverableScheme>, 
-    data: Data<AppData>,
+    path: Path<i32>, body: Json<UpdateStudentDeliverableScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 

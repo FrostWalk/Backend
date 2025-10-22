@@ -44,9 +44,9 @@ pub(crate) struct GroupDeliverableSelectionResponse {
     tag = "Group Deliverable Selections",
 )]
 /// Get the deliverable selection for a group
+#[actix_web_grants::protect("ROLE_STUDENT")]
 pub(in crate::api::v1) async fn get_group_deliverable_selection(
-    path: Path<i32>, 
-    data: Data<AppData>,
+    path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let group_id = path.into_inner();
 

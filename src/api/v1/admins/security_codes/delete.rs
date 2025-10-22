@@ -33,10 +33,13 @@ pub(crate) struct DeleteCodeResponse {
 /// Delete a security code
 ///
 /// Coordinators can only delete codes for projects they are assigned to. Professors/Root can delete codes for any project.
+#[actix_web_grants::protect(any(
+    "ROLE_ADMIN_ROOT",
+    "ROLE_ADMIN_PROFESSOR",
+    "ROLE_ADMIN_COORDINATOR"
+))]
 pub(in crate::api::v1) async fn delete_code_handler(
-    req: HttpRequest, 
-    path: Path<i32>, 
-    data: Data<AppData>,
+    req: HttpRequest, path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_admin() {
         Ok(user) => user,

@@ -32,10 +32,9 @@ pub(crate) struct UpdateStudentComponentScheme {
 /// Updates a student component.
 ///
 /// This endpoint allows authenticated admins to modify the name of a student component by ID.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn update_student_component_handler(
-    path: Path<i32>, 
-    body: Json<UpdateStudentComponentScheme>, 
-    data: Data<AppData>,
+    path: Path<i32>, body: Json<UpdateStudentComponentScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 

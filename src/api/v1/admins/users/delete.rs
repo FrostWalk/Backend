@@ -20,10 +20,9 @@ use log::warn;
     tag = "Admin users management",
 )]
 /// Delete an admin
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn delete_admin_handler(
-    req: HttpRequest, 
-    path: Path<i32>, 
-    data: Data<AppData>,
+    req: HttpRequest, path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let admin_id = path.into_inner();
 

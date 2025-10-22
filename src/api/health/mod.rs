@@ -1,6 +1,6 @@
 use crate::app_data::AppData;
-use actix_web::{HttpResponse, Result};
 use actix_web::web::Data;
+use actix_web::{HttpResponse, Result};
 use serde::Serialize;
 use std::time::{SystemTime, UNIX_EPOCH};
 use utoipa::ToSchema;

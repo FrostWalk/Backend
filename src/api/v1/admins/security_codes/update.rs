@@ -73,11 +73,13 @@ pub(crate) struct UpdateCodeResponse {
 ///
 /// Coordinators can only update codes for projects they are assigned to. Professors/Root can update codes for any project.
 /// If code is provided, a new unique code will be generated. If expiration is provided, it must be greater than one day from now.
+#[actix_web_grants::protect(any(
+    "ROLE_ADMIN_ROOT",
+    "ROLE_ADMIN_PROFESSOR",
+    "ROLE_ADMIN_COORDINATOR"
+))]
 pub(in crate::api::v1) async fn update_code_handler(
-    req: HttpRequest, 
-    path: Path<i32>, 
-    body: Json<UpdateCodeScheme>, 
-    data: Data<AppData>,
+    req: HttpRequest, path: Path<i32>, body: Json<UpdateCodeScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_admin() {
         Ok(user) => user,

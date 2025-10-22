@@ -36,6 +36,7 @@ pub(crate) struct GetMeStudentResponse {
 /// This endpoint is designed to return detailed information about the student making the request.
 /// It extracts the student's data from the request context, which should be populated by middleware
 /// responsible for authentication and authorization.
+#[actix_web_grants::protect("ROLE_STUDENT")]
 pub(super) async fn students_me_handler(req: HttpRequest) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_student() {
         Ok(user) => user,

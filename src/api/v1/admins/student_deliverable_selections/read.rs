@@ -45,10 +45,13 @@ pub(crate) struct StudentSelectionInfo {
 ///
 /// This endpoint allows admins to view all student deliverable selections for a specific project,
 /// including which deliverables each student has chosen.
+#[actix_web_grants::protect(any(
+    "ROLE_ADMIN_ROOT",
+    "ROLE_ADMIN_PROFESSOR",
+    "ROLE_ADMIN_COORDINATOR"
+))]
 pub(super) async fn get_student_deliverable_selections(
-    req: HttpRequest, 
-    path: Path<i32>, 
-    data: Data<AppData>,
+    req: HttpRequest, path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _admin = match req.extensions().get_admin() {
         Ok(admin) => admin,

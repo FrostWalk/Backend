@@ -2,12 +2,14 @@ use crate::api::configure_endpoints;
 use crate::app_data::AppData;
 use crate::config::Config;
 use crate::database::repositories::admins_repository::create_default_admin;
+use crate::jwt::grants_extractor::extract;
 use crate::logging::logger::init_mongo_logger;
 use crate::logging::middleware::RequestContextMiddleware;
 use crate::mail::Mailer;
 use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
+use actix_web_grants::GrantsMiddleware;
 use log::{error, info};
 use welds::connections::postgres::connect;
 
@@ -71,6 +73,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(app_data.clone())) //add application state with repositories and config
             .wrap(Logger::default()) // add logging middleware
             .wrap(RequestContextMiddleware) // add request context middleware
+            .wrap(GrantsMiddleware::with_extractor(extract)) // add grants middleware for authorization
             .configure(configure_endpoints) // add scopes and routes
     })
     .workers(app_config.workers()) // normally 1 worker per thread

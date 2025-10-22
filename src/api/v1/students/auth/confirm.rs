@@ -33,8 +33,7 @@ pub(crate) struct ConfirmTokenQuery {
 /// This endpoint verifies the email confirmation token sent to the student's email
 /// and activates their account by setting is_pending to false.
 pub(super) async fn confirm_student_handler(
-    query: Query<ConfirmTokenQuery>, 
-    data: Data<AppData>,
+    query: Query<ConfirmTokenQuery>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let token = &query.t;
 

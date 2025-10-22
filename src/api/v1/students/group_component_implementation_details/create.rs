@@ -44,10 +44,9 @@ pub(crate) struct CreateComponentImplementationDetailResponse {
     tag = "Group Component Implementation Details",
 )]
 /// Create implementation details for a single component (Group Leaders only)
+#[actix_web_grants::protect("ROLE_STUDENT")]
 pub(in crate::api::v1) async fn create_component_implementation_detail(
-    req: HttpRequest, 
-    path: Path<i32>, 
-    body: Json<CreateComponentImplementationDetailRequest>, 
+    req: HttpRequest, path: Path<i32>, body: Json<CreateComponentImplementationDetailRequest>,
     data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let group_id = path.into_inner();

@@ -35,10 +35,9 @@ pub(crate) struct CheckNameResponse {
 ///
 /// This endpoint allows students to check if a group name is already taken
 /// within a specific project before creating a group.
+#[actix_web_grants::protect("ROLE_STUDENT")]
 pub(super) async fn check_name(
-    req: HttpRequest, 
-    body: Json<CheckNameRequest>, 
-    data: Data<AppData>,
+    req: HttpRequest, body: Json<CheckNameRequest>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _user = match req.extensions().get_student() {
         Ok(user) => user,
