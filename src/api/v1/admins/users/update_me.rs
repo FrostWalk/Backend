@@ -80,7 +80,7 @@ pub(super) async fn update_me_admin_handler(
             )
         })?;
 
-    let mut admin_state = match admin_state_opt {
+    let admin_state = match admin_state_opt {
         Some(s) => s,
         None => return Err("Admin not found".to_json_error(StatusCode::NOT_FOUND)),
     };
@@ -144,21 +144,19 @@ pub(super) async fn update_me_admin_handler(
         }
     }
 
-    // Apply only provided fields
-    if let Some(v) = body.first_name.clone() {
-        admin_state.first_name = v;
-    }
-    if let Some(v) = body.last_name.clone() {
-        admin_state.last_name = v;
-    }
-    if let Some(v) = body.email.clone() {
-        admin_state.email = v;
-    }
-    if let Some(v) = body.password.clone() {
-        admin_state.password_hash = generate_hash(v);
-    }
+    // Update admin using repository function
+    let password_hash = body.password.as_ref().map(generate_hash);
 
-    admin_state.save(&data.db).await.map_err(|e| {
+    admins_repository::update_by_id(
+        &data.db,
+        user.admin_id,
+        body.first_name.clone(),
+        body.last_name.clone(),
+        body.email.clone(),
+        password_hash,
+    )
+    .await
+    .map_err(|e| {
         error_with_log_id_and_payload(
             format!("unable to update admin profile: {}", e),
             "Profile update failed",

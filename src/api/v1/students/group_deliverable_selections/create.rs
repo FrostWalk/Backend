@@ -1,10 +1,11 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, error_with_log_id_and_payload, JsonError};
-use crate::database::repositories::{group_deliverable_selections_repository, groups_repository};
+use crate::database::repositories::{
+    group_deliverable_selections_repository, group_deliverables_repository, groups_repository,
+    projects_repository,
+};
 use crate::jwt::get_user::LoggedUser;
-use crate::models::group_deliverable::GroupDeliverable;
 use crate::models::group_deliverable_selection::GroupDeliverableSelection;
-use crate::models::project::Project;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json, Path};
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
@@ -128,9 +129,8 @@ pub(in crate::api::v1) async fn create_group_deliverable_selection(
     }
 
     // 4. Verify the group_deliverable_id exists and belongs to the same project
-    let mut deliverable_rows =
-        GroupDeliverable::where_col(|gd| gd.group_deliverable_id.equal(body.group_deliverable_id))
-            .run(&data.db)
+    let deliverable_state =
+        group_deliverables_repository::get_by_id(&data.db, body.group_deliverable_id)
             .await
             .map_err(|e| {
                 error_with_log_id(
@@ -139,16 +139,15 @@ pub(in crate::api::v1) async fn create_group_deliverable_selection(
                     StatusCode::INTERNAL_SERVER_ERROR,
                     log::Level::Error,
                 )
+            })?
+            .ok_or_else(|| {
+                error_with_log_id(
+                    format!("Group deliverable {} not found", body.group_deliverable_id),
+                    "Deliverable not found",
+                    StatusCode::NOT_FOUND,
+                    log::Level::Warn,
+                )
             })?;
-
-    let deliverable_state = deliverable_rows.pop().ok_or_else(|| {
-        error_with_log_id(
-            format!("Group deliverable {} not found", body.group_deliverable_id),
-            "Deliverable not found",
-            StatusCode::NOT_FOUND,
-            log::Level::Warn,
-        )
-    })?;
 
     let deliverable = DbState::into_inner(deliverable_state);
 
@@ -165,8 +164,7 @@ pub(in crate::api::v1) async fn create_group_deliverable_selection(
     }
 
     // 5. Verify the project's deliverable_selection_deadline has not passed (if set)
-    let mut project_rows = Project::where_col(|p| p.project_id.equal(group.project_id))
-        .run(&data.db)
+    let project_state = projects_repository::get_by_id(&data.db, group.project_id)
         .await
         .map_err(|e| {
             error_with_log_id(
@@ -175,16 +173,15 @@ pub(in crate::api::v1) async fn create_group_deliverable_selection(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
             )
+        })?
+        .ok_or_else(|| {
+            error_with_log_id(
+                format!("Project {} not found", group.project_id),
+                "Project not found",
+                StatusCode::NOT_FOUND,
+                log::Level::Warn,
+            )
         })?;
-
-    let project_state = project_rows.pop().ok_or_else(|| {
-        error_with_log_id(
-            format!("Project {} not found", group.project_id),
-            "Project not found",
-            StatusCode::NOT_FOUND,
-            log::Level::Warn,
-        )
-    })?;
 
     let project = DbState::into_inner(project_state);
 
@@ -203,30 +200,31 @@ pub(in crate::api::v1) async fn create_group_deliverable_selection(
     }
 
     // Create the selection
-    let mut selection_state = DbState::new_uncreated(GroupDeliverableSelection {
+    let selection = GroupDeliverableSelection {
         group_deliverable_selection_id: 0,
         group_id,
         group_deliverable_id: body.group_deliverable_id,
         created_at: Utc::now(),
         updated_at: Utc::now(),
-    });
+    };
 
-    match selection_state.save(&data.db).await {
-        Ok(_) => {
-            let selection = DbState::into_inner(selection_state);
-            Ok(
-                HttpResponse::Created().json(CreateGroupDeliverableSelectionResponse {
-                    group_deliverable_selection_id: selection.group_deliverable_selection_id,
-                    message: "Deliverable selected successfully".to_string(),
-                }),
+    let selection_state = group_deliverable_selections_repository::create(&data.db, selection)
+        .await
+        .map_err(|e| {
+            error_with_log_id_and_payload(
+                format!("Failed to create group deliverable selection: {}", e),
+                "Failed to create deliverable selection",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &body,
             )
-        }
-        Err(e) => Err(error_with_log_id_and_payload(
-            format!("Failed to create group deliverable selection: {}", e),
-            "Failed to create deliverable selection",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-            &body,
-        )),
-    }
+        })?;
+
+    let selection = DbState::into_inner(selection_state);
+    Ok(
+        HttpResponse::Created().json(CreateGroupDeliverableSelectionResponse {
+            group_deliverable_selection_id: selection.group_deliverable_selection_id,
+            message: "Deliverable selected successfully".to_string(),
+        }),
+    )
 }

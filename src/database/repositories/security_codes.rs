@@ -1,3 +1,4 @@
+use crate::models::project::Project;
 use crate::models::security_code::SecurityCode;
 use welds::connections::postgres::PostgresClient;
 use welds::state::DbState;
@@ -71,4 +72,36 @@ pub(crate) async fn delete(
         .await?;
 
     Ok(())
+}
+
+/// Create a new security code
+pub(crate) async fn create(
+    db: &PostgresClient, security_code: SecurityCode,
+) -> welds::errors::Result<DbState<SecurityCode>> {
+    let mut state = DbState::new_uncreated(security_code);
+    state.save(db).await?;
+    Ok(state)
+}
+
+/// Get all security codes with their projects
+pub(crate) async fn get_all_with_projects(
+    db: &PostgresClient,
+) -> welds::errors::Result<Vec<(DbState<SecurityCode>, DbState<Project>)>> {
+    let security_codes = SecurityCode::all()
+        .order_by_asc(|sc| sc.security_code_id)
+        .run(db)
+        .await?;
+
+    let mut result = Vec::new();
+    for sc in security_codes {
+        let mut projects = Project::where_col(|p| p.project_id.equal(sc.project_id))
+            .run(db)
+            .await?;
+
+        if let Some(project) = projects.pop() {
+            result.push((sc, project));
+        }
+    }
+
+    Ok(result)
 }

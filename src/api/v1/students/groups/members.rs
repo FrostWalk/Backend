@@ -233,16 +233,16 @@ pub(super) async fn add_member(
         ));
     }
 
-    // Add the student as a group member with Member role
-    let mut member_state = DbState::new_uncreated(GroupMember {
+    // Add the student as a group member with Member role using repository function
+    let group_member = GroupMember {
         group_member_id: 0,
         group_id,
         student_id: student.student_id,
         student_role_id: AvailableStudentRole::Member as i32,
         joined_at: Utc::now(),
-    });
+    };
 
-    match member_state.save(&data.db).await {
+    match groups_repository::create_group_member(&data.db, group_member).await {
         Ok(_) => Ok(HttpResponse::Ok().json(MemberInfo {
             student_id: student.student_id,
             email: student.email,
@@ -415,11 +415,8 @@ pub(super) async fn remove_member(
         );
     }
 
-    // Remove the member using where_col delete with member ID
-    match GroupMember::where_col(|gm| gm.group_member_id.equal(member.group_member_id))
-        .delete(&data.db)
-        .await
-    {
+    // Remove the member using repository
+    match groups_repository::delete_member_by_id(&data.db, member.group_member_id).await {
         Ok(_) => Ok(HttpResponse::NoContent().finish()),
         Err(e) => Err(error_with_log_id(
             format!("unable to remove member from group: {}", e),

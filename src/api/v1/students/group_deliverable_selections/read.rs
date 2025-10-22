@@ -1,10 +1,9 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError};
 use crate::database::repositories::{
-    group_component_implementation_details_repository, group_deliverable_selections_repository,
+    group_component_implementation_details_repository, group_deliverable_components_repository,
+    group_deliverable_selections_repository, group_deliverables_repository,
 };
-use crate::models::group_deliverable::GroupDeliverable;
-use crate::models::group_deliverable_component::GroupDeliverableComponent;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};
 use actix_web::HttpResponse;
@@ -74,32 +73,28 @@ pub(in crate::api::v1) async fn get_group_deliverable_selection(
     let selection = DbState::into_inner(selection_state);
 
     // Get the deliverable name
-    let mut deliverable_rows = GroupDeliverable::where_col(|gd| {
-        gd.group_deliverable_id
-            .equal(selection.group_deliverable_id)
-    })
-    .run(&data.db)
-    .await
-    .map_err(|e| {
-        error_with_log_id(
-            format!("Database error fetching deliverable: {}", e),
-            "Database error",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-        )
-    })?;
-
-    let deliverable_state = deliverable_rows.pop().ok_or_else(|| {
-        error_with_log_id(
-            format!(
-                "Deliverable {} not found for selection",
-                selection.group_deliverable_id
-            ),
-            "Deliverable not found",
-            StatusCode::NOT_FOUND,
-            log::Level::Error,
-        )
-    })?;
+    let deliverable_state =
+        group_deliverables_repository::get_by_id(&data.db, selection.group_deliverable_id)
+            .await
+            .map_err(|e| {
+                error_with_log_id(
+                    format!("Database error fetching deliverable: {}", e),
+                    "Database error",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                )
+            })?
+            .ok_or_else(|| {
+                error_with_log_id(
+                    format!(
+                        "Deliverable {} not found for selection",
+                        selection.group_deliverable_id
+                    ),
+                    "Deliverable not found",
+                    StatusCode::NOT_FOUND,
+                    log::Level::Error,
+                )
+            })?;
 
     let deliverable = DbState::into_inner(deliverable_state);
 
@@ -124,11 +119,10 @@ pub(in crate::api::v1) async fn get_group_deliverable_selection(
         let detail = DbState::into_inner(detail_state);
 
         // Get the component name
-        let mut component_rows = GroupDeliverableComponent::where_col(|gdc| {
-            gdc.group_deliverable_component_id
-                .equal(detail.group_deliverable_component_id)
-        })
-        .run(&data.db)
+        let component_state = group_deliverable_components_repository::get_by_id(
+            &data.db,
+            detail.group_deliverable_component_id,
+        )
         .await
         .map_err(|e| {
             error_with_log_id(
@@ -139,7 +133,7 @@ pub(in crate::api::v1) async fn get_group_deliverable_selection(
             )
         })?;
 
-        let component_name = if let Some(component_state) = component_rows.pop() {
+        let component_name = if let Some(component_state) = component_state {
             let component = DbState::into_inner(component_state);
             component.name
         } else {

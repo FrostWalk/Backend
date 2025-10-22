@@ -1,6 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
-use crate::models::student_deliverable_component::StudentDeliverableComponent;
+use crate::database::repositories::student_deliverable_components_repository;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::web::{Data, Json};
@@ -39,32 +39,26 @@ pub(super) async fn update_student_component_handler(
     let id = path.into_inner();
 
     // Find the existing component by ID
-    let mut rows =
-        StudentDeliverableComponent::where_col(|sc| sc.student_deliverable_component_id.equal(id))
-            .run(&data.db)
-            .await
-            .map_err(|e| {
-                error_with_log_id_and_payload(
-                    format!("unable to load student component: {}", e),
-                    "Failed to update component",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    log::Level::Error,
-                    &body,
-                )
-            })?;
-
-    let mut component_state = match rows.pop() {
-        Some(s) => s,
-        None => return Err("Student component not found".to_json_error(StatusCode::NOT_FOUND)),
-    };
+    let mut component_state = student_deliverable_components_repository::get_by_id(&data.db, id)
+        .await
+        .map_err(|e| {
+            error_with_log_id_and_payload(
+                format!("unable to load student component: {}", e),
+                "Failed to update component",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &body,
+            )
+        })?
+        .ok_or_else(|| "Student component not found".to_json_error(StatusCode::NOT_FOUND))?;
 
     // Check if another component with this name already exists for the same project
-    let existing = StudentDeliverableComponent::where_col(|sc| {
-        sc.project_id.equal(component_state.project_id)
-    })
-    .where_col(|sc| sc.name.equal(&body.name))
-    .where_col(|sc| sc.student_deliverable_component_id.not_equal(id))
-    .run(&data.db)
+    let exists = student_deliverable_components_repository::check_name_exists_excluding(
+        &data.db,
+        component_state.project_id,
+        &body.name,
+        id,
+    )
     .await
     .map_err(|e| {
         error_with_log_id_and_payload(
@@ -76,7 +70,7 @@ pub(super) async fn update_student_component_handler(
         )
     })?;
 
-    if !existing.is_empty() {
+    if exists {
         return Err("Component with this name already exists for the project"
             .to_json_error(StatusCode::CONFLICT));
     }
@@ -84,15 +78,17 @@ pub(super) async fn update_student_component_handler(
     // Update the name
     component_state.name = body.name.clone();
 
-    component_state.save(&data.db).await.map_err(|e| {
-        error_with_log_id_and_payload(
-            format!("unable to update student component: {}", e),
-            "Failed to update component",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-            &body,
-        )
-    })?;
+    student_deliverable_components_repository::update(&data.db, component_state)
+        .await
+        .map_err(|e| {
+            error_with_log_id_and_payload(
+                format!("unable to update student component: {}", e),
+                "Failed to update component",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &body,
+            )
+        })?;
 
     Ok(HttpResponse::Ok().finish())
 }

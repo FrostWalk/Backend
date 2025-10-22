@@ -1,6 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError, ToJsonError};
-use crate::models::student_deliverables_component::StudentDeliverablesComponent;
+use crate::database::repositories::student_deliverables_components_repository;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::web::Path;
@@ -27,9 +27,8 @@ pub(super) async fn delete_student_deliverable_component_handler(
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 
-    // Find the existing relationship by ID
-    let mut rows = StudentDeliverablesComponent::where_col(|spc| spc.id.equal(id))
-        .run(&data.db)
+    // Check if the relationship exists
+    let relationship_exists = student_deliverables_components_repository::get_by_id(&data.db, id)
         .await
         .map_err(|e| {
             error_with_log_id(
@@ -41,24 +40,27 @@ pub(super) async fn delete_student_deliverable_component_handler(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
             )
+        })?
+        .is_some();
+
+    if !relationship_exists {
+        return Err("Relationship not found".to_json_error(StatusCode::NOT_FOUND));
+    }
+
+    // Delete the relationship using repository function
+    student_deliverables_components_repository::delete_by_id(&data.db, id)
+        .await
+        .map_err(|e| {
+            error_with_log_id(
+                format!(
+                    "unable to delete student deliverable component relationship: {}",
+                    e
+                ),
+                "Failed to delete relationship",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
         })?;
-
-    let mut relationship_state = match rows.pop() {
-        Some(s) => s,
-        None => return Err("Relationship not found".to_json_error(StatusCode::NOT_FOUND)),
-    };
-
-    relationship_state.delete(&data.db).await.map_err(|e| {
-        error_with_log_id(
-            format!(
-                "unable to delete student deliverable component relationship: {}",
-                e
-            ),
-            "Failed to delete relationship",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-        )
-    })?;
 
     Ok(HttpResponse::Ok().finish())
 }

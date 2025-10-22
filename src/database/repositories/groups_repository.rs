@@ -1,8 +1,27 @@
 use crate::models::group::Group;
 use crate::models::group_member::GroupMember;
+use crate::models::project::Project;
 use crate::models::student_role::AvailableStudentRole;
 use welds::connections::postgres::PostgresClient;
 use welds::state::DbState;
+
+/// Create a new group
+pub(crate) async fn create_group(
+    db: &PostgresClient, group: Group,
+) -> welds::errors::Result<DbState<Group>> {
+    let mut state = DbState::new_uncreated(group);
+    state.save(db).await?;
+    Ok(state)
+}
+
+/// Create a new group member
+pub(crate) async fn create_group_member(
+    db: &PostgresClient, group_member: GroupMember,
+) -> welds::errors::Result<DbState<GroupMember>> {
+    let mut state = DbState::new_uncreated(group_member);
+    state.save(db).await?;
+    Ok(state)
+}
 
 /// Get a group by its ID
 pub(crate) async fn get_by_id(
@@ -133,4 +152,72 @@ pub(crate) async fn count_groups_for_project(
 ) -> welds::errors::Result<i32> {
     let groups = get_by_project_id(db, project_id).await?;
     Ok(groups.len() as i32)
+}
+
+/// Delete a group by ID
+pub(crate) async fn delete_by_id(db: &PostgresClient, group_id: i32) -> welds::errors::Result<()> {
+    Group::where_col(|g| g.group_id.equal(group_id))
+        .delete(db)
+        .await?;
+    Ok(())
+}
+
+/// Delete a group member by ID
+pub(crate) async fn delete_member_by_id(
+    db: &PostgresClient, group_member_id: i32,
+) -> welds::errors::Result<()> {
+    GroupMember::where_col(|gm| gm.group_member_id.equal(group_member_id))
+        .delete(db)
+        .await?;
+    Ok(())
+}
+
+/// Get all groups for a student with their projects (returns GroupMember -> Group -> Project tuples)
+pub(crate) async fn get_groups_with_projects_for_student(
+    db: &PostgresClient, student_id: i32,
+) -> welds::errors::Result<Vec<(DbState<GroupMember>, DbState<Group>, DbState<Project>)>> {
+    let group_members = GroupMember::where_col(|gm| gm.student_id.equal(student_id))
+        .run(db)
+        .await?;
+
+    let mut result = Vec::new();
+    for gm in group_members {
+        let mut groups = Group::where_col(|g| g.group_id.equal(gm.group_id))
+            .run(db)
+            .await?;
+
+        if let Some(group) = groups.pop() {
+            let mut projects = Project::where_col(|p| p.project_id.equal(group.project_id))
+                .run(db)
+                .await?;
+
+            if let Some(project) = projects.pop() {
+                result.push((gm, group, project));
+            }
+        }
+    }
+
+    Ok(result)
+}
+
+/// Get all groups for a student (returns GroupMember -> Group tuples)
+pub(crate) async fn get_groups_for_student(
+    db: &PostgresClient, student_id: i32,
+) -> welds::errors::Result<Vec<(DbState<GroupMember>, DbState<Group>)>> {
+    let group_members = GroupMember::where_col(|gm| gm.student_id.equal(student_id))
+        .run(db)
+        .await?;
+
+    let mut result = Vec::new();
+    for gm in group_members {
+        let mut groups = Group::where_col(|g| g.group_id.equal(gm.group_id))
+            .run(db)
+            .await?;
+
+        if let Some(group) = groups.pop() {
+            result.push((gm, group));
+        }
+    }
+
+    Ok(result)
 }

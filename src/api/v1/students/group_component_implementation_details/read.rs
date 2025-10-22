@@ -1,9 +1,9 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError};
 use crate::database::repositories::{
-    group_component_implementation_details_repository, group_deliverable_selections_repository,
+    group_component_implementation_details_repository, group_deliverable_components_repository,
+    group_deliverable_selections_repository,
 };
-use crate::models::group_deliverable_component::GroupDeliverableComponent;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};
 use actix_web::HttpResponse;
@@ -88,12 +88,11 @@ pub(in crate::api::v1) async fn get_component_implementation_details(
     for detail_state in details_states {
         let detail = DbState::into_inner(detail_state);
 
-        // Get the component name
-        let mut component_rows = GroupDeliverableComponent::where_col(|gdc| {
-            gdc.group_deliverable_component_id
-                .equal(detail.group_deliverable_component_id)
-        })
-        .run(&data.db)
+        // Get the component name using repository function
+        let component_name = match group_deliverable_components_repository::get_component_by_id(
+            &data.db,
+            detail.group_deliverable_component_id,
+        )
         .await
         .map_err(|e| {
             error_with_log_id(
@@ -102,16 +101,15 @@ pub(in crate::api::v1) async fn get_component_implementation_details(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
             )
-        })?;
-
-        let component_name = if let Some(component_state) = component_rows.pop() {
-            let component = DbState::into_inner(component_state);
-            component.name
-        } else {
-            format!(
+        })? {
+            Some(component_state) => {
+                let component = DbState::into_inner(component_state);
+                component.name
+            }
+            None => format!(
                 "Unknown Component {}",
                 detail.group_deliverable_component_id
-            )
+            ),
         };
 
         details.push(ComponentImplementationDetailResponse {

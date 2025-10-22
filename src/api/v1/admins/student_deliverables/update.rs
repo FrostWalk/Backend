@@ -1,6 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
-use crate::models::student_deliverable::StudentDeliverable;
+use crate::database::repositories::student_deliverables_repository;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::web::{Data, Json};
@@ -39,8 +39,7 @@ pub(super) async fn update_student_deliverable_handler(
     let id = path.into_inner();
 
     // Find the existing deliverable by ID
-    let mut rows = StudentDeliverable::where_col(|sp| sp.student_deliverable_id.equal(id))
-        .run(&data.db)
+    let deliverable_state = student_deliverables_repository::get_by_id(&data.db, id)
         .await
         .map_err(|e| {
             error_with_log_id_and_payload(
@@ -50,47 +49,44 @@ pub(super) async fn update_student_deliverable_handler(
                 log::Level::Error,
                 &body,
             )
-        })?;
-
-    let mut deliverable_state = match rows.pop() {
-        Some(s) => s,
-        None => return Err("Student deliverable not found".to_json_error(StatusCode::NOT_FOUND)),
-    };
+        })?
+        .ok_or_else(|| "Student deliverable not found".to_json_error(StatusCode::NOT_FOUND))?;
 
     // Check if another deliverable with this name already exists for the same project
-    let existing =
-        StudentDeliverable::where_col(|sp| sp.project_id.equal(deliverable_state.project_id))
-            .where_col(|sp| sp.name.equal(&body.name))
-            .where_col(|sp| sp.student_deliverable_id.not_equal(id))
-            .run(&data.db)
-            .await
-            .map_err(|e| {
-                error_with_log_id_and_payload(
-                    format!("unable to check existing student deliverable: {}", e),
-                    "Failed to update deliverable",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    log::Level::Error,
-                    &body,
-                )
-            })?;
-
-    if !existing.is_empty() {
-        return Err("Deliverable with this name already exists for the project"
-            .to_json_error(StatusCode::CONFLICT));
-    }
-
-    // Update the name
-    deliverable_state.name = body.name.clone();
-
-    deliverable_state.save(&data.db).await.map_err(|e| {
+    let exists = student_deliverables_repository::check_name_exists_excluding(
+        &data.db,
+        deliverable_state.project_id,
+        &body.name,
+        id,
+    )
+    .await
+    .map_err(|e| {
         error_with_log_id_and_payload(
-            format!("unable to update student deliverable: {}", e),
+            format!("unable to check existing student deliverable: {}", e),
             "Failed to update deliverable",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
             &body,
         )
     })?;
+
+    if exists {
+        return Err("Deliverable with this name already exists for the project"
+            .to_json_error(StatusCode::CONFLICT));
+    }
+
+    // Update the name using repository function
+    student_deliverables_repository::update_by_id(&data.db, id, &body.name)
+        .await
+        .map_err(|e| {
+            error_with_log_id_and_payload(
+                format!("unable to update student deliverable: {}", e),
+                "Failed to update deliverable",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &body,
+            )
+        })?;
 
     Ok(HttpResponse::Ok().finish())
 }

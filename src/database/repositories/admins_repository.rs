@@ -47,6 +47,59 @@ pub(crate) async fn delete_by_id(
     }
 }
 
+/// Update an admin's password by email
+pub(crate) async fn update_password_by_email(
+    db: &PostgresClient, email: &str, password_hash: String,
+) -> welds::errors::Result<()> {
+    Admin::where_col(|a| a.email.equal(email))
+        .set(|a| a.password_hash, password_hash)
+        .run(db)
+        .await?;
+    Ok(())
+}
+
+/// Create a new admin
+pub(crate) async fn create(
+    db: &PostgresClient, admin: Admin,
+) -> welds::errors::Result<DbState<Admin>> {
+    let mut state = DbState::new_uncreated(admin);
+    state.save(db).await?;
+    Ok(state)
+}
+
+/// Update an admin by ID
+pub(crate) async fn update_by_id(
+    db: &PostgresClient, admin_id: i32, first_name: Option<String>, last_name: Option<String>,
+    email: Option<String>, password_hash: Option<String>,
+) -> welds::errors::Result<()> {
+    if let Some(name) = first_name {
+        Admin::where_col(|a| a.admin_id.equal(admin_id))
+            .set(|a| a.first_name, name)
+            .run(db)
+            .await?;
+    }
+    if let Some(name) = last_name {
+        Admin::where_col(|a| a.admin_id.equal(admin_id))
+            .set(|a| a.last_name, name)
+            .run(db)
+            .await?;
+    }
+    if let Some(email) = email {
+        Admin::where_col(|a| a.admin_id.equal(admin_id))
+            .set(|a| a.email, email)
+            .run(db)
+            .await?;
+    }
+    if let Some(hash) = password_hash {
+        Admin::where_col(|a| a.admin_id.equal(admin_id))
+            .set(|a| a.password_hash, hash)
+            .run(db)
+            .await?;
+    }
+
+    Ok(())
+}
+
 pub(crate) async fn create_default_admin(db: &PostgresClient, email: String, password: String) {
     let found = match get_all(db).await {
         Ok(v) => v.len(),

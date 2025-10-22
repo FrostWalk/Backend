@@ -1,12 +1,12 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
+use crate::database::repositories::group_deliverable_components_repository;
 use crate::models::group_deliverable_component::GroupDeliverableComponent;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use welds::state::DbState;
 
 #[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub(crate) struct CreateGroupComponentScheme {
@@ -52,41 +52,46 @@ pub(super) async fn create_group_component_handler(
     body: Json<CreateGroupComponentScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // Check if component with this name already exists for the project
-    let existing = GroupDeliverableComponent::where_col(|gc| gc.project_id.equal(body.project_id))
-        .where_col(|gc| gc.name.equal(&body.name))
-        .run(&data.db)
-        .await
-        .map_err(|e| {
-            error_with_log_id_and_payload(
-                format!("unable to check existing component: {}", e),
-                "Failed to create component",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                log::Level::Error,
-                &body,
-            )
-        })?;
-
-    if !existing.is_empty() {
-        return Err("Component with this name already exists for the project"
-            .to_json_error(StatusCode::CONFLICT));
-    }
-
-    let mut state = DbState::new_uncreated(GroupDeliverableComponent {
-        group_deliverable_component_id: 0,
-        project_id: body.project_id,
-        name: body.name.clone(),
-        sellable: body.sellable,
-    });
-
-    if let Err(e) = state.save(&data.db).await {
-        return Err(error_with_log_id_and_payload(
-            format!("unable to create group component: {}", e),
+    let exists = group_deliverable_components_repository::check_name_exists(
+        &data.db,
+        body.project_id,
+        &body.name,
+    )
+    .await
+    .map_err(|e| {
+        error_with_log_id_and_payload(
+            format!("unable to check existing component: {}", e),
             "Failed to create component",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
             &body,
-        ));
+        )
+    })?;
+
+    if exists {
+        return Err("Component with this name already exists for the project"
+            .to_json_error(StatusCode::CONFLICT));
     }
+
+    let group_deliverable_component = GroupDeliverableComponent {
+        group_deliverable_component_id: 0,
+        project_id: body.project_id,
+        name: body.name.clone(),
+        sellable: body.sellable,
+    };
+
+    let state =
+        group_deliverable_components_repository::create(&data.db, group_deliverable_component)
+            .await
+            .map_err(|e| {
+                error_with_log_id_and_payload(
+                    format!("unable to create group component: {}", e),
+                    "Failed to create component",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                    &body,
+                )
+            })?;
 
     Ok(HttpResponse::Ok().json(CreateGroupComponentResponse {
         group_deliverable_component_id: state.group_deliverable_component_id,

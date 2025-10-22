@@ -1,7 +1,7 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError, ToJsonError};
-use crate::models::group_deliverable::GroupDeliverable;
-use crate::models::group_deliverables_component::GroupDeliverablesComponent;
+use crate::database::repositories::group_deliverables_components_repository;
+use crate::database::repositories::group_deliverables_repository;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::web::Path;
@@ -64,14 +64,16 @@ pub(crate) struct GetComponentsForGroupDeliverableResponse {
 pub(super) async fn get_all_group_deliverables_handler(
     data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
-    let deliverables = GroupDeliverable::all().run(&data.db).await.map_err(|e| {
-        error_with_log_id(
-            format!("unable to retrieve all group deliverables: {}", e),
-            "Failed to retrieve deliverables",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-        )
-    })?;
+    let deliverables = group_deliverables_repository::get_all(&data.db)
+        .await
+        .map_err(|e| {
+            error_with_log_id(
+                format!("unable to retrieve all group deliverables: {}", e),
+                "Failed to retrieve deliverables",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
+        })?;
 
     let response_deliverables: Vec<GroupDeliverableResponse> = deliverables
         .into_iter()
@@ -109,8 +111,7 @@ pub(super) async fn get_group_deliverables_for_project_handler(
     let project_id = path.into_inner();
 
     // Get all deliverables for this project
-    let deliverables = GroupDeliverable::where_col(|gd| gd.project_id.equal(project_id))
-        .run(&data.db)
+    let deliverables = group_deliverables_repository::get_by_project_id(&data.db, project_id)
         .await
         .map_err(|e| {
             error_with_log_id(
@@ -163,23 +164,18 @@ pub(super) async fn get_group_deliverable_handler(
     let deliverable_id = path.into_inner();
 
     // Get the deliverable by ID
-    let mut deliverables =
-        GroupDeliverable::where_col(|gd| gd.group_deliverable_id.equal(deliverable_id))
-            .run(&data.db)
-            .await
-            .map_err(|e| {
-                error_with_log_id(
-                    format!("unable to retrieve deliverable {}: {}", deliverable_id, e),
-                    "Failed to retrieve deliverable",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    log::Level::Error,
-                )
-            })?;
-
-    let deliverable = match deliverables.pop() {
-        Some(p) => DbState::into_inner(p),
-        None => return Err("Group deliverable not found".to_json_error(StatusCode::NOT_FOUND)),
-    };
+    let deliverable = group_deliverables_repository::get_by_id(&data.db, deliverable_id)
+        .await
+        .map_err(|e| {
+            error_with_log_id(
+                format!("unable to retrieve deliverable {}: {}", deliverable_id, e),
+                "Failed to retrieve deliverable",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
+        })?
+        .ok_or_else(|| "Group deliverable not found".to_json_error(StatusCode::NOT_FOUND))
+        .map(DbState::into_inner)?;
 
     Ok(HttpResponse::Ok().json(GroupDeliverableResponse {
         group_deliverable_id: deliverable.group_deliverable_id,
@@ -213,60 +209,40 @@ pub(super) async fn get_components_for_group_deliverable_handler(
     let deliverable_id = path.into_inner();
 
     // Verify the group deliverable exists
-    let deliverable_exists =
-        GroupDeliverable::where_col(|gd| gd.group_deliverable_id.equal(deliverable_id))
-            .run(&data.db)
-            .await
-            .map_err(|e| {
-                error_with_log_id(
-                    format!("unable to check if group deliverable exists: {}", e),
-                    "Failed to retrieve components",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    log::Level::Error,
-                )
-            })?;
+    let _deliverable = group_deliverables_repository::get_by_id(&data.db, deliverable_id)
+        .await
+        .map_err(|e| {
+            error_with_log_id(
+                format!("unable to check if group deliverable exists: {}", e),
+                "Failed to retrieve components",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
+        })?
+        .ok_or_else(|| "Group deliverable not found".to_json_error(StatusCode::NOT_FOUND))?;
 
-    if deliverable_exists.is_empty() {
-        return Err("Group deliverable not found".to_json_error(StatusCode::NOT_FOUND));
-    }
-
-    // Efficiently fetch relationships with related entities using map_query
-    let relationships =
-        GroupDeliverablesComponent::where_col(|gdc| gdc.group_deliverable_id.equal(deliverable_id))
-            .run(&data.db)
-            .await
-            .map_err(|e| {
-                error_with_log_id(
-                    format!(
-                        "unable to retrieve components for deliverable {}: {}",
-                        deliverable_id, e
-                    ),
-                    "Failed to retrieve components",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    log::Level::Error,
-                )
-            })?;
-
-    let components_data =
-        GroupDeliverablesComponent::where_col(|gdc| gdc.group_deliverable_id.equal(deliverable_id))
-            .map_query(|gdc| gdc.group_deliverable_component)
-            .run(&data.db)
-            .await
-            .map_err(|e| {
-                error_with_log_id(
-                    format!(
-                        "unable to retrieve components for deliverable {}: {}",
-                        deliverable_id, e
-                    ),
-                    "Failed to retrieve components",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    log::Level::Error,
-                )
-            })?;
+    // Get components with their details using repository function
+    let components_with_details =
+        group_deliverables_components_repository::get_components_with_details_for_deliverable(
+            &data.db,
+            deliverable_id,
+        )
+        .await
+        .map_err(|e| {
+            error_with_log_id(
+                format!(
+                    "unable to retrieve components for deliverable {}: {}",
+                    deliverable_id, e
+                ),
+                "Failed to retrieve components",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
+        })?;
 
     let mut components = Vec::new();
 
-    for (relationship_state, component_state) in relationships.into_iter().zip(components_data) {
+    for (relationship_state, component_state) in components_with_details {
         let relationship_data = DbState::into_inner(relationship_state);
         let component = DbState::into_inner(component_state);
 
