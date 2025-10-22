@@ -44,10 +44,9 @@ pub(crate) struct ProjectInfo {
 ///
 /// This endpoint allows students to validate a security code and get information about
 /// the project associated with it. All security codes are for GroupLeader role.
+#[actix_web_grants::protect("ROLE_STUDENT")]
 pub(super) async fn validate_code(
-    req: HttpRequest, 
-    body: Json<ValidateCodeRequest>, 
-    data: Data<AppData>,
+    req: HttpRequest, body: Json<ValidateCodeRequest>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _user = match req.extensions().get_student() {
         Ok(user) => user,

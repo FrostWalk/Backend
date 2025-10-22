@@ -39,9 +39,9 @@ pub(crate) struct GetComponentImplementationDetailsResponse {
     tag = "Group Component Implementation Details",
 )]
 /// Get all implementation details for a group's selection
+#[actix_web_grants::protect("ROLE_STUDENT")]
 pub(in crate::api::v1) async fn get_component_implementation_details(
-    path: Path<i32>, 
-    data: Data<AppData>,
+    path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let group_id = path.into_inner();
 

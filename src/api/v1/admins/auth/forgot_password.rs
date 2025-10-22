@@ -34,8 +34,7 @@ pub(crate) struct ForgotPasswordSchema {
     tag = "Admin authentication"
 )]
 pub(crate) async fn forgot_password_handler(
-    body: Json<ForgotPasswordSchema>, 
-    data: Data<AppData>,
+    body: Json<ForgotPasswordSchema>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // Fetch the admin by email
     let admin_state = admins_repository::get_by_email(&data.db, &body.email)

@@ -79,11 +79,9 @@ pub(crate) struct RemoveCoordinatorResponse {
 /// This endpoint allows Professors and Root admins to assign Coordinators to specific projects.
 /// Only admins with the Coordinator role can be assigned.
 /// **Constraint**: At most one coordinator can be assigned per project.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn assign_coordinator(
-    req: HttpRequest, 
-    path: Path<i32>,
-    body: Json<AssignCoordinatorRequest>, 
-    data: Data<AppData>,
+    req: HttpRequest, path: Path<i32>, body: Json<AssignCoordinatorRequest>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _admin = match req.extensions().get_admin() {
         Ok(admin) => admin,
@@ -231,10 +229,13 @@ pub(super) async fn assign_coordinator(
 ///
 /// This endpoint allows admins to view the coordinator assigned to a specific project.
 /// Returns null if no coordinator is assigned.
+#[actix_web_grants::protect(any(
+    "ROLE_ADMIN_ROOT",
+    "ROLE_ADMIN_PROFESSOR",
+    "ROLE_ADMIN_COORDINATOR"
+))]
 pub(super) async fn list_coordinators(
-    req: HttpRequest, 
-    path: Path<i32>, 
-    data: Data<AppData>,
+    req: HttpRequest, path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _admin = match req.extensions().get_admin() {
         Ok(admin) => admin,
@@ -339,10 +340,9 @@ pub(super) async fn list_coordinators(
 /// Remove a coordinator from a project
 ///
 /// This endpoint allows Professors and Root admins to remove coordinator assignments from projects.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn remove_coordinator(
-    req: HttpRequest, 
-    path: Path<(i32, i32)>, 
-    data: Data<AppData>,
+    req: HttpRequest, path: Path<(i32, i32)>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _admin = match req.extensions().get_admin() {
         Ok(admin) => admin,

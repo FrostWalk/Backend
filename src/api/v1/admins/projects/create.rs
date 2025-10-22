@@ -38,9 +38,9 @@ pub(crate) struct CreateProjectResponse {
     tag = "Projects management",
 )]
 /// Create a project
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(in crate::api::v1) async fn create_project_handler(
-    body: Json<CreateProjectScheme>, 
-    data: Data<AppData>,
+    body: Json<CreateProjectScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     if body.name.is_empty() {
         return Err("Name field is mandatory".to_json_error(StatusCode::BAD_REQUEST));

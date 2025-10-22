@@ -17,9 +17,9 @@ use actix_web::HttpResponse;
     tag = "Projects management",
 )]
 /// Delete a project by id
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(in crate::api::v1) async fn delete_project_handler(
-    path: Path<i32>, 
-    data: Data<AppData>,
+    path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let project_id = path.into_inner();
 

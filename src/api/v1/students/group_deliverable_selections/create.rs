@@ -41,10 +41,9 @@ pub(crate) struct CreateGroupDeliverableSelectionResponse {
     tag = "Group Deliverable Selections",
 )]
 /// Create a group deliverable selection (Group Leaders only)
+#[actix_web_grants::protect("ROLE_STUDENT")]
 pub(in crate::api::v1) async fn create_group_deliverable_selection(
-    req: HttpRequest, 
-    path: Path<i32>,
-    body: Json<CreateGroupDeliverableSelectionRequest>, 
+    req: HttpRequest, path: Path<i32>, body: Json<CreateGroupDeliverableSelectionRequest>,
     data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let group_id = path.into_inner();

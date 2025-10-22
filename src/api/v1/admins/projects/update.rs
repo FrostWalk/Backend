@@ -29,10 +29,9 @@ pub struct UpdateProjectScheme {
     tag = "Projects management",
 )]
 /// Update a project details
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(in crate::api::v1) async fn update_project_handler(
-    path: Path<i32>, 
-    body: Json<UpdateProjectScheme>, 
-    data: Data<AppData>,
+    path: Path<i32>, body: Json<UpdateProjectScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 

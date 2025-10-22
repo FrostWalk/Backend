@@ -47,8 +47,7 @@ pub(crate) struct LoginAdminsResponse {
     tag = "Admin authentication"
 )]
 pub(crate) async fn admins_login_handler(
-    body: Json<LoginAdminsSchema>, 
-    data: Data<AppData>,
+    body: Json<LoginAdminsSchema>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // common unauthorized response
     let unauthorized = Err(WRONG_CREDENTIALS.to_json_error(StatusCode::UNAUTHORIZED));

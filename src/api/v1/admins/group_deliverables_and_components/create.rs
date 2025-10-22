@@ -47,9 +47,9 @@ pub(crate) struct CreateGroupDeliverableComponentResponse {
 /// Creates a new group deliverable-component relationship.
 ///
 /// This endpoint allows authenticated admins to add components to group deliverables with specified quantities.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn create_group_deliverable_component_handler(
-    body: Json<CreateGroupDeliverableComponentScheme>, 
-    data: Data<AppData>,
+    body: Json<CreateGroupDeliverableComponentScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // Check if relationship already exists
     let existing = GroupDeliverablesComponent::where_col(|gdc| {

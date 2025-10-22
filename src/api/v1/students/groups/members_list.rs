@@ -42,10 +42,9 @@ pub(crate) struct GroupMemberInfo {
 ///
 /// This endpoint allows students to view all members of a group with their roles.
 /// Any authenticated student can view group members.
+#[actix_web_grants::protect("ROLE_STUDENT")]
 pub(super) async fn list_group_members(
-    req: HttpRequest, 
-    path: Path<i32>, 
-    data: Data<AppData>,
+    req: HttpRequest, path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _user = match req.extensions().get_student() {
         Ok(user) => user,

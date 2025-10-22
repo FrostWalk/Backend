@@ -8,7 +8,6 @@ include!(concat!(env!("OUT_DIR"), "/build_info.rs"));
 
 #[derive(Serialize, ToSchema)]
 pub struct VersionResponse {
-    pub version: String,
     pub git_tag: String,
     pub git_commit: String,
     pub build_time: String,
@@ -19,7 +18,6 @@ pub struct VersionResponse {
 /// Version information endpoint
 ///
 /// This endpoint provides comprehensive version information including:
-/// - Application version from Cargo.toml
 /// - Git tag (if available)
 /// - Git commit hash
 /// - Build timestamp
@@ -41,7 +39,6 @@ pub async fn version_info() -> Result<HttpResponse> {
         .as_secs();
 
     let version_response = VersionResponse {
-        version: GIT_TAG.to_string(),
         git_tag: GIT_TAG.to_string(),
         git_commit: GIT_COMMIT.to_string(),
         build_time: BUILD_TIME.to_string(),

@@ -47,13 +47,14 @@ pub(crate) struct CreateStudentDeliverableComponentResponse {
 /// Creates a new student deliverable-component relationship.
 ///
 /// This endpoint allows authenticated admins to add components to student deliverables with specified quantities.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn create_student_deliverable_component_handler(
-    body: Json<CreateStudentDeliverableComponentScheme>, 
-    data: Data<AppData>,
+    body: Json<CreateStudentDeliverableComponentScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // Check if relationship already exists
     let existing = StudentDeliverablesComponent::where_col(|spc| {
-        spc.student_deliverable_id.equal(body.student_deliverable_id)
+        spc.student_deliverable_id
+            .equal(body.student_deliverable_id)
     })
     .where_col(|spc| {
         spc.student_deliverable_component_id

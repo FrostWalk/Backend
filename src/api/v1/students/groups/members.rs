@@ -53,11 +53,9 @@ pub(crate) struct MemberInfo {
 /// Add a member to a group
 ///
 /// This endpoint allows GroupLeaders to add new members to their group.
+#[actix_web_grants::protect("ROLE_STUDENT")]
 pub(super) async fn add_member(
-    req: HttpRequest, 
-    path: Path<i32>, 
-    body: Json<AddMemberRequest>, 
-    data: Data<AppData>,
+    req: HttpRequest, path: Path<i32>, body: Json<AddMemberRequest>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_student() {
         Ok(user) => user,
@@ -282,11 +280,9 @@ pub(super) async fn add_member(
 /// Remove a member from a group
 ///
 /// This endpoint allows GroupLeaders to remove members from their group.
+#[actix_web_grants::protect("ROLE_STUDENT")]
 pub(super) async fn remove_member(
-    req: HttpRequest, 
-    path: Path<i32>, 
-    body: Json<RemoveMemberRequest>, 
-    data: Data<AppData>,
+    req: HttpRequest, path: Path<i32>, body: Json<RemoveMemberRequest>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_student() {
         Ok(user) => user,

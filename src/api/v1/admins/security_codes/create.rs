@@ -64,10 +64,13 @@ pub(crate) struct CreateCodeResponse {
 /// Generate a unique code for a project
 ///
 /// Coordinators can only create codes for projects they are assigned to. Professors/Root can create codes for any project.
+#[actix_web_grants::protect(any(
+    "ROLE_ADMIN_ROOT",
+    "ROLE_ADMIN_PROFESSOR",
+    "ROLE_ADMIN_COORDINATOR"
+))]
 pub(in crate::api::v1) async fn create_code_handler(
-    req: HttpRequest, 
-    body: Json<CreateCodeScheme>, 
-    data: Data<AppData>,
+    req: HttpRequest, body: Json<CreateCodeScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_admin() {
         Ok(user) => user,

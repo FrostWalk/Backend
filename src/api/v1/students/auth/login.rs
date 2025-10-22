@@ -49,8 +49,7 @@ pub(crate) struct LoginStudentsResponse {
     tag = "Student authentication",
 )]
 pub(crate) async fn students_login_handler(
-    body: Json<LoginStudentsSchema>, 
-    data: Data<AppData>,
+    body: Json<LoginStudentsSchema>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // common unauthorized response
     let unauthorized = Err(WRONG_CREDENTIALS.to_json_error(StatusCode::UNAUTHORIZED));

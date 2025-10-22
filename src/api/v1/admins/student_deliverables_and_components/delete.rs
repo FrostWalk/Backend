@@ -21,9 +21,9 @@ use actix_web::HttpResponse;
 /// Removes a component from a student deliverable.
 ///
 /// This endpoint allows authenticated admins to remove the relationship between a component and a student deliverable by ID.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn delete_student_deliverable_component_handler(
-    path: Path<i32>, 
-    data: Data<AppData>,
+    path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 

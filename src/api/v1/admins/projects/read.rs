@@ -34,9 +34,13 @@ pub(crate) struct GetAllProjectsResponse {
 /// Get all projects details
 ///
 /// Returns all projects for Professors/Root, or only assigned projects for Coordinators
+#[actix_web_grants::protect(any(
+    "ROLE_ADMIN_ROOT",
+    "ROLE_ADMIN_PROFESSOR",
+    "ROLE_ADMIN_COORDINATOR"
+))]
 pub(in crate::api::v1) async fn get_all_projects_handler(
-    req: HttpRequest, 
-    data: Data<AppData>,
+    req: HttpRequest, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_admin() {
         Ok(user) => user,
@@ -126,10 +130,13 @@ pub(crate) struct ProjectDetailsResponse {
 /// Get project details by id with deliverables and components
 ///
 /// Coordinators can only view projects they are assigned to. Professors/Root can view any project.
+#[actix_web_grants::protect(any(
+    "ROLE_ADMIN_ROOT",
+    "ROLE_ADMIN_PROFESSOR",
+    "ROLE_ADMIN_COORDINATOR"
+))]
 pub(in crate::api::v1) async fn get_one_project_handler(
-    req: HttpRequest, 
-    path: Path<i32>, 
-    data: Data<AppData>,
+    req: HttpRequest, path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_admin() {
         Ok(user) => user,

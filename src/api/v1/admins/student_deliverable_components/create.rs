@@ -43,24 +43,25 @@ pub(crate) struct CreateStudentComponentResponse {
 /// Creates a new student component.
 ///
 /// This endpoint allows authenticated admins to create a new student component for a specific project.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn create_student_component_handler(
-    body: Json<CreateStudentComponentScheme>, 
-    data: Data<AppData>,
+    body: Json<CreateStudentComponentScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // Check if component with this name already exists for the project
-    let existing = StudentDeliverableComponent::where_col(|sc| sc.project_id.equal(body.project_id))
-        .where_col(|sc| sc.name.equal(&body.name))
-        .run(&data.db)
-        .await
-        .map_err(|e| {
-            error_with_log_id_and_payload(
-                format!("unable to check existing component: {}", e),
-                "Failed to create component",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                log::Level::Error,
-                &body,
-            )
-        })?;
+    let existing =
+        StudentDeliverableComponent::where_col(|sc| sc.project_id.equal(body.project_id))
+            .where_col(|sc| sc.name.equal(&body.name))
+            .run(&data.db)
+            .await
+            .map_err(|e| {
+                error_with_log_id_and_payload(
+                    format!("unable to check existing component: {}", e),
+                    "Failed to create component",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                    &body,
+                )
+            })?;
 
     if !existing.is_empty() {
         return Err("Component with this name already exists for the project"

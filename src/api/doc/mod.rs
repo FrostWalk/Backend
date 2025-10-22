@@ -99,7 +99,7 @@ use crate::api::v1::students::student_deliverable_selections::{
 use crate::api::v1::students::users::me::__path_students_me_handler;
 use crate::api::v1::students::users::update_me::__path_update_me_student_handler;
 use crate::api::version::__path_version_info;
-use crate::jwt::auth_middleware::{ADMIN_HEADER_NAME, STUDENT_HEADER_NAME};
+use crate::jwt::grants_extractor::{ADMIN_HEADER_NAME, STUDENT_HEADER_NAME};
 use utoipa::openapi::security::SecurityScheme;
 use utoipa::openapi::security::{ApiKey, ApiKeyValue};
 use utoipa::openapi::{Components, Server};

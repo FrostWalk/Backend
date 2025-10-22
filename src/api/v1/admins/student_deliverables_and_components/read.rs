@@ -51,6 +51,7 @@ pub(crate) struct GetDeliverablesForComponentResponse {
 /// Get all components for a specific student deliverable.
 ///
 /// Returns all components associated with the specified student deliverable along with their quantities.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn get_components_for_deliverable_handler(
     path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
@@ -166,6 +167,7 @@ pub(super) async fn get_components_for_deliverable_handler(
 /// Get all deliverables that use a specific student component.
 ///
 /// Returns all student deliverables that use the specified component along with their quantities.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn get_deliverables_for_component_handler(
     path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {

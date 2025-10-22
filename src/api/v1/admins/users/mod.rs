@@ -4,9 +4,7 @@ use crate::api::v1::admins::users::me::admins_me_handler;
 use crate::api::v1::admins::users::read::{get_all_admins_handler, get_one_admin_handler};
 use crate::api::v1::admins::users::update::update_admin_handler;
 use crate::api::v1::admins::users::update_me::update_me_admin_handler;
-use crate::jwt::admin_auth_factory::Admin;
 use crate::models::admin;
-use crate::models::admin_role::{AvailableAdminRole, ALL};
 use actix_web::{web, Scope};
 use serde::Serialize;
 use utoipa::ToSchema;
@@ -20,63 +18,13 @@ pub(crate) mod update_me;
 
 pub(super) fn users_scope() -> Scope {
     web::scope("/users")
-        .route(
-            "/me",
-            web::get()
-                .to(admins_me_handler)
-                .wrap(Admin::require_roles(ALL)),
-        )
-        .route(
-            "/me",
-            web::patch()
-                .to(update_me_admin_handler)
-                .wrap(Admin::require_roles(ALL)),
-        )
-        .route(
-            "",
-            web::get()
-                .to(get_all_admins_handler)
-                .wrap(Admin::require_roles([
-                    AvailableAdminRole::Root,
-                    AvailableAdminRole::Professor,
-                ])),
-        )
-        .route(
-            "",
-            web::post()
-                .to(create_admin_handler)
-                .wrap(Admin::require_roles([
-                    AvailableAdminRole::Root,
-                    AvailableAdminRole::Professor,
-                ])),
-        )
-        .route(
-            "/{id}",
-            web::patch()
-                .to(update_admin_handler)
-                .wrap(Admin::require_roles([
-                    AvailableAdminRole::Root,
-                    AvailableAdminRole::Professor,
-                ])),
-        )
-        .route(
-            "/{id}",
-            web::get()
-                .to(get_one_admin_handler)
-                .wrap(Admin::require_roles([
-                    AvailableAdminRole::Root,
-                    AvailableAdminRole::Professor,
-                ])),
-        )
-        .route(
-            "/{id}",
-            web::delete()
-                .to(delete_admin_handler)
-                .wrap(Admin::require_roles([
-                    AvailableAdminRole::Root,
-                    AvailableAdminRole::Professor,
-                ])),
-        )
+        .route("/me", web::get().to(admins_me_handler))
+        .route("/me", web::patch().to(update_me_admin_handler))
+        .route("", web::get().to(get_all_admins_handler))
+        .route("", web::post().to(create_admin_handler))
+        .route("/{id}", web::patch().to(update_admin_handler))
+        .route("/{id}", web::get().to(get_one_admin_handler))
+        .route("/{id}", web::delete().to(delete_admin_handler))
 }
 
 #[derive(Debug, Serialize, ToSchema)]

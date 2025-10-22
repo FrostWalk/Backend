@@ -50,8 +50,7 @@ pub(crate) struct StudentSignupResponse {
 ///
 /// This endpoint allows students to register to the app.
 pub(super) async fn student_signup_handler(
-    body: Json<StudentSignupScheme>, 
-    data: Data<AppData>,
+    body: Json<StudentSignupScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // Validate that all fields are not empty or default values
     if body.first_name.trim().is_empty() {

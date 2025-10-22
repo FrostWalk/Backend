@@ -32,6 +32,11 @@ pub(crate) struct GetAllCodesResponse {
     tag = "Security codes management",
 )]
 /// Get all security codes
+#[actix_web_grants::protect(any(
+    "ROLE_ADMIN_ROOT",
+    "ROLE_ADMIN_PROFESSOR",
+    "ROLE_ADMIN_COORDINATOR"
+))]
 pub(in crate::api::v1) async fn get_all_codes_handler(
     data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {

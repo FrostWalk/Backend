@@ -62,6 +62,7 @@ pub(crate) struct GetDeliverablesForGroupComponentResponse {
 /// Get all group components.
 ///
 /// Returns all group components across all projects.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn get_all_group_components_handler(
     data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
@@ -107,6 +108,7 @@ pub(super) async fn get_all_group_components_handler(
 /// Get all group components for a specific project.
 ///
 /// Returns all group components associated with the specified project.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn get_group_components_for_project_handler(
     path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
@@ -161,6 +163,7 @@ pub(super) async fn get_group_components_for_project_handler(
 /// Get a specific group component by ID.
 ///
 /// Returns the details of the specified group component.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn get_group_component_handler(
     path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
@@ -208,6 +211,7 @@ pub(super) async fn get_group_component_handler(
 /// Get all deliverables that use a specific group component.
 ///
 /// Returns all group deliverables that use the specified component along with their quantities.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn get_deliverables_for_group_component_handler(
     path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {

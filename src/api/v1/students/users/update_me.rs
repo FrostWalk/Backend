@@ -44,10 +44,9 @@ pub(crate) struct UpdateMeStudentScheme {
 /// Updates the currently authenticated student's profile.
 ///
 /// This endpoint allows students to update their own profile details including name, email, and password.
+#[actix_web_grants::protect("ROLE_STUDENT")]
 pub(super) async fn update_me_student_handler(
-    req: HttpRequest, 
-    body: Json<UpdateMeStudentScheme>, 
-    data: Data<AppData>,
+    req: HttpRequest, body: Json<UpdateMeStudentScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_student() {
         Ok(user) => user,

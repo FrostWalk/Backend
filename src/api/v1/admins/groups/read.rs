@@ -58,10 +58,13 @@ pub(crate) struct DeliverableInfo {
 /// This endpoint allows admins to view all groups in a project with member counts,
 /// group leaders, and their chosen deliverables. Includes time_expired field for
 /// groups that haven't selected a deliverable by the deadline.
+#[actix_web_grants::protect(any(
+    "ROLE_ADMIN_ROOT",
+    "ROLE_ADMIN_PROFESSOR",
+    "ROLE_ADMIN_COORDINATOR"
+))]
 pub(super) async fn get_project_groups(
-    req: HttpRequest, 
-    path: Path<i32>, 
-    data: Data<AppData>,
+    req: HttpRequest, path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _admin = match req.extensions().get_admin() {
         Ok(admin) => admin,

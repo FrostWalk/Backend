@@ -42,10 +42,13 @@ pub(crate) struct UpdateMeAdminScheme {
 /// Updates the currently authenticated admin's profile.
 ///
 /// This endpoint allows admins to update their own profile details including name, email, and password.
+#[actix_web_grants::protect(any(
+    "ROLE_ADMIN_ROOT",
+    "ROLE_ADMIN_PROFESSOR",
+    "ROLE_ADMIN_COORDINATOR"
+))]
 pub(super) async fn update_me_admin_handler(
-    req: HttpRequest, 
-    body: Json<UpdateMeAdminScheme>, 
-    data: Data<AppData>,
+    req: HttpRequest, body: Json<UpdateMeAdminScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_admin() {
         Ok(user) => user,

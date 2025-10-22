@@ -47,10 +47,9 @@ pub(crate) struct CreateGroupResponse {
 /// The security code must be valid and not expired for the specified project.
 /// Each student can only create one group per project.
 /// The group creator becomes the GroupLeader automatically.
+#[actix_web_grants::protect("ROLE_STUDENT")]
 pub(crate) async fn create_group(
-    req: HttpRequest, 
-    body: Json<CreateGroupRequest>, 
-    data: Data<AppData>,
+    req: HttpRequest, body: Json<CreateGroupRequest>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let user = match req.extensions().get_student() {
         Ok(user) => user,

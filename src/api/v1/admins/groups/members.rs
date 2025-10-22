@@ -72,10 +72,13 @@ pub(crate) struct LeaderChangeInfo {
 ///
 /// This endpoint allows admins and coordinators to remove any member from a group,
 /// including the Group Leader. Must delete the student's deliverable selection when removed.
+#[actix_web_grants::protect(any(
+    "ROLE_ADMIN_ROOT",
+    "ROLE_ADMIN_PROFESSOR",
+    "ROLE_ADMIN_COORDINATOR"
+))]
 pub(super) async fn remove_member(
-    req: HttpRequest, 
-    path: Path<(i32, i32)>, 
-    data: Data<AppData>,
+    req: HttpRequest, path: Path<(i32, i32)>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _admin = match req.extensions().get_admin() {
         Ok(admin) => admin,
@@ -238,11 +241,13 @@ pub(super) async fn remove_member(
 ///
 /// This endpoint allows admins and coordinators to change the Group Leader of a group.
 /// Can optionally remove the old leader or demote them to member.
+#[actix_web_grants::protect(any(
+    "ROLE_ADMIN_ROOT",
+    "ROLE_ADMIN_PROFESSOR",
+    "ROLE_ADMIN_COORDINATOR"
+))]
 pub(super) async fn transfer_leadership(
-    req: HttpRequest, 
-    path: Path<i32>,
-    body: Json<TransferLeadershipRequest>, 
-    data: Data<AppData>,
+    req: HttpRequest, path: Path<i32>, body: Json<TransferLeadershipRequest>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _admin = match req.extensions().get_admin() {
         Ok(admin) => admin,
@@ -512,11 +517,13 @@ pub(super) async fn transfer_leadership(
 ///
 /// This endpoint allows admins and coordinators to manually add students to groups.
 /// Can add students as members or group leaders.
+#[actix_web_grants::protect(any(
+    "ROLE_ADMIN_ROOT",
+    "ROLE_ADMIN_PROFESSOR",
+    "ROLE_ADMIN_COORDINATOR"
+))]
 pub(super) async fn add_member(
-    req: HttpRequest, 
-    path: Path<i32>, 
-    body: Json<AdminAddMemberRequest>, 
-    data: Data<AppData>,
+    req: HttpRequest, path: Path<i32>, body: Json<AdminAddMemberRequest>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     let _admin = match req.extensions().get_admin() {
         Ok(admin) => admin,
@@ -689,7 +696,7 @@ pub(super) async fn add_member(
     // Add the student as a group member
     let mut member_state = DbState::new_uncreated(GroupMember {
         group_member_id: 0,
-        group_id: group_id,
+        group_id,
         student_id: student.student_id,
         student_role_id: body.role_id,
         joined_at: Utc::now(),

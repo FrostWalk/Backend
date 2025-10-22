@@ -62,6 +62,7 @@ pub(crate) struct GetDeliverablesForStudentComponentResponse {
 /// Get all student components.
 ///
 /// Returns all student components across all projects.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn get_all_student_components_handler(
     data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
@@ -106,6 +107,7 @@ pub(super) async fn get_all_student_components_handler(
 /// Get all student components for a specific project.
 ///
 /// Returns all student components associated with the specified project.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn get_student_components_for_project_handler(
     path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
@@ -159,6 +161,7 @@ pub(super) async fn get_student_components_for_project_handler(
 /// Get a specific student component by ID.
 ///
 /// Returns the details of the specified student component.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn get_student_component_handler(
     path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
@@ -205,6 +208,7 @@ pub(super) async fn get_student_component_handler(
 /// Get all deliverables that use a specific student component.
 ///
 /// Returns all student deliverables that use the specified component along with their quantities.
+#[actix_web_grants::protect(any("ROLE_ADMIN_ROOT", "ROLE_ADMIN_PROFESSOR"))]
 pub(super) async fn get_deliverables_for_student_component_handler(
     path: Path<i32>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
