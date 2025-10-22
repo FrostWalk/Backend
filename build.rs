@@ -67,7 +67,7 @@ fn get_git_tag() -> String {
 
     // Fall back to git describe for local builds (includes commit info and dirty status)
     match Command::new("git")
-        .args(&["describe", "--tags", "--always", "--dirty"])
+        .args(["describe", "--tags", "--always", "--dirty"])
         .output()
     {
         Ok(output) => {
@@ -90,7 +90,7 @@ fn get_git_commit() -> String {
     }
 
     // Fall back to git command for local builds
-    match Command::new("git").args(&["rev-parse", "HEAD"]).output() {
+    match Command::new("git").args(["rev-parse", "HEAD"]).output() {
         Ok(output) => {
             if output.status.success() {
                 String::from_utf8_lossy(&output.stdout).trim().to_string()
@@ -103,7 +103,7 @@ fn get_git_commit() -> String {
 }
 
 fn get_rust_version() -> String {
-    match Command::new("rustc").args(&["--version"]).output() {
+    match Command::new("rustc").args(["--version"]).output() {
         Ok(output) => {
             if output.status.success() {
                 String::from_utf8_lossy(&output.stdout).trim().to_string()

@@ -40,3 +40,12 @@ pub(crate) async fn get_by_project_id(
 
     Ok(selections)
 }
+
+/// Create a new group deliverable selection
+pub(crate) async fn create(
+    db: &PostgresClient, group_deliverable_selection: GroupDeliverableSelection,
+) -> welds::errors::Result<DbState<GroupDeliverableSelection>> {
+    let mut state = DbState::new_uncreated(group_deliverable_selection);
+    state.save(db).await?;
+    Ok(state)
+}

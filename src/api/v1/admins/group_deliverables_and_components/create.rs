@@ -1,12 +1,12 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
+use crate::database::repositories::group_deliverables_components_repository;
 use crate::models::group_deliverables_component::GroupDeliverablesComponent;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use welds::state::DbState;
 
 #[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub(crate) struct CreateGroupDeliverableComponentScheme {
@@ -52,14 +52,11 @@ pub(super) async fn create_group_deliverable_component_handler(
     body: Json<CreateGroupDeliverableComponentScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // Check if relationship already exists
-    let existing = GroupDeliverablesComponent::where_col(|gdc| {
-        gdc.group_deliverable_id.equal(body.group_deliverable_id)
-    })
-    .where_col(|gdc| {
-        gdc.group_deliverable_component_id
-            .equal(body.group_deliverable_component_id)
-    })
-    .run(&data.db)
+    let exists = group_deliverables_components_repository::relationship_exists(
+        &data.db,
+        body.group_deliverable_id,
+        body.group_deliverable_component_id,
+    )
     .await
     .map_err(|e| {
         error_with_log_id_and_payload(
@@ -71,29 +68,32 @@ pub(super) async fn create_group_deliverable_component_handler(
         )
     })?;
 
-    if !existing.is_empty() {
+    if exists {
         return Err("Relationship already exists".to_json_error(StatusCode::CONFLICT));
     }
 
-    let mut state = DbState::new_uncreated(GroupDeliverablesComponent {
+    let group_deliverables_component = GroupDeliverablesComponent {
         id: 0,
         group_deliverable_id: body.group_deliverable_id,
         group_deliverable_component_id: body.group_deliverable_component_id,
         quantity: body.quantity,
-    });
+    };
 
-    if let Err(e) = state.save(&data.db).await {
-        return Err(error_with_log_id_and_payload(
-            format!(
-                "unable to create group deliverable component relationship: {}",
-                e
-            ),
-            "Failed to create relationship",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-            &body,
-        ));
-    }
+    let state =
+        group_deliverables_components_repository::create(&data.db, group_deliverables_component)
+            .await
+            .map_err(|e| {
+                error_with_log_id_and_payload(
+                    format!(
+                        "unable to create group deliverable component relationship: {}",
+                        e
+                    ),
+                    "Failed to create relationship",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                    &body,
+                )
+            })?;
 
     Ok(
         HttpResponse::Ok().json(CreateGroupDeliverableComponentResponse {

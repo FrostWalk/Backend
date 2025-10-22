@@ -41,7 +41,8 @@ pub(super) async fn update_admin_handler(
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 
-    let admin_state_opt = admins_repository::get_by_id(&data.db, id)
+    // Check if admin exists
+    let admin_exists = admins_repository::get_by_id(&data.db, id)
         .await
         .map_err(|e| {
             error_with_log_id_and_payload(
@@ -51,28 +52,26 @@ pub(super) async fn update_admin_handler(
                 log::Level::Error,
                 &body,
             )
-        })?;
+        })?
+        .is_some();
 
-    let mut admin_state = match admin_state_opt {
-        Some(s) => s,
-        None => return Err("Admin not found".to_json_error(StatusCode::NOT_FOUND)),
-    };
-
-    // Apply only provided fields
-    if let Some(v) = body.first_name.clone() {
-        admin_state.first_name = v;
-    }
-    if let Some(v) = body.last_name.clone() {
-        admin_state.last_name = v;
-    }
-    if let Some(v) = body.email.clone() {
-        admin_state.email = v;
-    }
-    if let Some(v) = body.password.clone() {
-        admin_state.password_hash = generate_hash(v);
+    if !admin_exists {
+        return Err("Admin not found".to_json_error(StatusCode::NOT_FOUND));
     }
 
-    admin_state.save(&data.db).await.map_err(|e| {
+    // Update admin using repository function
+    let password_hash = body.password.as_ref().map(generate_hash);
+
+    admins_repository::update_by_id(
+        &data.db,
+        id,
+        body.first_name.clone(),
+        body.last_name.clone(),
+        body.email.clone(),
+        password_hash,
+    )
+    .await
+    .map_err(|e| {
         error_with_log_id_and_payload(
             format!("unable to update admin {}: {}", id, e),
             "Failed to update user",

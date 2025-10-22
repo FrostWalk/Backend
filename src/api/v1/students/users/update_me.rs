@@ -183,15 +183,17 @@ pub(super) async fn update_me_student_handler(
         student_state.password_hash = generate_hash(v);
     }
 
-    student_state.save(&data.db).await.map_err(|e| {
-        error_with_log_id_and_payload(
-            format!("unable to update student profile: {}", e),
-            "Profile update failed",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-            &body,
-        )
-    })?;
+    students_repository::update(&data.db, student_state)
+        .await
+        .map_err(|e| {
+            error_with_log_id_and_payload(
+                format!("unable to update student profile: {}", e),
+                "Profile update failed",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &body,
+            )
+        })?;
 
     Ok(HttpResponse::Ok().finish())
 }

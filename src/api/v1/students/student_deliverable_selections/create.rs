@@ -1,9 +1,10 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, error_with_log_id_and_payload, JsonError};
-use crate::database::repositories::{groups_repository, student_deliverable_selections_repository};
+use crate::database::repositories::{
+    groups_repository, projects_repository, student_deliverable_selections_repository,
+    student_deliverables_repository,
+};
 use crate::jwt::get_user::LoggedUser;
-use crate::models::project::Project;
-use crate::models::student_deliverable::StudentDeliverable;
 use crate::models::student_deliverable_selection::StudentDeliverableSelection;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
@@ -111,33 +112,29 @@ pub(in crate::api::v1) async fn create_student_deliverable_selection(
     }
 
     // 3. Verify the student_deliverable_id exists and belongs to the same project
-    let mut deliverable_rows = StudentDeliverable::where_col(|sd| {
-        sd.student_deliverable_id.equal(body.student_deliverable_id)
-    })
-    .run(&data.db)
-    .await
-    .map_err(|e| {
-        error_with_log_id(
-            format!("Database error fetching deliverable: {}", e),
-            "Database error",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-        )
-    })?;
-
-    let deliverable_state = deliverable_rows.pop().ok_or_else(|| {
-        error_with_log_id(
-            format!(
-                "Student deliverable {} not found",
-                body.student_deliverable_id
-            ),
-            "Deliverable not found",
-            StatusCode::NOT_FOUND,
-            log::Level::Warn,
-        )
-    })?;
-
-    let deliverable = DbState::into_inner(deliverable_state);
+    let deliverable =
+        student_deliverables_repository::get_by_id(&data.db, body.student_deliverable_id)
+            .await
+            .map_err(|e| {
+                error_with_log_id(
+                    format!("Database error fetching deliverable: {}", e),
+                    "Database error",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                )
+            })?
+            .ok_or_else(|| {
+                error_with_log_id(
+                    format!(
+                        "Student deliverable {} not found",
+                        body.student_deliverable_id
+                    ),
+                    "Deliverable not found",
+                    StatusCode::NOT_FOUND,
+                    log::Level::Warn,
+                )
+            })
+            .map(DbState::into_inner)?;
 
     if deliverable.project_id != body.project_id {
         return Err(error_with_log_id(
@@ -152,8 +149,7 @@ pub(in crate::api::v1) async fn create_student_deliverable_selection(
     }
 
     // 4. Verify the project's deliverable_selection_deadline has not passed (if set)
-    let mut project_rows = Project::where_col(|p| p.project_id.equal(body.project_id))
-        .run(&data.db)
+    let project = projects_repository::get_by_id(&data.db, body.project_id)
         .await
         .map_err(|e| {
             error_with_log_id(
@@ -162,18 +158,16 @@ pub(in crate::api::v1) async fn create_student_deliverable_selection(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
             )
-        })?;
-
-    let project_state = project_rows.pop().ok_or_else(|| {
-        error_with_log_id(
-            format!("Project {} not found", body.project_id),
-            "Project not found",
-            StatusCode::NOT_FOUND,
-            log::Level::Warn,
-        )
-    })?;
-
-    let project = DbState::into_inner(project_state);
+        })?
+        .ok_or_else(|| {
+            error_with_log_id(
+                format!("Project {} not found", body.project_id),
+                "Project not found",
+                StatusCode::NOT_FOUND,
+                log::Level::Warn,
+            )
+        })
+        .map(DbState::into_inner)?;
 
     if let Some(deadline) = project.deliverable_selection_deadline {
         if Utc::now() > deadline {
@@ -189,17 +183,17 @@ pub(in crate::api::v1) async fn create_student_deliverable_selection(
         }
     }
 
-    // Create the selection
-    let mut selection_state = DbState::new_uncreated(StudentDeliverableSelection {
+    // Create the selection using repository function
+    let selection = StudentDeliverableSelection {
         student_deliverable_selection_id: 0,
         student_id: user.student_id,
         student_deliverable_id: body.student_deliverable_id,
         created_at: Utc::now(),
         updated_at: Utc::now(),
-    });
+    };
 
-    match selection_state.save(&data.db).await {
-        Ok(_) => {
+    match student_deliverable_selections_repository::create(&data.db, selection).await {
+        Ok(selection_state) => {
             let selection = DbState::into_inner(selection_state);
             Ok(
                 HttpResponse::Created().json(CreateStudentDeliverableSelectionResponse {

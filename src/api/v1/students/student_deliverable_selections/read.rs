@@ -1,8 +1,8 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError};
 use crate::database::repositories::student_deliverable_selections_repository;
+use crate::database::repositories::student_deliverables_repository;
 use crate::jwt::get_user::LoggedUser;
-use crate::models::student_deliverable::StudentDeliverable;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
@@ -76,33 +76,29 @@ pub(in crate::api::v1) async fn get_student_deliverable_selection(
 
     let selection = DbState::into_inner(selection_state);
 
-    // Get the deliverable name
-    let mut deliverable_rows = StudentDeliverable::where_col(|sd| {
-        sd.student_deliverable_id
-            .equal(selection.student_deliverable_id)
-    })
-    .run(&data.db)
-    .await
-    .map_err(|e| {
-        error_with_log_id(
-            format!("Database error fetching deliverable: {}", e),
-            "Database error",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-        )
-    })?;
-
-    let deliverable_state = deliverable_rows.pop().ok_or_else(|| {
-        error_with_log_id(
-            format!(
-                "Deliverable {} not found for selection",
-                selection.student_deliverable_id
-            ),
-            "Deliverable not found",
-            StatusCode::NOT_FOUND,
-            log::Level::Error,
-        )
-    })?;
+    // Get the deliverable name using repository function
+    let deliverable_state =
+        student_deliverables_repository::get_by_id(&data.db, selection.student_deliverable_id)
+            .await
+            .map_err(|e| {
+                error_with_log_id(
+                    format!("Database error fetching deliverable: {}", e),
+                    "Database error",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                )
+            })?
+            .ok_or_else(|| {
+                error_with_log_id(
+                    format!(
+                        "Deliverable {} not found for selection",
+                        selection.student_deliverable_id
+                    ),
+                    "Deliverable not found",
+                    StatusCode::NOT_FOUND,
+                    log::Level::Error,
+                )
+            })?;
 
     let deliverable = DbState::into_inner(deliverable_state);
 

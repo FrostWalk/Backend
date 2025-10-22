@@ -1,9 +1,9 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError};
+use crate::database::repositories::projects_repository;
 use crate::jwt::get_user::LoggedUser;
 use crate::models::group_deliverable::GroupDeliverable;
 use crate::models::group_deliverable_component::GroupDeliverableComponent;
-use crate::models::group_member::GroupMember;
 use crate::models::project::Project;
 use crate::models::student_deliverable::StudentDeliverable;
 use crate::models::student_deliverable_component::StudentDeliverableComponent;
@@ -58,100 +58,49 @@ pub(super) async fn get_student_projects(
         }
     };
 
-    // Fetch projects with all related entities efficiently using map_query
-    let projects: Vec<Project> = GroupMember::where_col(|gm| gm.student_id.equal(user.student_id))
-        .map_query(|gm| gm.group)
-        .map_query(|g| g.project)
-        .run(&data.db)
-        .await
-        .map_err(|e| {
-            error_with_log_id(
-                format!(
-                    "unable to fetch student projects from database {}: {}",
-                    user.student_id, e
-                ),
-                "Failed to retrieve projects",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                log::Level::Error,
-            )
-        })?
-        .into_iter()
-        .map(DbState::into_inner)
-        .collect();
+    // Fetch projects with all related entities using repository function
+    let projects_with_details_data =
+        projects_repository::get_projects_with_details_for_student(&data.db, user.student_id)
+            .await
+            .map_err(|e| {
+                error_with_log_id(
+                    format!(
+                        "unable to fetch student projects from database {}: {}",
+                        user.student_id, e
+                    ),
+                    "Failed to retrieve projects",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                )
+            })?;
 
     let mut projects_with_details = Vec::new();
 
-    for project in projects {
-        let project_id = project.project_id;
-
-        // Fetch all related entities efficiently using map_query
-        let group_deliverables: Vec<GroupDeliverable> =
-            Project::where_col(|p| p.project_id.equal(project_id))
-                .map_query(|p| p.group_deliverables)
-                .run(&data.db)
-                .await
-                .map_err(|e| {
-                    error_with_log_id(
-                        format!("unable to retrieve group deliverables: {}", e),
-                        "Failed to retrieve project details",
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        log::Level::Error,
-                    )
-                })?
-                .into_iter()
-                .map(DbState::into_inner)
-                .collect();
-
-        let group_components: Vec<GroupDeliverableComponent> =
-            Project::where_col(|p| p.project_id.equal(project_id))
-                .map_query(|p| p.group_deliverable_components)
-                .run(&data.db)
-                .await
-                .map_err(|e| {
-                    error_with_log_id(
-                        format!("unable to retrieve group components: {}", e),
-                        "Failed to retrieve project details",
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        log::Level::Error,
-                    )
-                })?
-                .into_iter()
-                .map(DbState::into_inner)
-                .collect();
-
-        let student_deliverables: Vec<StudentDeliverable> =
-            Project::where_col(|p| p.project_id.equal(project_id))
-                .map_query(|p| p.student_deliverables)
-                .run(&data.db)
-                .await
-                .map_err(|e| {
-                    error_with_log_id(
-                        format!("unable to retrieve student deliverables: {}", e),
-                        "Failed to retrieve project details",
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        log::Level::Error,
-                    )
-                })?
-                .into_iter()
-                .map(DbState::into_inner)
-                .collect();
-
-        let student_components: Vec<StudentDeliverableComponent> =
-            Project::where_col(|p| p.project_id.equal(project_id))
-                .map_query(|p| p.student_deliverable_components)
-                .run(&data.db)
-                .await
-                .map_err(|e| {
-                    error_with_log_id(
-                        format!("unable to retrieve student components: {}", e),
-                        "Failed to retrieve project details",
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        log::Level::Error,
-                    )
-                })?
-                .into_iter()
-                .map(DbState::into_inner)
-                .collect();
+    for (
+        project_state,
+        group_deliverables_state,
+        group_components_state,
+        student_deliverables_state,
+        student_components_state,
+    ) in projects_with_details_data
+    {
+        let project = DbState::into_inner(project_state);
+        let group_deliverables = group_deliverables_state
+            .into_iter()
+            .map(DbState::into_inner)
+            .collect();
+        let group_components = group_components_state
+            .into_iter()
+            .map(DbState::into_inner)
+            .collect();
+        let student_deliverables = student_deliverables_state
+            .into_iter()
+            .map(DbState::into_inner)
+            .collect();
+        let student_components = student_components_state
+            .into_iter()
+            .map(DbState::into_inner)
+            .collect();
 
         projects_with_details.push(ProjectWithDetails {
             project,

@@ -43,6 +43,23 @@ pub(crate) async fn has_selection_for_project(
     Ok(selection.is_some())
 }
 
+/// Create a new student deliverable selection
+pub(crate) async fn create(
+    db: &PostgresClient, selection: StudentDeliverableSelection,
+) -> welds::errors::Result<DbState<StudentDeliverableSelection>> {
+    let mut state = DbState::new_uncreated(selection);
+    state.save(db).await?;
+    Ok(state)
+}
+
+/// Update a student deliverable selection
+pub(crate) async fn update(
+    db: &PostgresClient, mut state: DbState<StudentDeliverableSelection>,
+) -> welds::errors::Result<DbState<StudentDeliverableSelection>> {
+    state.save(db).await?;
+    Ok(state)
+}
+
 /// Delete a student's deliverable selection for a specific project
 pub(crate) async fn delete_by_student_and_project(
     db: &PostgresClient, student_id: i32, project_id: i32,

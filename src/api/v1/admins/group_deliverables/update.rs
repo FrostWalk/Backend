@@ -1,6 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
-use crate::models::group_deliverable::GroupDeliverable;
+use crate::database::repositories::group_deliverables_repository;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::web::{Data, Json};
@@ -39,8 +39,7 @@ pub(super) async fn update_group_deliverable_handler(
     let id = path.into_inner();
 
     // Find the existing deliverable by ID
-    let mut rows = GroupDeliverable::where_col(|gd| gd.group_deliverable_id.equal(id))
-        .run(&data.db)
+    let deliverable_state = group_deliverables_repository::get_by_id(&data.db, id)
         .await
         .map_err(|e| {
             error_with_log_id_and_payload(
@@ -50,47 +49,44 @@ pub(super) async fn update_group_deliverable_handler(
                 log::Level::Error,
                 &body,
             )
-        })?;
-
-    let mut deliverable_state = match rows.pop() {
-        Some(s) => s,
-        None => return Err("Group deliverable not found".to_json_error(StatusCode::NOT_FOUND)),
-    };
+        })?
+        .ok_or_else(|| "Group deliverable not found".to_json_error(StatusCode::NOT_FOUND))?;
 
     // Check if another deliverable with this name already exists for the same project
-    let existing =
-        GroupDeliverable::where_col(|gd| gd.project_id.equal(deliverable_state.project_id))
-            .where_col(|gd| gd.name.equal(&body.name))
-            .where_col(|gd| gd.group_deliverable_id.not_equal(id))
-            .run(&data.db)
-            .await
-            .map_err(|e| {
-                error_with_log_id_and_payload(
-                    format!("unable to check existing group deliverable: {}", e),
-                    "Failed to update deliverable",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    log::Level::Error,
-                    &body,
-                )
-            })?;
-
-    if !existing.is_empty() {
-        return Err("Deliverable with this name already exists for the project"
-            .to_json_error(StatusCode::CONFLICT));
-    }
-
-    // Update the name
-    deliverable_state.name = body.name.clone();
-
-    deliverable_state.save(&data.db).await.map_err(|e| {
+    let exists = group_deliverables_repository::check_name_exists_excluding(
+        &data.db,
+        deliverable_state.project_id,
+        &body.name,
+        id,
+    )
+    .await
+    .map_err(|e| {
         error_with_log_id_and_payload(
-            format!("unable to update group deliverable: {}", e),
+            format!("unable to check existing group deliverable: {}", e),
             "Failed to update deliverable",
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
             &body,
         )
     })?;
+
+    if exists {
+        return Err("Deliverable with this name already exists for the project"
+            .to_json_error(StatusCode::CONFLICT));
+    }
+
+    // Update the name using repository function
+    group_deliverables_repository::update_by_id(&data.db, id, &body.name)
+        .await
+        .map_err(|e| {
+            error_with_log_id_and_payload(
+                format!("unable to update group deliverable: {}", e),
+                "Failed to update deliverable",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &body,
+            )
+        })?;
 
     Ok(HttpResponse::Ok().finish())
 }

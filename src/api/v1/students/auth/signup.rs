@@ -11,7 +11,6 @@ use log::info;
 use password_auth::generate_hash;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use welds::state::DbState;
 
 #[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub(crate) struct StudentSignupScheme {
@@ -116,7 +115,7 @@ pub(super) async fn student_signup_handler(
     // Determine if account should be immediately active or pending confirmation
     let is_pending = !data.config.skip_email_confirmation();
 
-    let mut result = DbState::new_uncreated(Student {
+    let student = Student {
         student_id: 0,
         first_name: body.first_name.clone(),
         last_name: body.last_name.clone(),
@@ -124,17 +123,19 @@ pub(super) async fn student_signup_handler(
         university_id: body.university_id,
         password_hash: generate_hash(body.password.clone()),
         is_pending,
-    });
+    };
 
-    if let Err(e) = result.save(&data.db).await {
-        return Err(error_with_log_id_and_payload(
-            format!("unable to create student's account: {}", e),
-            "Account creation failed",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-            &body,
-        ));
-    }
+    let result = students_repository::create(&data.db, student)
+        .await
+        .map_err(|e| {
+            error_with_log_id_and_payload(
+                format!("unable to create student's account: {}", e),
+                "Account creation failed",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &body,
+            )
+        })?;
 
     // Only send confirmation email if email confirmation is not skipped
     if !data.config.skip_email_confirmation() {

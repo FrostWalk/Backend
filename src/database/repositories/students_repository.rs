@@ -51,3 +51,42 @@ pub(crate) async fn university_id_exists(
     let result = get_by_university_id(db, university_id).await?;
     Ok(result.is_some())
 }
+
+/// Create a new student
+pub(crate) async fn create(
+    db: &PostgresClient, student: Student,
+) -> welds::errors::Result<DbState<Student>> {
+    let mut state = DbState::new_uncreated(student);
+    state.save(db).await?;
+    Ok(state)
+}
+
+/// Update student confirmation status by email
+pub(crate) async fn update_confirmation_by_email(
+    db: &PostgresClient, email: &str, is_pending: bool,
+) -> welds::errors::Result<()> {
+    Student::where_col(|s| s.email.equal(email))
+        .set(|s| s.is_pending, is_pending)
+        .run(db)
+        .await?;
+    Ok(())
+}
+
+/// Update student password by email
+pub(crate) async fn update_password_by_email(
+    db: &PostgresClient, email: &str, password_hash: String,
+) -> welds::errors::Result<()> {
+    Student::where_col(|s| s.email.equal(email))
+        .set(|s| s.password_hash, password_hash)
+        .run(db)
+        .await?;
+    Ok(())
+}
+
+/// Update a student
+pub(crate) async fn update(
+    db: &PostgresClient, mut state: DbState<Student>,
+) -> welds::errors::Result<DbState<Student>> {
+    state.save(db).await?;
+    Ok(state)
+}

@@ -73,27 +73,25 @@ pub(crate) async fn reset_password_handler(
             )
         })?;
 
-    let admin_state = match admin_state {
-        Some(admin) => admin,
-        None => {
-            error!("admin with email {} not found", email);
-            return Err("Admin account not found".to_json_error(StatusCode::BAD_REQUEST));
-        }
-    };
+    admin_state.ok_or_else(|| {
+        error!("admin with email {} not found", email);
+        "Admin account not found".to_json_error(StatusCode::BAD_REQUEST)
+    })?;
 
-    // Update the password hash
-    let mut admin_state = admin_state;
-    admin_state.password_hash = generate_hash(&body.new_password);
+    // Update the password hash using repository function
+    let password_hash = generate_hash(&body.new_password);
 
-    if let Err(e) = admin_state.save(&data.db).await {
-        return Err(error_with_log_id_and_payload(
-            format!("unable to update admin password: {}", e),
-            "Password reset failed",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-            &body,
-        ));
-    }
+    admins_repository::update_password_by_email(&data.db, &email, password_hash)
+        .await
+        .map_err(|e| {
+            error_with_log_id_and_payload(
+                format!("unable to update admin password: {}", e),
+                "Password reset failed",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &body,
+            )
+        })?;
 
     info!("admin password reset successfully: {}", email);
 

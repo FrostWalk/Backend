@@ -1,12 +1,12 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
+use crate::database::repositories::student_deliverable_components_repository;
 use crate::models::student_deliverable_component::StudentDeliverableComponent;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use welds::state::DbState;
 
 #[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub(crate) struct CreateStudentComponentScheme {
@@ -48,41 +48,45 @@ pub(super) async fn create_student_component_handler(
     body: Json<CreateStudentComponentScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // Check if component with this name already exists for the project
-    let existing =
-        StudentDeliverableComponent::where_col(|sc| sc.project_id.equal(body.project_id))
-            .where_col(|sc| sc.name.equal(&body.name))
-            .run(&data.db)
+    let exists = student_deliverable_components_repository::check_name_exists(
+        &data.db,
+        body.project_id,
+        &body.name,
+    )
+    .await
+    .map_err(|e| {
+        error_with_log_id_and_payload(
+            format!("unable to check existing component: {}", e),
+            "Failed to create component",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            log::Level::Error,
+            &body,
+        )
+    })?;
+
+    if exists {
+        return Err("Component with this name already exists for the project"
+            .to_json_error(StatusCode::CONFLICT));
+    }
+
+    let student_deliverable_component = StudentDeliverableComponent {
+        student_deliverable_component_id: 0,
+        project_id: body.project_id,
+        name: body.name.clone(),
+    };
+
+    let state =
+        student_deliverable_components_repository::create(&data.db, student_deliverable_component)
             .await
             .map_err(|e| {
                 error_with_log_id_and_payload(
-                    format!("unable to check existing component: {}", e),
+                    format!("unable to create student component: {}", e),
                     "Failed to create component",
                     StatusCode::INTERNAL_SERVER_ERROR,
                     log::Level::Error,
                     &body,
                 )
             })?;
-
-    if !existing.is_empty() {
-        return Err("Component with this name already exists for the project"
-            .to_json_error(StatusCode::CONFLICT));
-    }
-
-    let mut state = DbState::new_uncreated(StudentDeliverableComponent {
-        student_deliverable_component_id: 0,
-        project_id: body.project_id,
-        name: body.name.clone(),
-    });
-
-    if let Err(e) = state.save(&data.db).await {
-        return Err(error_with_log_id_and_payload(
-            format!("unable to create student component: {}", e),
-            "Failed to create component",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-            &body,
-        ));
-    }
 
     Ok(HttpResponse::Ok().json(CreateStudentComponentResponse {
         student_deliverable_component_id: state.student_deliverable_component_id,

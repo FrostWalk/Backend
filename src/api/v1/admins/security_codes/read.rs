@@ -1,6 +1,7 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError};
 use crate::database::repositories::security_codes;
+use crate::models::project::Project;
 use crate::models::security_code::SecurityCode;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
@@ -42,9 +43,8 @@ pub(in crate::api::v1) async fn get_all_codes_handler(
 ) -> Result<HttpResponse, JsonError> {
     let now: DateTime<Utc> = Utc::now();
 
-    let codes: Vec<DbState<SecurityCode>> = match security_codes::get_all(&data.db).await {
-        // Filter for non-expired codes (Welds currently does not support filtering with datetime operators)
-        Ok(c) => c.into_iter().filter(|code| code.expiration > now).collect(),
+    let codes_with_projects = match security_codes::get_all_with_projects(&data.db).await {
+        Ok(c) => c,
         Err(e) => {
             return Err(error_with_log_id(
                 format!(
@@ -58,25 +58,14 @@ pub(in crate::api::v1) async fn get_all_codes_handler(
         }
     };
 
-    let projects = match SecurityCode::all()
-        .order_by_asc(|sc| sc.security_code_id)
-        .map_query(|sc| sc.project)
-        .run(&data.db)
-        .await
-    {
-        Ok(p) => p,
-        Err(e) => {
-            return Err(error_with_log_id(
-                format!("unable to retrieve projects from database. Error: {}", e),
-                "Failed to retrieve security codes",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                log::Level::Error,
-            ));
-        }
-    };
+    // Filter for non-expired codes (Welds currently does not support filtering with datetime operators)
+    let filtered_codes: Vec<(DbState<SecurityCode>, DbState<Project>)> = codes_with_projects
+        .into_iter()
+        .filter(|(code, _)| code.expiration > now)
+        .collect();
 
-    let mut out = Vec::with_capacity(codes.len());
-    for (sc_state, p_state) in codes.into_iter().zip(projects) {
+    let mut out = Vec::with_capacity(filtered_codes.len());
+    for (sc_state, p_state) in filtered_codes {
         let sc = DbState::into_inner(sc_state);
         let p = DbState::into_inner(p_state);
 

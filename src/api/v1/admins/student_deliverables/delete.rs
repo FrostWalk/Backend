@@ -1,6 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError, ToJsonError};
-use crate::models::student_deliverable::StudentDeliverable;
+use crate::database::repositories::student_deliverables_repository;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::web::Path;
@@ -27,9 +27,8 @@ pub(super) async fn delete_student_deliverable_handler(
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 
-    // Find the existing deliverable by ID
-    let mut rows = StudentDeliverable::where_col(|sp| sp.student_deliverable_id.equal(id))
-        .run(&data.db)
+    // Check if the deliverable exists
+    let deliverable_exists = student_deliverables_repository::get_by_id(&data.db, id)
         .await
         .map_err(|e| {
             error_with_log_id(
@@ -38,21 +37,24 @@ pub(super) async fn delete_student_deliverable_handler(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
             )
+        })?
+        .is_some();
+
+    if !deliverable_exists {
+        return Err("Student deliverable not found".to_json_error(StatusCode::NOT_FOUND));
+    }
+
+    // Delete the deliverable using repository function
+    student_deliverables_repository::delete_by_id(&data.db, id)
+        .await
+        .map_err(|e| {
+            error_with_log_id(
+                format!("unable to delete student deliverable: {}", e),
+                "Failed to delete deliverable",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
         })?;
-
-    let mut deliverable_state = match rows.pop() {
-        Some(s) => s,
-        None => return Err("Student deliverable not found".to_json_error(StatusCode::NOT_FOUND)),
-    };
-
-    deliverable_state.delete(&data.db).await.map_err(|e| {
-        error_with_log_id(
-            format!("unable to delete student deliverable: {}", e),
-            "Failed to delete deliverable",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-        )
-    })?;
 
     Ok(HttpResponse::Ok().finish())
 }

@@ -1,5 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
+use crate::database::repositories::projects_repository;
 use crate::models::project::Project;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
@@ -52,26 +53,27 @@ pub(in crate::api::v1) async fn create_project_handler(
         return Err("Max group size must be greater than 1".to_json_error(StatusCode::BAD_REQUEST));
     }
 
-    let mut p = Project::new();
-    p.name = body.name.clone();
-    p.year = Local::now().year();
-    p.max_student_uploads = body.max_student_uploads;
-    p.max_group_size = body.max_group_size;
-    p.deliverable_selection_deadline = body.deliverable_selection_deadline;
-    p.active = body.active;
+    let project = Project {
+        project_id: 0,
+        name: body.name.clone(),
+        year: Local::now().year(),
+        max_student_uploads: body.max_student_uploads,
+        max_group_size: body.max_group_size,
+        deliverable_selection_deadline: body.deliverable_selection_deadline,
+        active: body.active,
+    };
 
-    match p.save(&data.db).await {
-        Ok(_) => {}
-        Err(e) => {
-            return Err(error_with_log_id_and_payload(
-                format!("unable to insert project {:?} in database: {}", p, e),
+    let p = projects_repository::create(&data.db, project)
+        .await
+        .map_err(|e| {
+            error_with_log_id_and_payload(
+                format!("unable to insert project in database: {}", e),
                 "Failed to create project",
                 StatusCode::INTERNAL_SERVER_ERROR,
                 log::Level::Error,
                 &body,
-            ));
-        }
-    }
+            )
+        })?;
 
     Ok(HttpResponse::Created().json(CreateProjectResponse {
         project_id: p.project_id,

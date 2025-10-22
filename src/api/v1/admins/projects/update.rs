@@ -35,7 +35,8 @@ pub(in crate::api::v1) async fn update_project_handler(
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 
-    let state_opt = projects_repository::get_by_id(&data.db, id)
+    // Check if project exists
+    let project_exists = projects_repository::get_by_id(&data.db, id)
         .await
         .map_err(|e| {
             error_with_log_id_and_payload(
@@ -45,28 +46,24 @@ pub(in crate::api::v1) async fn update_project_handler(
                 log::Level::Error,
                 &body,
             )
-        })?;
+        })?
+        .is_some();
 
-    let mut state = match state_opt {
-        Some(s) => s,
-        None => return Err("Project not found".to_json_error(StatusCode::NOT_FOUND)),
-    };
-
-    // 2) Apply only provided fields
-    if let Some(v) = body.name.clone() {
-        state.name = v;
-    }
-    if let Some(v) = body.max_student_uploads {
-        state.max_student_uploads = v;
-    }
-    if let Some(v) = body.max_group_size {
-        state.max_group_size = v;
-    }
-    if let Some(v) = body.active {
-        state.active = v;
+    if !project_exists {
+        return Err("Project not found".to_json_error(StatusCode::NOT_FOUND));
     }
 
-    state.save(&data.db).await.map_err(|e| {
+    // Update project using repository function
+    projects_repository::update_by_id(
+        &data.db,
+        id,
+        body.name.clone(),
+        body.max_student_uploads,
+        body.max_group_size,
+        body.active,
+    )
+    .await
+    .map_err(|e| {
         error_with_log_id_and_payload(
             format!("unable to update project {}: {}", id, e),
             "Failed to update project",
@@ -76,5 +73,5 @@ pub(in crate::api::v1) async fn update_project_handler(
         )
     })?;
 
-    Ok(HttpResponse::Ok().json((*state).clone()))
+    Ok(HttpResponse::Ok().finish())
 }

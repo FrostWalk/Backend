@@ -1,6 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
-use crate::models::student_deliverables_component::StudentDeliverablesComponent;
+use crate::database::repositories::student_deliverables_components_repository;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::web::{Data, Json};
@@ -37,13 +37,32 @@ pub(super) async fn update_student_deliverable_component_handler(
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
     // Find the existing relationship by ID
-    let mut rows = StudentDeliverablesComponent::where_col(|spc| spc.id.equal(id))
-        .run(&data.db)
+    let mut relationship_state =
+        student_deliverables_components_repository::get_by_id(&data.db, id)
+            .await
+            .map_err(|e| {
+                error_with_log_id_and_payload(
+                    format!(
+                        "unable to load student deliverable component relationship: {}",
+                        e
+                    ),
+                    "Failed to update relationship",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                    &body,
+                )
+            })?
+            .ok_or_else(|| "Relationship not found".to_json_error(StatusCode::NOT_FOUND))?;
+
+    // Update the quantity
+    relationship_state.quantity = body.quantity;
+
+    student_deliverables_components_repository::update(&data.db, relationship_state)
         .await
         .map_err(|e| {
             error_with_log_id_and_payload(
                 format!(
-                    "unable to load student deliverable component relationship: {}",
+                    "unable to update student deliverable component relationship: {}",
                     e
                 ),
                 "Failed to update relationship",
@@ -52,27 +71,6 @@ pub(super) async fn update_student_deliverable_component_handler(
                 &body,
             )
         })?;
-
-    let mut relationship_state = match rows.pop() {
-        Some(s) => s,
-        None => return Err("Relationship not found".to_json_error(StatusCode::NOT_FOUND)),
-    };
-
-    // Update the quantity
-    relationship_state.quantity = body.quantity;
-
-    relationship_state.save(&data.db).await.map_err(|e| {
-        error_with_log_id_and_payload(
-            format!(
-                "unable to update student deliverable component relationship: {}",
-                e
-            ),
-            "Failed to update relationship",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-            &body,
-        )
-    })?;
 
     Ok(HttpResponse::Ok().finish())
 }

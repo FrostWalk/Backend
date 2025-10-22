@@ -1,8 +1,8 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError, ToJsonError};
-use crate::models::student_deliverable::StudentDeliverable;
-use crate::models::student_deliverable_component::StudentDeliverableComponent;
-use crate::models::student_deliverables_component::StudentDeliverablesComponent;
+use crate::database::repositories::student_deliverable_components_repository;
+use crate::database::repositories::student_deliverables_components_repository;
+use crate::database::repositories::student_deliverables_repository;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::web::Path;
@@ -57,96 +57,53 @@ pub(super) async fn get_components_for_deliverable_handler(
 ) -> Result<HttpResponse, JsonError> {
     let deliverable_id = path.into_inner();
 
-    // Verify the student deliverable exists
-    let deliverable_exists =
-        StudentDeliverable::where_col(|sp| sp.student_deliverable_id.equal(deliverable_id))
-            .run(&data.db)
-            .await
-            .map_err(|e| {
-                error_with_log_id(
-                    format!("unable to check if student deliverable exists: {}", e),
-                    "Failed to retrieve components",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    log::Level::Error,
-                )
-            })?;
+    // Verify the student deliverable exists using repository function
+    let deliverable_state = student_deliverables_repository::get_by_id(&data.db, deliverable_id)
+        .await
+        .map_err(|e| {
+            error_with_log_id(
+                format!("unable to check if student deliverable exists: {}", e),
+                "Failed to retrieve components",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
+        })?
+        .ok_or_else(|| "Student deliverable not found".to_json_error(StatusCode::NOT_FOUND))?;
 
-    if deliverable_exists.is_empty() {
-        return Err("Student deliverable not found".to_json_error(StatusCode::NOT_FOUND));
-    }
+    let deliverable = DbState::into_inner(deliverable_state);
 
-    // Efficiently fetch relationships with related entities using map_query
-    let relationships = StudentDeliverablesComponent::where_col(|spc| {
-        spc.student_deliverable_id.equal(deliverable_id)
-    })
-    .run(&data.db)
-    .await
-    .map_err(|e| {
-        error_with_log_id(
-            format!(
-                "unable to retrieve components for deliverable {}: {}",
-                deliverable_id, e
-            ),
-            "Failed to retrieve components",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
+    // Get components with their details using repository function
+    let components_with_details =
+        student_deliverables_components_repository::get_components_with_details_for_deliverable(
+            &data.db,
+            deliverable_id,
         )
-    })?;
-
-    let components_data = StudentDeliverablesComponent::where_col(|spc| {
-        spc.student_deliverable_id.equal(deliverable_id)
-    })
-    .map_query(|spc| spc.student_deliverable_component)
-    .run(&data.db)
-    .await
-    .map_err(|e| {
-        error_with_log_id(
-            format!(
-                "unable to retrieve components for deliverable {}: {}",
-                deliverable_id, e
-            ),
-            "Failed to retrieve components",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-        )
-    })?;
-
-    let deliverables_data = StudentDeliverablesComponent::where_col(|spc| {
-        spc.student_deliverable_id.equal(deliverable_id)
-    })
-    .map_query(|spc| spc.student_deliverable)
-    .run(&data.db)
-    .await
-    .map_err(|e| {
-        error_with_log_id(
-            format!(
-                "unable to retrieve deliverables for deliverable {}: {}",
-                deliverable_id, e
-            ),
-            "Failed to retrieve components",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-        )
-    })?;
+        .await
+        .map_err(|e| {
+            error_with_log_id(
+                format!(
+                    "unable to retrieve components for deliverable {}: {}",
+                    deliverable_id, e
+                ),
+                "Failed to retrieve components",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
+        })?;
 
     let mut components = Vec::new();
 
-    for ((relationship_state, component_state), deliverable_state) in relationships
-        .into_iter()
-        .zip(components_data)
-        .zip(deliverables_data)
-    {
+    for (relationship_state, component_state) in components_with_details {
         let relationship_data = DbState::into_inner(relationship_state);
         let component = DbState::into_inner(component_state);
-        let deliverable = DbState::into_inner(deliverable_state);
 
         components.push(StudentDeliverableComponentResponse {
             id: relationship_data.id,
             student_deliverable_id: relationship_data.student_deliverable_id,
             student_deliverable_component_id: relationship_data.student_deliverable_component_id,
             quantity: relationship_data.quantity,
-            component_name: component.name,
-            deliverable_name: deliverable.name,
+            component_name: component.name.clone(),
+            deliverable_name: deliverable.name.clone(),
         });
     }
 
@@ -173,88 +130,45 @@ pub(super) async fn get_deliverables_for_component_handler(
 ) -> Result<HttpResponse, JsonError> {
     let component_id = path.into_inner();
 
-    // Verify the student component exists
-    let component_exists = StudentDeliverableComponent::where_col(|sc| {
-        sc.student_deliverable_component_id.equal(component_id)
-    })
-    .run(&data.db)
-    .await
-    .map_err(|e| {
-        error_with_log_id(
-            format!("unable to check if student component exists: {}", e),
-            "Failed to retrieve deliverables",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-        )
-    })?;
+    // Verify the student component exists using repository function
+    let component_state =
+        student_deliverable_components_repository::get_by_id(&data.db, component_id)
+            .await
+            .map_err(|e| {
+                error_with_log_id(
+                    format!("unable to check if student component exists: {}", e),
+                    "Failed to retrieve deliverables",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    log::Level::Error,
+                )
+            })?
+            .ok_or_else(|| "Student component not found".to_json_error(StatusCode::NOT_FOUND))?;
 
-    if component_exists.is_empty() {
-        return Err("Student component not found".to_json_error(StatusCode::NOT_FOUND));
-    }
+    let component = DbState::into_inner(component_state);
 
-    // Efficiently fetch relationships with related entities using map_query
-    let relationships = StudentDeliverablesComponent::where_col(|spc| {
-        spc.student_deliverable_component_id.equal(component_id)
-    })
-    .run(&data.db)
-    .await
-    .map_err(|e| {
-        error_with_log_id(
-            format!(
-                "unable to retrieve deliverables for component {}: {}",
-                component_id, e
-            ),
-            "Failed to retrieve deliverables",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
+    // Get deliverables with their details using repository function
+    let deliverables_with_details =
+        student_deliverables_components_repository::get_deliverables_with_details_for_component(
+            &data.db,
+            component_id,
         )
-    })?;
-
-    let components_data = StudentDeliverablesComponent::where_col(|spc| {
-        spc.student_deliverable_component_id.equal(component_id)
-    })
-    .map_query(|spc| spc.student_deliverable_component)
-    .run(&data.db)
-    .await
-    .map_err(|e| {
-        error_with_log_id(
-            format!(
-                "unable to retrieve components for component {}: {}",
-                component_id, e
-            ),
-            "Failed to retrieve deliverables",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-        )
-    })?;
-
-    let deliverables_data = StudentDeliverablesComponent::where_col(|spc| {
-        spc.student_deliverable_component_id.equal(component_id)
-    })
-    .map_query(|spc| spc.student_deliverable)
-    .run(&data.db)
-    .await
-    .map_err(|e| {
-        error_with_log_id(
-            format!(
-                "unable to retrieve deliverables for component {}: {}",
-                component_id, e
-            ),
-            "Failed to retrieve deliverables",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-        )
-    })?;
+        .await
+        .map_err(|e| {
+            error_with_log_id(
+                format!(
+                    "unable to retrieve deliverables for component {}: {}",
+                    component_id, e
+                ),
+                "Failed to retrieve deliverables",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
+        })?;
 
     let mut deliverables = Vec::new();
 
-    for ((relationship_state, component_state), deliverable_state) in relationships
-        .into_iter()
-        .zip(components_data)
-        .zip(deliverables_data)
-    {
+    for (relationship_state, deliverable_state) in deliverables_with_details {
         let relationship_data = DbState::into_inner(relationship_state);
-        let component = DbState::into_inner(component_state);
         let deliverable = DbState::into_inner(deliverable_state);
 
         deliverables.push(StudentDeliverableComponentResponse {
@@ -262,8 +176,8 @@ pub(super) async fn get_deliverables_for_component_handler(
             student_deliverable_id: relationship_data.student_deliverable_id,
             student_deliverable_component_id: relationship_data.student_deliverable_component_id,
             quantity: relationship_data.quantity,
-            component_name: component.name,
-            deliverable_name: deliverable.name,
+            component_name: component.name.clone(),
+            deliverable_name: deliverable.name.clone(),
         });
     }
 

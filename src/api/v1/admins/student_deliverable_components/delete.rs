@@ -1,6 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError, ToJsonError};
-use crate::models::student_deliverable_component::StudentDeliverableComponent;
+use crate::database::repositories::student_deliverable_components_repository;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::web::Path;
@@ -27,33 +27,34 @@ pub(super) async fn delete_student_component_handler(
 ) -> Result<HttpResponse, JsonError> {
     let id = path.into_inner();
 
-    // Find the existing component by ID
-    let mut rows =
-        StudentDeliverableComponent::where_col(|sc| sc.student_deliverable_component_id.equal(id))
-            .run(&data.db)
-            .await
-            .map_err(|e| {
-                error_with_log_id(
-                    format!("unable to load student component: {}", e),
-                    "Failed to delete component",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    log::Level::Error,
-                )
-            })?;
+    // Check if the component exists
+    let component_exists = student_deliverable_components_repository::get_by_id(&data.db, id)
+        .await
+        .map_err(|e| {
+            error_with_log_id(
+                format!("unable to load student component: {}", e),
+                "Failed to delete component",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
+        })?
+        .is_some();
 
-    let mut component_state = match rows.pop() {
-        Some(s) => s,
-        None => return Err("Student component not found".to_json_error(StatusCode::NOT_FOUND)),
-    };
+    if !component_exists {
+        return Err("Student component not found".to_json_error(StatusCode::NOT_FOUND));
+    }
 
-    component_state.delete(&data.db).await.map_err(|e| {
-        error_with_log_id(
-            format!("unable to delete student component: {}", e),
-            "Failed to delete component",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-        )
-    })?;
+    // Delete the component using repository function
+    student_deliverable_components_repository::delete_by_id(&data.db, id)
+        .await
+        .map_err(|e| {
+            error_with_log_id(
+                format!("unable to delete student component: {}", e),
+                "Failed to delete component",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
+        })?;
 
     Ok(HttpResponse::Ok().finish())
 }

@@ -2,10 +2,9 @@ use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, error_with_log_id_and_payload, JsonError};
 use crate::database::repositories::{
     group_component_implementation_details_repository, group_deliverable_selections_repository,
-    groups_repository,
+    group_deliverables_components_repository, groups_repository,
 };
 use crate::jwt::get_user::LoggedUser;
-use crate::models::group_deliverables_component::GroupDeliverablesComponent;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json, Path};
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
@@ -124,15 +123,11 @@ pub(in crate::api::v1) async fn create_component_implementation_detail(
     let selection = welds::state::DbState::into_inner(selection_state);
 
     // 3. Verify the component is part of the selected deliverable
-    let component_exists = GroupDeliverablesComponent::where_col(|gdc| {
-        gdc.group_deliverable_id
-            .equal(selection.group_deliverable_id)
-    })
-    .where_col(|gdc| {
-        gdc.group_deliverable_component_id
-            .equal(body.group_deliverable_component_id)
-    })
-    .run(&data.db)
+    let component_exists = group_deliverables_components_repository::is_component_in_deliverable(
+        &data.db,
+        selection.group_deliverable_id,
+        body.group_deliverable_component_id,
+    )
     .await
     .map_err(|e| {
         error_with_log_id(
@@ -143,7 +138,7 @@ pub(in crate::api::v1) async fn create_component_implementation_detail(
         )
     })?;
 
-    if component_exists.is_empty() {
+    if !component_exists {
         return Err(error_with_log_id(
             format!(
                 "Component {} is not part of deliverable {}",

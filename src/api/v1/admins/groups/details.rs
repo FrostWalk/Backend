@@ -1,15 +1,13 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id, JsonError};
 use crate::database::repositories::{
-    group_component_implementation_details_repository, group_deliverable_selections_repository,
-    group_deliverables_repository, groups_repository, projects_repository,
-    student_deliverable_selections_repository, students_repository,
+    group_component_implementation_details_repository, group_deliverable_components_repository,
+    group_deliverable_selections_repository, group_deliverables_repository, groups_repository,
+    projects_repository, student_deliverable_components_repository,
+    student_deliverable_selections_repository, student_deliverables_components_repository,
+    student_deliverables_repository, students_repository,
 };
 use crate::jwt::get_user::LoggedUser;
-use crate::models::group_deliverable_component::GroupDeliverableComponent;
-use crate::models::student_deliverable::StudentDeliverable;
-use crate::models::student_deliverable_component::StudentDeliverableComponent;
-use crate::models::student_deliverables_component::StudentDeliverablesComponent;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
@@ -211,7 +209,7 @@ pub(super) async fn get_group_details(
                         let selection = DbState::into_inner(selection_state);
 
                         // Get the deliverable details
-                        let deliverable_state = StudentDeliverable::find_by_id(
+                        let deliverable_state = student_deliverables_repository::get_by_id(
                             &data.db,
                             selection.student_deliverable_id,
                         )
@@ -232,46 +230,45 @@ pub(super) async fn get_group_details(
                             let deliverable = DbState::into_inner(deliverable_state);
 
                             // Get components for this deliverable
-                            let components_relations =
-                                StudentDeliverablesComponent::where_col(|sdc| {
-                                    sdc.student_deliverable_id
-                                        .equal(selection.student_deliverable_id)
-                                })
-                                .run(&data.db)
-                                .await
-                                .map_err(|e| {
-                                    error_with_log_id(
-                                        format!(
-                                            "unable to fetch components for deliverable {}: {}",
-                                            selection.student_deliverable_id, e
-                                        ),
-                                        "Database error",
-                                        StatusCode::INTERNAL_SERVER_ERROR,
-                                        log::Level::Error,
-                                    )
-                                })?;
+                            let components_relations = student_deliverables_components_repository::get_components_for_deliverable(
+                                &data.db,
+                                selection.student_deliverable_id,
+                            )
+                            .await
+                            .map_err(|e| {
+                                error_with_log_id(
+                                    format!(
+                                        "unable to fetch components for deliverable {}: {}",
+                                        selection.student_deliverable_id, e
+                                    ),
+                                    "Database error",
+                                    StatusCode::INTERNAL_SERVER_ERROR,
+                                    log::Level::Error,
+                                )
+                            })?;
 
                             let mut components = Vec::new();
                             for relation_state in components_relations {
                                 let relation = DbState::into_inner(relation_state);
 
                                 // Get component details
-                                let component_state = StudentDeliverableComponent::find_by_id(
-                                    &data.db,
-                                    relation.student_deliverable_component_id,
-                                )
-                                .await
-                                .map_err(|e| {
-                                    error_with_log_id(
-                                        format!(
-                                            "unable to fetch component {}: {}",
-                                            relation.student_deliverable_component_id, e
-                                        ),
-                                        "Database error",
-                                        StatusCode::INTERNAL_SERVER_ERROR,
-                                        log::Level::Error,
+                                let component_state =
+                                    student_deliverable_components_repository::get_by_id(
+                                        &data.db,
+                                        relation.student_deliverable_component_id,
                                     )
-                                })?;
+                                    .await
+                                    .map_err(|e| {
+                                        error_with_log_id(
+                                            format!(
+                                                "unable to fetch component {}: {}",
+                                                relation.student_deliverable_component_id, e
+                                            ),
+                                            "Database error",
+                                            StatusCode::INTERNAL_SERVER_ERROR,
+                                            log::Level::Error,
+                                        )
+                                    })?;
 
                                 if let Some(component_state) = component_state {
                                     let component = DbState::into_inner(component_state);
@@ -376,11 +373,10 @@ pub(super) async fn get_group_details(
                 let detail = DbState::into_inner(detail_state);
 
                 // Get the component name
-                let mut component_rows = GroupDeliverableComponent::where_col(|gdc| {
-                    gdc.group_deliverable_component_id
-                        .equal(detail.group_deliverable_component_id)
-                })
-                .run(&data.db)
+                let component_state = group_deliverable_components_repository::get_by_id(
+                    &data.db,
+                    detail.group_deliverable_component_id,
+                )
                 .await
                 .map_err(|e| {
                     error_with_log_id(
@@ -391,7 +387,7 @@ pub(super) async fn get_group_details(
                     )
                 })?;
 
-                let component_name = if let Some(component_state) = component_rows.pop() {
+                let component_name = if let Some(component_state) = component_state {
                     let component = DbState::into_inner(component_state);
                     component.name
                 } else {

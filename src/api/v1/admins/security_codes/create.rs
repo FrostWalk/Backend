@@ -3,7 +3,7 @@ use crate::common::json_error::{
     error_with_log_id, error_with_log_id_and_payload, JsonError, ToJsonError,
 };
 use crate::database::repositories::coordinator_projects_repository;
-use crate::database::repositories::security_codes::security_code_exists;
+use crate::database::repositories::security_codes::{self, security_code_exists};
 use crate::jwt::get_user::LoggedUser;
 use crate::models::admin_role::AvailableAdminRole;
 use crate::models::security_code::SecurityCode;
@@ -14,7 +14,6 @@ use chrono::{DateTime, Duration, Utc};
 use log::error;
 use serde::{Deserialize, Serialize};
 use utoipa::{schema, ToSchema};
-use welds::state::DbState;
 
 fn generate_random_code() -> String {
     use rand::Rng;
@@ -131,15 +130,15 @@ pub(in crate::api::v1) async fn create_code_handler(
         }
     }
 
-    // Create and save the security code to the database
-    let mut security_code_state = DbState::new_uncreated(SecurityCode {
+    // Create and save the security code to the database using repository function
+    let security_code = SecurityCode {
         security_code_id: 0,
         project_id: body.project_id,
         code: code.clone(),
         expiration: body.expiration,
-    });
+    };
 
-    match security_code_state.save(&data.db).await {
+    match security_codes::create(&data.db, security_code).await {
         Ok(_) => Ok(HttpResponse::Created().json(CreateCodeResponse { code })),
         Err(e) => Err(error_with_log_id_and_payload(
             format!("unable to save security code to database: {}", e),

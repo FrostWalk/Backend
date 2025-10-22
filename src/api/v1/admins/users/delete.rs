@@ -51,7 +51,7 @@ pub(super) async fn delete_admin_handler(
             )
         })?;
 
-    let mut admin_state = match admin_state {
+    let admin_state = match admin_state {
         Some(s) => s,
         None => return Err("Admin not found".to_json_error(StatusCode::NOT_FOUND)),
     };
@@ -64,14 +64,17 @@ pub(super) async fn delete_admin_handler(
         return Err("Operation not permitted".to_json_error(StatusCode::FORBIDDEN));
     }
 
-    admin_state.delete(&data.db).await.map_err(|e| {
-        error_with_log_id(
-            format!("unable to delete admin from database: {}", e),
-            "Failed to delete user",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-        )
-    })?;
+    // Delete admin using repository function
+    admins_repository::delete_by_id(&data.db, admin_id)
+        .await
+        .map_err(|e| {
+            error_with_log_id(
+                format!("unable to delete admin from database: {}", e),
+                "Failed to delete user",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+            )
+        })?;
 
     Ok(HttpResponse::Ok().finish())
 }

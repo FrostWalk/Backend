@@ -1,12 +1,12 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
+use crate::database::repositories::student_deliverables_components_repository;
 use crate::models::student_deliverables_component::StudentDeliverablesComponent;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
 use actix_web::HttpResponse;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use welds::state::DbState;
 
 #[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub(crate) struct CreateStudentDeliverableComponentScheme {
@@ -52,15 +52,11 @@ pub(super) async fn create_student_deliverable_component_handler(
     body: Json<CreateStudentDeliverableComponentScheme>, data: Data<AppData>,
 ) -> Result<HttpResponse, JsonError> {
     // Check if relationship already exists
-    let existing = StudentDeliverablesComponent::where_col(|spc| {
-        spc.student_deliverable_id
-            .equal(body.student_deliverable_id)
-    })
-    .where_col(|spc| {
-        spc.student_deliverable_component_id
-            .equal(body.student_deliverable_component_id)
-    })
-    .run(&data.db)
+    let exists = student_deliverables_components_repository::relationship_exists(
+        &data.db,
+        body.student_deliverable_id,
+        body.student_deliverable_component_id,
+    )
     .await
     .map_err(|e| {
         error_with_log_id_and_payload(
@@ -72,19 +68,24 @@ pub(super) async fn create_student_deliverable_component_handler(
         )
     })?;
 
-    if !existing.is_empty() {
+    if exists {
         return Err("Relationship already exists".to_json_error(StatusCode::CONFLICT));
     }
 
-    let mut state = DbState::new_uncreated(StudentDeliverablesComponent {
+    let student_deliverables_component = StudentDeliverablesComponent {
         id: 0,
         student_deliverable_id: body.student_deliverable_id,
         student_deliverable_component_id: body.student_deliverable_component_id,
         quantity: body.quantity,
-    });
+    };
 
-    if let Err(e) = state.save(&data.db).await {
-        return Err(error_with_log_id_and_payload(
+    let state = student_deliverables_components_repository::create(
+        &data.db,
+        student_deliverables_component,
+    )
+    .await
+    .map_err(|e| {
+        error_with_log_id_and_payload(
             format!(
                 "unable to create student deliverable component relationship: {}",
                 e
@@ -93,8 +94,8 @@ pub(super) async fn create_student_deliverable_component_handler(
             StatusCode::INTERNAL_SERVER_ERROR,
             log::Level::Error,
             &body,
-        ));
-    }
+        )
+    })?;
 
     Ok(
         HttpResponse::Ok().json(CreateStudentDeliverableComponentResponse {

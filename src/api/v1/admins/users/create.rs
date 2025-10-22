@@ -1,5 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
+use crate::database::repositories::admins_repository;
 use crate::jwt::get_user::LoggedUser;
 use crate::models::admin::Admin;
 use crate::models::admin_role::AvailableAdminRole;
@@ -11,7 +12,6 @@ use password_auth::generate_hash;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use welds::state::DbState;
 
 #[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub(crate) struct CreateAdminScheme {
@@ -76,24 +76,26 @@ pub(super) async fn create_admin_handler(
         })
         .collect();
 
-    let mut state = DbState::new_uncreated(Admin {
+    let admin = Admin {
         admin_id: 0,
         first_name: body.first_name.clone(),
         last_name: body.last_name.clone(),
         email: body.email.clone(),
         password_hash: generate_hash(&generated_password),
         admin_role_id: body.admin_role_id,
-    });
+    };
 
-    if let Err(e) = state.save(&data.db).await {
-        return Err(error_with_log_id_and_payload(
-            format!("unable to create admin: {}", e),
-            "Failed to create user",
-            StatusCode::INTERNAL_SERVER_ERROR,
-            log::Level::Error,
-            &body,
-        ));
-    }
+    let state = admins_repository::create(&data.db, admin)
+        .await
+        .map_err(|e| {
+            error_with_log_id_and_payload(
+                format!("unable to create admin: {}", e),
+                "Failed to create user",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                log::Level::Error,
+                &body,
+            )
+        })?;
 
     // Send welcome email with credentials
     let full_name = format!("{} {}", body.first_name, body.last_name);
