@@ -24,6 +24,7 @@ RUN cargo install --path . --root /out --profile ${PROFILE} --target x86_64-unkn
 # Runtime Stage
 FROM alpine:latest
 
+RUN apk add --no-cache curl
 RUN adduser -D app
 WORKDIR /app
 
