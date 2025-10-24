@@ -1,4 +1,3 @@
-# Fetch full history + tags
 clone:
   git:
     image: woodpeckerci/plugin-git
@@ -7,45 +6,74 @@ clone:
       tags: true
     when:
       - event: manual
-      - event: push
-        branch: development
+        branch: main
+      - event: tag
 
 steps:
-  # ---------- DEV IMAGE (backend:dev) ----------
-  docker-build-dev:
+  # ---------- DISCOVER RELEASE TAG ----------
+  compute-release-tag:
+    image: alpine/git:latest
+    commands:
+      - set -e
+      - |
+        # Skip unless it's a tag event or a manual run explicitly asking for a release
+        if [ "$CI_PIPELINE_EVENT" = "manual" ] && [ "${RUN_RELEASE:-}" != "true" ]; then
+          echo "Skipping release: RUN_RELEASE!=true on manual run."
+          exit 0
+        fi
+
+        if [ "$CI_PIPELINE_EVENT" = "tag" ] && [ -n "$CI_COMMIT_TAG" ]; then
+          TAG="$CI_COMMIT_TAG"
+        elif [ -n "${OVERRIDE_TAG:-}" ]; then
+          TAG="$OVERRIDE_TAG"
+        else
+          # Use the newest existing tag from the clone (no network)
+          TAG="$(git describe --tags --abbrev=0 2>/dev/null || git tag --sort=-creatordate | head -n1 || true)"
+          if [ -z "$TAG" ]; then
+            echo "No git tags found. On manual runs set RUN_RELEASE=true and provide OVERRIDE_TAG (e.g., v1.0.0)." >&2
+            exit 1
+          fi
+        fi
+
+        printf "%s\n%s\n" "$TAG" "latest" > .tags
+        echo "Release tags:"
+        cat .tags
+    when:
+      - event: tag
+      - event: manual
+        branch: main
+
+  # ---------- RELEASE IMAGE (backend:<tag> and :latest) ----------
+  docker-build-release:
     image: woodpeckerci/plugin-docker-buildx
-    settings: # Publish to GHCR
+    depends_on: [compute-release-tag]
+    settings:
       registry: ghcr.io
       repo: ghcr.io/frostwalk/backend
-      tags: dev
+      tags_file: .tags
       dockerfile: Dockerfile
-      # Build in release profile but mark as dev build
       build_args:
         PROFILE: release
-        IS_DEV_BUILD: "true"
       build_args_from_env: true
-      # Link image to the source repository (OCI label)
       labels:
         - org.opencontainers.image.source=https://github.com/frostwalk/backend
         - org.opencontainers.image.licenses=MIT
-        - org.opencontainers.image.description="Development image of the backend"
+        - org.opencontainers.image.description="Release image of the backend"
       default_labels: true
-      # GHCR auth
       username:
         from_secret: GHCR_USERNAME
       password:
         from_secret: GHCR_TOKEN
     when:
-      - event: push
-        branch: development
+      - event: tag
       - event: manual
+        branch: main
 
   # ---------- CVE SCAN (fail on HIGH/CRITICAL) ----------
-  # Trivy scans the just-pushed dev image. It fails the pipeline on HIGH/CRITICAL to gate deployments.
-  trivy-scan-dev:
+  trivy-scan-release:
     image: ghcr.io/aquasecurity/trivy:latest
     depends_on:
-      - docker-build-dev
+      - docker-build-release
     environment:
       GHCR_USERNAME:
         from_secret: GHCR_USERNAME
@@ -53,23 +81,23 @@ steps:
         from_secret: GHCR_TOKEN
     commands:
       - set -e
-      # Login to GHCR for private image access (stored in ~/.docker/config.json by Trivy)
       - echo "$GHCR_TOKEN" | trivy registry login --username "$GHCR_USERNAME" --password-stdin ghcr.io
-      # Fail on HIGH/CRITICAL vulns; consider --ignore-unfixed if desired
-      - trivy image --timeout 5m --severity HIGH,CRITICAL --exit-code 1 ghcr.io/frostwalk/backend:dev
-      # save a human-readable report
-      - trivy image --format table ghcr.io/frostwalk/backend:dev > trivy-report.txt
+      - |
+        while read -r t; do
+          echo "Scanning ghcr.io/frostwalk/backend:${t}"
+          trivy image --timeout 5m --severity HIGH,CRITICAL --exit-code 1 ghcr.io/frostwalk/backend:"${t}"
+          trivy image --format table ghcr.io/frostwalk/backend:"${t}" > "trivy-report-${t}.txt"
+        done < .tags
     when:
+      - event: tag
       - event: manual
-      - event: push
-        branch: development
+        branch: main
 
   # ---------- prepare Docker auth for Syft ----------
-  # Create a Docker config.json in the shared workspace so Syft can pull from GHCR without a shell.
   prepare-docker-config:
     image: alpine:latest
     depends_on:
-      - trivy-scan-dev
+      - trivy-scan-release
     environment:
       GHCR_USERNAME:
         from_secret: GHCR_USERNAME
@@ -81,13 +109,13 @@ steps:
       - AUTH=$(printf "%s:%s" "$GHCR_USERNAME" "$GHCR_TOKEN" | base64 | tr -d '\n')
       - printf '{"auths":{"ghcr.io":{"auth":"%s"}}}\n' "$AUTH" > .docker/config.json
     when:
+      - event: tag
       - event: manual
-      - event: push
-        branch: development
+        branch: main
 
-  # ---------- SBOM (CycloneDX) with official Syft (no shell) ----------
-  # Use entrypoint (no /bin/sh). DOCKER_CONFIG points to the file created above.
-  sbom-generate-dev:
+  # ---------- SBOM (CycloneDX) with Syft ----------
+  # Builds SBOM from :latest (same digest as the release tag produced in this pipeline).
+  sbom-generate-release:
     image: anchore/syft:latest
     depends_on:
       - prepare-docker-config
@@ -95,20 +123,19 @@ steps:
       DOCKER_CONFIG: .docker
     entrypoint:
       - /syft
-      - ghcr.io/frostwalk/backend:dev
+      - ghcr.io/frostwalk/backend:latest
       - -o
       - cyclonedx-json=sbom.cdx.json
     when:
+      - event: tag
       - event: manual
-      - event: push
-        branch: development
+        branch: main
 
   # ---------- SIGN ----------
-  # Cosign signs the dev tag; signature is stored alongside the image in GHCR.
-  cosign-sign-dev:
+  cosign-sign-release:
     image: cgr.dev/chainguard/cosign:latest
     depends_on:
-      - sbom-generate-dev
+      - sbom-generate-release
     environment:
       GHCR_USERNAME:
         from_secret: GHCR_USERNAME
@@ -120,21 +147,23 @@ steps:
         from_secret: COSIGN_PASSWORD
     commands:
       - set -e
-      # Login to GHCR so Cosign can push the signature object
       - cosign login ghcr.io -u "$GHCR_USERNAME" -p "$GHCR_TOKEN"
       - printf "%s" "$COSIGN_PRIVATE_KEY" > cosign.key
-      - cosign sign --yes --key cosign.key ghcr.io/frostwalk/backend:dev
+      - |
+        while read -r t; do
+          echo "Signing ghcr.io/frostwalk/backend:${t}"
+          cosign sign --yes --key cosign.key ghcr.io/frostwalk/backend:"${t}"
+        done < .tags
     when:
+      - event: tag
       - event: manual
-      - event: push
-        branch: development
+        branch: main
 
-  # ---------- SIGN SBOM ----------
-  # Attach a signed CycloneDX SBOM attestation to the dev image.
-  cosign-attest-sbom-dev:
+  # ---------- SIGN SBOM (attestation) ----------
+  cosign-attest-sbom-release:
     image: cgr.dev/chainguard/cosign:latest
     depends_on:
-      - sbom-generate-dev
+      - sbom-generate-release
     environment:
       GHCR_USERNAME:
         from_secret: GHCR_USERNAME
@@ -146,24 +175,24 @@ steps:
         from_secret: COSIGN_PASSWORD
     commands:
       - set -e
-      # Login so Cosign can push the attestation object to GHCR
       - cosign login ghcr.io -u "$GHCR_USERNAME" -p "$GHCR_TOKEN"
-      # Load the private key
       - printf "%s" "$COSIGN_PRIVATE_KEY" > cosign.key
-      # Attach a signed SBOM attestation (CycloneDX) to the image
-      - cosign attest --yes --key cosign.key --type cyclonedx --predicate sbom.cdx.json ghcr.io/frostwalk/backend:dev
+      - |
+        while read -r t; do
+          echo "Attesting SBOM to ghcr.io/frostwalk/backend:${t}"
+          cosign attest --yes --key cosign.key --type cyclonedx --predicate sbom.cdx.json ghcr.io/frostwalk/backend:"${t}"
+        done < .tags
     when:
+      - event: tag
       - event: manual
-      - event: push
-        branch: development
+        branch: main
 
   # ---------- VERIFY ----------
-  # Verify signature with the public key; if this fails, deployment will be blocked.
-  cosign-verify-dev:
+  cosign-verify-release:
     image: cgr.dev/chainguard/cosign:latest
     depends_on:
-      - cosign-sign-dev
-      - cosign-attest-sbom-dev
+      - cosign-sign-release
+      - cosign-attest-sbom-release
     environment:
       GHCR_USERNAME:
         from_secret: GHCR_USERNAME
@@ -175,26 +204,28 @@ steps:
       - set -e
       - cosign login ghcr.io -u "$GHCR_USERNAME" -p "$GHCR_TOKEN"
       - printf "%s" "$COSIGN_PUBLIC_KEY" > cosign.pub
-      # Verify signature with the public key before deploying
-      - cosign verify --key cosign.pub ghcr.io/frostwalk/backend:dev >/dev/null
+      - |
+        while read -r t; do
+          echo "Verifying signature for ghcr.io/frostwalk/backend:${t}"
+          cosign verify --key cosign.pub ghcr.io/frostwalk/backend:"${t}" >/dev/null
+        done < .tags
     when:
+      - event: tag
       - event: manual
-      - event: push
-        branch: development
+        branch: main
 
   # ---------- TRIGGER UPGRADE ----------
-  # Only runs if build, scan, SBOM, sign, attest, and verify succeeded.
   trigger-watchtower:
     image: curlimages/curl:latest
     environment:
       WT_URL: https://wt.advancedprogramming.ovh/v1/update
       WT_TOKEN:
         from_secret: WATCHTOWER_TOKEN
-    depends_on:
-      - cosign-verify-dev
     commands:
       - 'curl -fsS -X POST -H "Authorization: Bearer $${WT_TOKEN}" "$WT_URL"'
+    depends_on:
+      - cosign-verify-release
     when:
       - event: manual
-      - event: push
-        branch: development
+        branch: main
+      - event: tag
