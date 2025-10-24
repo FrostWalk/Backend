@@ -1,0 +1,161 @@
+clone:
+  git:
+    image: woodpeckerci/plugin-git
+    settings:
+      depth: 0
+      tags: true
+    when:
+      - event: manual
+        branch: main
+      - event: tag
+
+steps:
+  compute-release-tag:
+    image: alpine/git:latest
+    commands:
+      - set -e
+      - |
+        if [ "$CI_PIPELINE_EVENT" = "manual" ] && [ "${RUN_RELEASE:-}" != "true" ]; then
+          echo "Skipping release: RUN_RELEASE!=true on manual run."
+          exit 0
+        fi
+        if [ "$CI_PIPELINE_EVENT" = "tag" ] && [ -n "$CI_COMMIT_TAG" ]; then
+          TAG="$CI_COMMIT_TAG"
+        elif [ -n "${OVERRIDE_TAG:-}" ]; then
+          TAG="$OVERRIDE_TAG"
+        else
+          TAG="$(git describe --tags --abbrev=0 2>/dev/null || git tag --sort=-creatordate | head -n1 || true)"
+          if [ -z "$TAG" ]; then
+            echo "No git tags found. On manual runs set RUN_RELEASE=true and provide OVERRIDE_TAG (e.g., v1.0.0)." >&2
+            exit 1
+          fi
+        fi
+        printf "%s\n%s\n" "$TAG" "latest" > .tags
+        echo "Release tags:"
+        cat .tags
+    when:
+      - event: tag
+      - event: manual
+        branch: main
+
+  docker-build-release:
+    image: woodpeckerci/plugin-docker-buildx
+    depends_on: [compute-release-tag]
+    settings:
+      registry: ghcr.io
+      repo: ghcr.io/frostwalk/backend
+      tags_file: .tags
+      dockerfile: Dockerfile
+      build_args:
+        PROFILE: release
+      build_args_from_env: true
+      labels:
+        - org.opencontainers.image.source=https://github.com/frostwalk/backend
+        - org.opencontainers.image.licenses=MIT
+        - org.opencontainers.image.description="Production image of the backend"
+      default_labels: true
+      username:
+        from_secret: GHCR_USERNAME
+      password:
+        from_secret: GHCR_TOKEN
+    when:
+      - event: tag
+      - event: manual
+        branch: main
+
+  prepare-docker-config:
+    image: alpine:latest
+    depends_on:
+      - docker-build-release
+    environment:
+      GHCR_USERNAME:
+        from_secret: GHCR_USERNAME
+      GHCR_TOKEN:
+        from_secret: GHCR_TOKEN
+    commands:
+      - set -e
+      - mkdir -p .docker
+      - AUTH=$(printf "%s:%s" "$GHCR_USERNAME" "$GHCR_TOKEN" | base64 | tr -d '\n')
+      - printf '{"auths":{"ghcr.io":{"auth":"%s"}}}\n' "$AUTH" > .docker/config.json
+    when:
+      - event: manual
+        branch: main
+      - event: tag
+
+  sbom-generate:
+    image: anchore/syft:latest
+    depends_on:
+      - prepare-docker-config
+    environment:
+      DOCKER_CONFIG: .docker
+    entrypoint:
+      - /syft
+      - ghcr.io/frostwalk/backend:latest
+      - -o
+      - cyclonedx-json=sbom.cdx.json
+    when:
+      - event: manual
+        branch: main
+      - event: tag
+
+  cosign-sign:
+    image: cgr.dev/chainguard/cosign:latest
+    depends_on:
+      - sbom-generate
+    environment:
+      GHCR_USERNAME:
+        from_secret: GHCR_USERNAME
+      GHCR_TOKEN:
+        from_secret: GHCR_TOKEN
+      COSIGN_PRIVATE_KEY:
+        from_secret: COSIGN_PRIVATE_KEY
+      COSIGN_PASSWORD:
+        from_secret: COSIGN_PASSWORD
+    commands:
+      - set -e
+      - cosign login ghcr.io -u "$GHCR_USERNAME" -p "$GHCR_TOKEN"
+      - printf "%s" "$COSIGN_PRIVATE_KEY" > cosign.key
+      - TAG=$(head -n1 .tags)
+      - cosign sign --yes --key cosign.key ghcr.io/frostwalk/backend:${TAG}
+      - cosign sign --yes --key cosign.key ghcr.io/frostwalk/backend:latest
+    when:
+      - event: manual
+        branch: main
+      - event: tag
+
+  cosign-verify:
+    image: cgr.dev/chainguard/cosign:latest
+    depends_on:
+      - cosign-sign
+    environment:
+      GHCR_USERNAME:
+        from_secret: GHCR_USERNAME
+      GHCR_TOKEN:
+        from_secret: GHCR_TOKEN
+      COSIGN_PUBLIC_KEY:
+        from_secret: COSIGN_PUBLIC_KEY
+    commands:
+      - set -e
+      - cosign login ghcr.io -u "$GHCR_USERNAME" -p "$GHCR_TOKEN"
+      - printf "%s" "$COSIGN_PUBLIC_KEY" > cosign.pub
+      - TAG=$(head -n1 .tags)
+      - cosign verify --key cosign.pub ghcr.io/frostwalk/backend:${TAG} >/dev/null
+    when:
+      - event: manual
+        branch: main
+      - event: tag
+
+  trigger-watchtower:
+    image: curlimages/curl:latest
+    environment:
+      WT_URL: https://wt.advancedprogramming.ovh/v1/update
+      WT_TOKEN:
+        from_secret: WATCHTOWER_TOKEN
+    commands:
+      - 'curl -fsS -X POST -H "Authorization: Bearer $${WT_TOKEN}" "$WT_URL"'
+    depends_on:
+      - cosign-verify
+    when:
+      - event: manual
+        branch: main
+      - event: tag
