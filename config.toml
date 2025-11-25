@@ -12,8 +12,15 @@ allowed_signup_domains = ["studenti.unitn.it"]
 
 smtp_host = "localhost"
 smtp_port = 1025
+# Optional: SMTP authentication (omit or leave empty to disable authentication)
 smtp_username = "user@locahost"
 smtp_password = "password"
+# Optional: Email address to send from (required if smtp_username is not set)
+# If not set, will use smtp_username as the sender email address
+# smtp_from_email = "noreply@example.com"
+# Optional: Enable TLS for SMTP connection (default: true if not specified)
+# Set to false to disable TLS
+# smtp_use_tls = false
 email_from = "Advanced Programming"
 email_token_secret = "secret_token"
 frontend_base_url = "http://localhost:3000"

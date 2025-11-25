@@ -55,6 +55,7 @@ pub fn create_test_config() -> Config {
     config_map.insert("smtp_port".to_string(), "587".to_string());
     config_map.insert("smtp_username".to_string(), TEST_SMTP_USERNAME.to_string());
     config_map.insert("smtp_password".to_string(), "testpassword".to_string());
+    config_map.insert("smtp_use_tls".to_string(), "true".to_string());
     config_map.insert(
         "frontend_base_url".to_string(),
         TEST_FRONTEND_URL.to_string(),
@@ -112,6 +113,7 @@ pub fn create_minimal_test_config() -> Config {
     config_map.insert("smtp_port".to_string(), "587".to_string());
     config_map.insert("smtp_username".to_string(), TEST_SMTP_USERNAME.to_string());
     config_map.insert("smtp_password".to_string(), "testpassword".to_string());
+    config_map.insert("smtp_use_tls".to_string(), "true".to_string());
     config_map.insert(
         "frontend_base_url".to_string(),
         TEST_FRONTEND_URL.to_string(),
@@ -183,6 +185,8 @@ mod tests {
             "SMTP_PORT",
             "SMTP_USERNAME",
             "SMTP_PASSWORD",
+            "SMTP_USE_TLS",
+            "SMTP_FROM_EMAIL",
             "FRONTEND_BASE_URL",
             "ALLOWED_SIGNUP_DOMAINS",
             "EMAIL_FROM",
