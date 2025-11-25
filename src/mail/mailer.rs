@@ -29,35 +29,53 @@ pub struct Mailer {
 
 impl Mailer {
     pub fn from_config(config: &Config) -> Result<Self> {
+        // Determine the sender email address
+        // Priority: smtp_from_email > smtp_username > error
+        let from_email = config
+            .smtp_from_email()
+            .as_ref()
+            .or_else(|| config.smtp_username().as_ref())
+            .ok_or("Either smtp_from_email or smtp_username must be provided")?;
+
         Self::new(
             config.smtp_host(),
             config.smtp_port(),
-            config.smtp_username(),
-            config.smtp_password(),
+            config.smtp_username().as_deref(),
+            config.smtp_password().as_deref(),
+            config.smtp_use_tls(),
             config.email_from(),
+            from_email,
             config.frontend_base_url(),
         )
     }
 
     pub fn new(
-        smtp_host: &str, port: u16, username: &str, password: &str, from_name: &str,
-        frontend_base_url: &str,
+        smtp_host: &str, port: u16, username: Option<&str>, password: Option<&str>, use_tls: bool,
+        from_name: &str, from_email: &str, frontend_base_url: &str,
     ) -> Result<Self> {
-        let creds = Credentials::new(username.to_owned(), password.to_owned());
-
-        // Configure SMTP transport with RFC 5322 compliance
-        // - Uses STARTTLS for secure connection (required by Google)
+        // Configure SMTP transport
+        // - Uses STARTTLS if use_tls is true, otherwise plain connection
         // - Sets timeouts for reliable delivery
-        let mut builder = AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(smtp_host)?;
-        builder = builder
-            .port(port)
-            .credentials(creds)
-            // Set connection timeout (30 seconds) for reliable delivery
-            .timeout(Some(std::time::Duration::from_secs(30)));
+        let mut builder = if use_tls {
+            AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(smtp_host)?
+        } else {
+            AsyncSmtpTransport::<Tokio1Executor>::relay(smtp_host)?
+        };
+
+        builder = builder.port(port);
+
+        // Add credentials only if both username and password are provided
+        if let (Some(username), Some(password)) = (username, password) {
+            let creds = Credentials::new(username.to_owned(), password.to_owned());
+            builder = builder.credentials(creds);
+        }
+
+        // Set connection timeout (30 seconds) for reliable delivery
+        builder = builder.timeout(Some(std::time::Duration::from_secs(30)));
 
         let transport = builder.build();
 
-        let from = Mailbox::new(Some(from_name.to_owned()), username.parse()?);
+        let from = Mailbox::new(Some(from_name.to_owned()), from_email.parse()?);
         let frontend_base_url = Url::parse(frontend_base_url)?;
 
         Ok(Self {
@@ -295,9 +313,11 @@ mod tests {
         let result = Mailer::new(
             TEST_SMTP_HOST,
             587,
-            TEST_SMTP_USERNAME,
-            "testpassword",
+            Some(TEST_SMTP_USERNAME),
+            Some("testpassword"),
+            true,
             "Test Sender",
+            TEST_SMTP_USERNAME,
             TEST_FRONTEND_URL,
         );
 
@@ -309,9 +329,11 @@ mod tests {
         let result = Mailer::new(
             "invalid-host-that-does-not-exist",
             587,
-            TEST_SMTP_USERNAME,
-            "testpassword",
+            Some(TEST_SMTP_USERNAME),
+            Some("testpassword"),
+            true,
             "Test Sender",
+            TEST_SMTP_USERNAME,
             TEST_FRONTEND_URL,
         );
 
@@ -325,13 +347,33 @@ mod tests {
         let result = Mailer::new(
             TEST_SMTP_HOST,
             587,
-            TEST_SMTP_USERNAME,
-            "testpassword",
+            Some(TEST_SMTP_USERNAME),
+            Some("testpassword"),
+            true,
             "Test Sender",
+            TEST_SMTP_USERNAME,
             "not-a-valid-url",
         );
 
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_mailer_new_without_auth_and_tls() {
+        // Test mailer creation without authentication and without TLS
+        let result = Mailer::new(
+            TEST_SMTP_HOST,
+            25,
+            None,
+            None,
+            false,
+            "Test Sender",
+            "noreply@test.com",
+            TEST_FRONTEND_URL,
+        );
+
+        // This might succeed or fail depending on network, but should not panic
+        let _ = result; // Don't assert, just ensure it doesn't panic
     }
 
     #[test]
@@ -388,9 +430,11 @@ mod tests {
         Mailer::new(
             TEST_SMTP_HOST,
             587,
-            TEST_SMTP_USERNAME,
-            "testpassword",
+            Some(TEST_SMTP_USERNAME),
+            Some("testpassword"),
+            true,
             "Test Sender",
+            TEST_SMTP_USERNAME,
             TEST_FRONTEND_URL,
         )
     }

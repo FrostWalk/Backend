@@ -7,6 +7,10 @@ use serde::Deserialize;
 
 const CONFIG_FILE: &str = "config.toml";
 
+fn default_smtp_use_tls() -> bool {
+    true
+}
+
 /// Application configs
 #[derive(Deserialize, Getters, Clone)]
 pub(crate) struct Config {
@@ -34,10 +38,18 @@ pub(crate) struct Config {
     smtp_host: String,
     /// Port of smtp server
     smtp_port: u16,
-    /// Username of the smtp server
-    smtp_username: String,
-    /// Password of the smtp server
-    smtp_password: String,
+    /// Username of the smtp server (optional, required only if authentication is needed)
+    #[serde(default)]
+    smtp_username: Option<String>,
+    /// Password of the smtp server (optional, required only if authentication is needed)
+    #[serde(default)]
+    smtp_password: Option<String>,
+    /// Enable TLS for SMTP connection (default: true)
+    #[serde(default = "default_smtp_use_tls")]
+    smtp_use_tls: bool,
+    /// Email address to send from (optional, will use smtp_username if not provided)
+    #[serde(default)]
+    smtp_from_email: Option<String>,
     /// Frontend base url (for email links)
     frontend_base_url: String,
     /// Email domains with which you can create an account
@@ -210,6 +222,8 @@ mod tests {
             "SMTP_PORT",
             "SMTP_USERNAME",
             "SMTP_PASSWORD",
+            "SMTP_USE_TLS",
+            "SMTP_FROM_EMAIL",
             "FRONTEND_BASE_URL",
             "ALLOWED_SIGNUP_DOMAINS",
             "EMAIL_FROM",
@@ -240,6 +254,7 @@ mod tests {
         env::set_var("SMTP_PORT", "587");
         env::set_var("SMTP_USERNAME", TEST_SMTP_USERNAME);
         env::set_var("SMTP_PASSWORD", "testpassword");
+        env::set_var("SMTP_USE_TLS", "true");
         env::set_var("FRONTEND_BASE_URL", TEST_FRONTEND_URL);
         env::set_var("ALLOWED_SIGNUP_DOMAINS", "test.com,example.com");
         env::set_var("EMAIL_FROM", "noreply@test.com");
