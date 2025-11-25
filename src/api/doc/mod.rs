@@ -65,6 +65,7 @@ use crate::api::v1::admins::users::delete::__path_delete_admin_handler;
 use crate::api::v1::admins::users::me::__path_admins_me_handler;
 use crate::api::v1::admins::users::read::__path_get_all_admins_handler;
 use crate::api::v1::admins::users::read::__path_get_one_admin_handler;
+use crate::api::v1::admins::users::test_email::__path_test_email_handler;
 use crate::api::v1::admins::users::update::__path_update_admin_handler;
 use crate::api::v1::admins::users::update_me::__path_update_me_admin_handler;
 use crate::api::v1::students::auth::{
@@ -130,6 +131,7 @@ use utoipa_swagger_ui::SwaggerUi;
         create_admin_handler,
         update_admin_handler,
         delete_admin_handler,
+        test_email_handler,
         create_project_handler,
         get_all_projects_handler,
         update_project_handler,

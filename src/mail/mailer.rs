@@ -211,6 +211,33 @@ impl Mailer {
         )
         .await
     }
+
+    /// Send a simple test email without templates
+    /// This is useful for testing SMTP configuration
+    pub async fn send_test_email(
+        &self, to_email: String, subject: String, body: String,
+    ) -> Result<()> {
+        let to = Mailbox::new(None, to_email.parse()?);
+
+        // Generate RFC 5322 compliant Message-ID
+        let message_id = self.generate_message_id();
+
+        // Build a simple plain text email
+        let email = Message::builder()
+            .from(self.from.clone())
+            .to(to)
+            .subject(subject)
+            .message_id(Some(message_id))
+            .singlepart(
+                SinglePart::builder()
+                    .header(ContentType::TEXT_PLAIN)
+                    .header(ContentTransferEncoding::QuotedPrintable)
+                    .body(body),
+            )?;
+
+        self.transport.send(email).await?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
