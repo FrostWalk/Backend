@@ -82,12 +82,9 @@ steps:
     commands:
       - set -e
       - echo "$GHCR_TOKEN" | trivy registry login --username "$GHCR_USERNAME" --password-stdin ghcr.io
-      - |
-        while read -r t; do
-          echo "Scanning ghcr.io/frostwalk/backend:${t}"
-          trivy image --timeout 5m --severity HIGH,CRITICAL --exit-code 1 ghcr.io/frostwalk/backend:"${t}"
-          trivy image --format table ghcr.io/frostwalk/backend:"${t}" > "trivy-report-${t}.txt"
-        done < .tags
+      - echo "Scanning ghcr.io/frostwalk/backend:latest"
+      - trivy image --timeout 5m --severity HIGH,CRITICAL --exit-code 1 ghcr.io/frostwalk/backend:latest
+      - trivy image --format table ghcr.io/frostwalk/backend:latest > trivy-report-latest.txt
     when:
       - event: tag
       - event: manual
@@ -149,11 +146,8 @@ steps:
       - set -e
       - cosign login ghcr.io -u "$GHCR_USERNAME" -p "$GHCR_TOKEN"
       - printf "%s" "$COSIGN_PRIVATE_KEY" > cosign.key
-      - |
-        while read -r t; do
-          echo "Signing ghcr.io/frostwalk/backend:${t}"
-          cosign sign --yes --key cosign.key ghcr.io/frostwalk/backend:"${t}"
-        done < .tags
+      - echo "Signing ghcr.io/frostwalk/backend:latest"
+      - cosign sign --yes --key cosign.key ghcr.io/frostwalk/backend:latest
     when:
       - event: tag
       - event: manual
@@ -177,11 +171,8 @@ steps:
       - set -e
       - cosign login ghcr.io -u "$GHCR_USERNAME" -p "$GHCR_TOKEN"
       - printf "%s" "$COSIGN_PRIVATE_KEY" > cosign.key
-      - |
-        while read -r t; do
-          echo "Attesting SBOM to ghcr.io/frostwalk/backend:${t}"
-          cosign attest --yes --key cosign.key --type cyclonedx --predicate sbom.cdx.json ghcr.io/frostwalk/backend:"${t}"
-        done < .tags
+      - echo "Attesting SBOM to ghcr.io/frostwalk/backend:latest"
+      - cosign attest --yes --key cosign.key --type cyclonedx --predicate sbom.cdx.json ghcr.io/frostwalk/backend:latest
     when:
       - event: tag
       - event: manual
@@ -204,11 +195,8 @@ steps:
       - set -e
       - cosign login ghcr.io -u "$GHCR_USERNAME" -p "$GHCR_TOKEN"
       - printf "%s" "$COSIGN_PUBLIC_KEY" > cosign.pub
-      - |
-        while read -r t; do
-          echo "Verifying signature for ghcr.io/frostwalk/backend:${t}"
-          cosign verify --key cosign.pub ghcr.io/frostwalk/backend:"${t}" >/dev/null
-        done < .tags
+      - echo "Verifying signature for ghcr.io/frostwalk/backend:latest"
+      - cosign verify --key cosign.pub ghcr.io/frostwalk/backend:latest >/dev/null
     when:
       - event: tag
       - event: manual
