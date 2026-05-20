@@ -13,7 +13,7 @@ use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use chrono::{DateTime, Duration, Utc};
 use log::error;
 use serde::{Deserialize, Serialize};
-use utoipa::{schema, ToSchema};
+use utoipa::ToSchema;
 
 fn generate_random_code() -> String {
     use rand::RngExt;
