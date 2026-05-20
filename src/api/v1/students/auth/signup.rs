@@ -1,7 +1,6 @@
 use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
 use crate::database::repositories::students_repository;
-use crate::logging::payload_capture::capture_response_status;
 use crate::mail::Mailer;
 use crate::models::student::Student;
 use actix_web::http::StatusCode;
@@ -172,9 +171,6 @@ pub(super) async fn student_signup_handler(
     }
 
     info!("new student account created: {:?}", result);
-
-    // Capture successful response status
-    capture_response_status(200);
 
     Ok(HttpResponse::Ok().json(StudentSignupResponse {
         student_id: result.student_id,

@@ -18,7 +18,7 @@ use utoipa::{schema, ToSchema};
 use welds::state::DbState;
 
 fn generate_random_code() -> String {
-    use rand::Rng;
+    use rand::RngExt;
 
     let mut rng = rand::rng();
     const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

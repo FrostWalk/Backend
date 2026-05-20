@@ -39,11 +39,6 @@ pub fn create_test_config() -> Config {
     );
     config_map.insert("jwt_validity_days".to_string(), "1".to_string());
     config_map.insert(
-        "logs_mongo_uri".to_string(),
-        "mongodb://localhost:27017".to_string(),
-    );
-    config_map.insert("logs_db_name".to_string(), "test_logs".to_string());
-    config_map.insert(
         "default_admin_password".to_string(),
         TEST_PASSWORD.to_string(),
     );
@@ -96,11 +91,6 @@ pub fn create_minimal_test_config() -> Config {
         String::from_utf8_lossy(TEST_JWT_SECRET).to_string(),
     );
     config_map.insert("jwt_validity_days".to_string(), "1".to_string());
-    config_map.insert(
-        "logs_mongo_uri".to_string(),
-        "mongodb://localhost:27017".to_string(),
-    );
-    config_map.insert("logs_db_name".to_string(), "test_logs".to_string());
     config_map.insert(
         "default_admin_password".to_string(),
         TEST_PASSWORD.to_string(),
@@ -177,8 +167,6 @@ mod tests {
             "DB_URL",
             "JWT_SECRET",
             "JWT_VALIDITY_DAYS",
-            "LOGS_MONGO_URI",
-            "LOGS_DB_NAME",
             "DEFAULT_ADMIN_PASSWORD",
             "DEFAULT_ADMIN_EMAIL",
             "SMTP_HOST",

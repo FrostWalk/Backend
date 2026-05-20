@@ -7,7 +7,7 @@ use uuid::Uuid;
 /// Custom error type for generating JSON error responses
 ///
 /// - `error`: Human-readable error message
-/// - `log_id`: Unique identifier for the log entry (for frontend tracking)
+/// - `log_id`: Unique identifier included in console logs for frontend tracking
 /// - `status`: HTTP status code (not included in JSON response)
 ///
 /// Used to standardize error responses across the API
@@ -39,7 +39,7 @@ impl JsonError {
     /// # Arguments
     /// * `msg` - Error message that can be converted to String
     /// * `status` - HTTP status code to associate with the error
-    /// * `log_id` - Unique identifier for the log entry
+    /// * `log_id` - Unique identifier included in the console log line
     fn new_with_log_id(msg: impl Into<String>, status: StatusCode, log_id: Uuid) -> Self {
         JsonError {
             error: msg.into(),
@@ -85,8 +85,8 @@ impl<T: Display> ToJsonError for T {
     }
 }
 
-/// Creates a `JsonError` with a log ID for frontend tracking
-/// This function logs detailed error information and returns a user-friendly error message
+/// Creates a `JsonError` with a log ID for frontend tracking.
+/// This function logs detailed error information to the console and returns a user-friendly error message.
 pub(crate) fn error_with_log_id(
     detailed_msg: impl Into<String>, user_msg: impl Into<String>, status: StatusCode,
     log_level: log::Level,
@@ -94,31 +94,25 @@ pub(crate) fn error_with_log_id(
     let detailed_message = detailed_msg.into();
     let user_message = user_msg.into();
     let log_id = Uuid::new_v4();
-
-    // Update response status in request context
-    crate::logging::context::update_response_status(status.as_u16());
+    let log_message = format!("log_id={} {}", log_id, detailed_message);
 
     // Log the detailed error with the specific level
     match log_level {
-        log::Level::Error => log::error!("{}", detailed_message),
-        log::Level::Warn => log::warn!("{}", detailed_message),
-        log::Level::Info => log::info!("{}", detailed_message),
-        log::Level::Debug => log::debug!("{}", detailed_message),
-        log::Level::Trace => log::trace!("{}", detailed_message),
+        log::Level::Error => log::error!("{}", log_message),
+        log::Level::Warn => log::warn!("{}", log_message),
+        log::Level::Info => log::info!("{}", log_message),
+        log::Level::Debug => log::debug!("{}", log_message),
+        log::Level::Trace => log::trace!("{}", log_message),
     }
 
     JsonError::new_with_log_id(user_message, status, log_id)
 }
 
-/// Creates a `JsonError` with a log ID and captures the request payload
-/// This function logs detailed error information, captures the request payload, and returns a user-friendly error message
-pub(crate) fn error_with_log_id_and_payload<T: serde::Serialize>(
+/// Creates a `JsonError` with a log ID while keeping existing payload-aware call sites.
+/// Payloads are intentionally not logged to the console.
+pub(crate) fn error_with_log_id_and_payload<T>(
     detailed_msg: impl Into<String>, user_msg: impl Into<String>, status: StatusCode,
-    log_level: log::Level, payload: &T,
+    log_level: log::Level, _payload: &T,
 ) -> JsonError {
-    // Capture the request payload before logging the error
-    crate::logging::context::capture_current_request_payload(payload);
-
-    // Call the regular error function
     error_with_log_id(detailed_msg, user_msg, status, log_level)
 }

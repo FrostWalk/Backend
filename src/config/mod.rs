@@ -26,10 +26,6 @@ pub(crate) struct Config {
     jwt_secret: String,
     /// Seconds after which the token is considered expired, and the cookie is deleted
     jwt_validity_days: i64,
-    /// Mongo's connection string for logs storage
-    logs_mongo_uri: String,
-    /// Mongo's database name for logs storage
-    logs_db_name: String,
     /// Application default admin account password
     default_admin_password: String,
     /// Application default admin account email
@@ -189,7 +185,6 @@ mod tests {
 
         // Test that URLs are properly formatted
         assert!(config.db_url().starts_with("postgres://"));
-        assert!(config.logs_mongo_uri().starts_with("mongodb://"));
         assert!(config.frontend_base_url().starts_with("http"));
     }
 
@@ -214,8 +209,6 @@ mod tests {
             "DB_URL",
             "JWT_SECRET",
             "JWT_VALIDITY_DAYS",
-            "LOGS_MONGO_URI",
-            "LOGS_DB_NAME",
             "DEFAULT_ADMIN_PASSWORD",
             "DEFAULT_ADMIN_EMAIL",
             "SMTP_HOST",
@@ -246,8 +239,6 @@ mod tests {
             String::from_utf8_lossy(TEST_JWT_SECRET).to_string(),
         );
         env::set_var("JWT_VALIDITY_DAYS", "1");
-        env::set_var("LOGS_MONGO_URI", "mongodb://localhost:27017");
-        env::set_var("LOGS_DB_NAME", "test_logs");
         env::set_var("DEFAULT_ADMIN_PASSWORD", TEST_PASSWORD);
         env::set_var("DEFAULT_ADMIN_EMAIL", TEST_ADMIN_EMAIL);
         env::set_var("SMTP_HOST", TEST_SMTP_HOST);

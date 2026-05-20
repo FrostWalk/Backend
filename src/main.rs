@@ -3,8 +3,7 @@ use crate::app_data::AppData;
 use crate::config::Config;
 use crate::database::repositories::admins_repository::create_default_admin;
 use crate::jwt::grants_extractor::extract;
-use crate::logging::logger::init_mongo_logger;
-use crate::logging::middleware::RequestContextMiddleware;
+use crate::logging::init_console_logger;
 use crate::mail::Mailer;
 use actix_web::middleware::Logger;
 use actix_web::web::Data;
@@ -34,11 +33,11 @@ async fn main() -> std::io::Result<()> {
     // load config from env or file
     let app_config = Config::load();
 
-    if let Err(e) = init_mongo_logger(app_config.logs_mongo_uri(), app_config.logs_db_name()).await
-    {
-        eprintln!("failed to initialize MongoDB logger: {}", e);
+    if let Err(e) = init_console_logger() {
+        eprintln!("failed to initialize console logger: {}", e);
         std::process::exit(1);
     }
+
     let client = match connect(app_config.db_url()).await {
         Ok(client) => client,
         Err(e) => {
@@ -72,7 +71,6 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(Data::new(app_data.clone())) //add application state with repositories and config
             .wrap(Logger::default()) // add logging middleware
-            .wrap(RequestContextMiddleware) // add request context middleware
             .wrap(GrantsMiddleware::with_extractor(extract)) // add grants middleware for authorization
             .configure(configure_endpoints) // add scopes and routes
     })
