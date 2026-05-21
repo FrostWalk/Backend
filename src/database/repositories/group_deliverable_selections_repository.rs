@@ -2,6 +2,18 @@ use crate::models::group_deliverable_selection::GroupDeliverableSelection;
 use welds::connections::postgres::PostgresClient;
 use welds::state::DbState;
 
+/// Get a group deliverable selection by its primary key
+pub(crate) async fn get_by_group_deliverable_selection_id(
+    db: &PostgresClient, selection_id: i32,
+) -> welds::errors::Result<Option<DbState<GroupDeliverableSelection>>> {
+    let mut rows = GroupDeliverableSelection::where_col(|gds| {
+        gds.group_deliverable_selection_id.equal(selection_id)
+    })
+    .run(db)
+    .await?;
+    Ok(rows.pop())
+}
+
 /// Get a group deliverable selection by group ID
 pub(crate) async fn get_by_group_id(
     db: &PostgresClient, group_id: i32,

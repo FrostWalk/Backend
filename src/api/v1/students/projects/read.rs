@@ -21,6 +21,8 @@ pub(crate) struct ProjectWithDetails {
     pub group_components: Vec<GroupDeliverableComponent>,
     pub student_deliverables: Vec<StudentDeliverable>,
     pub student_components: Vec<StudentDeliverableComponent>,
+    #[schema(example = 1)]
+    pub fair_id: Option<i32>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -82,6 +84,7 @@ pub(super) async fn get_student_projects(
         group_components_state,
         student_deliverables_state,
         student_components_state,
+        fair_id,
     ) in projects_with_details_data
     {
         let project = DbState::into_inner(project_state);
@@ -108,6 +111,7 @@ pub(super) async fn get_student_projects(
             group_components,
             student_deliverables,
             student_components,
+            fair_id,
         });
     }
 

@@ -2,6 +2,14 @@ use crate::api::health::{__path_health_check, __path_liveness_check};
 use crate::api::v1::admins::auth::forgot_password::__path_forgot_password_handler;
 use crate::api::v1::admins::auth::login::__path_admins_login_handler;
 use crate::api::v1::admins::auth::reset_password::__path_reset_password_handler;
+use crate::api::v1::admins::fairs::create::__path_create_fair_handler;
+use crate::api::v1::admins::fairs::disable::__path_disable_fair_handler;
+use crate::api::v1::admins::fairs::enable::__path_enable_fair_handler;
+use crate::api::v1::admins::fairs::read::{
+    __path_get_fair_by_project_handler, __path_get_fair_handler,
+};
+use crate::api::v1::admins::fairs::report::__path_fair_report_handler;
+use crate::api::v1::admins::fairs::update::__path_update_fair_handler;
 use crate::api::v1::admins::group_deliverable_components::create::__path_create_group_component_handler;
 use crate::api::v1::admins::group_deliverable_components::delete::__path_delete_group_component_handler;
 use crate::api::v1::admins::group_deliverable_components::read::__path_get_all_group_components_handler;
@@ -68,6 +76,7 @@ use crate::api::v1::admins::users::read::__path_get_one_admin_handler;
 use crate::api::v1::admins::users::test_email::__path_test_email_handler;
 use crate::api::v1::admins::users::update::__path_update_admin_handler;
 use crate::api::v1::admins::users::update_me::__path_update_me_admin_handler;
+use crate::api::v1::public::fairs::leaderboard::__path_leaderboard_handler;
 use crate::api::v1::students::auth::{
     allowed_domains::__path_allowed_domains_handler, confirm::__path_confirm_student_handler,
     forgot_password::__path_forgot_password_handler as __path_students_forgot_password_handler,
@@ -75,6 +84,8 @@ use crate::api::v1::students::auth::{
     reset_password::__path_reset_password_handler as __path_students_reset_password_handler,
     signup::__path_student_signup_handler,
 };
+use crate::api::v1::students::fairs::list::__path_list_transactions_handler;
+use crate::api::v1::students::fairs::purchase::__path_purchase_handler;
 use crate::api::v1::students::group_component_implementation_details::{
     create::__path_create_component_implementation_detail,
     delete::__path_delete_component_implementation_detail,
@@ -208,6 +219,16 @@ use utoipa_swagger_ui::SwaggerUi;
         get_student_deliverable_selection,
         update_student_deliverable_selection,
         delete_student_deliverable_selection,
+        create_fair_handler,
+        get_fair_handler,
+        get_fair_by_project_handler,
+        update_fair_handler,
+        enable_fair_handler,
+        disable_fair_handler,
+        fair_report_handler,
+        purchase_handler,
+        list_transactions_handler,
+        leaderboard_handler,
     ),
     tags(
         (name = "Health", description = "Application health check endpoints for monitoring and Docker"),
@@ -227,6 +248,9 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "Groups management", description = "CRUD operations on groups and group members"),
         (name = "Group Deliverable Selections", description = "Operations for group deliverable selections"),
         (name = "Student Deliverable Selections", description = "Operations for student deliverable selections"),
+        (name = "Fairs management", description = "Professor endpoints for creating and managing fairs"),
+        (name = "Fair transactions", description = "Group leader endpoints for purchases during the fair"),
+        (name = "Fairs leaderboard", description = "Public endpoint for the fair sales leaderboard"),
     ),
     modifiers(&SecurityAddon),
     info(
@@ -242,10 +266,7 @@ pub(crate) fn open_api() -> SwaggerUi {
     let mut doc = ApiDoc::openapi();
     doc.info.title = String::from("Advanced Programming Application Backend API v1");
     doc.info.version = String::from("0.1.0");
-    doc.servers = Some(vec![
-        Server::new("https://dev.advancedprogramming.ovh/api"),
-        Server::new("http://localhost:8080/"),
-    ]);
+    doc.servers = Some(vec![Server::new("http://localhost:8080/")]);
     SwaggerUi::new("/swagger/{_:.*}").url("/swagger-openapi.json", doc)
 }
 

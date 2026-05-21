@@ -149,8 +149,10 @@ pub(crate) async fn get_projects_with_details_for_student(
         Vec<DbState<GroupDeliverableComponent>>,
         Vec<DbState<StudentDeliverable>>,
         Vec<DbState<StudentDeliverableComponent>>,
+        Option<i32>,
     )>,
 > {
+    use crate::database::repositories::fairs_repository;
     use crate::models::group_member::GroupMember;
 
     // Get projects through group membership
@@ -189,12 +191,17 @@ pub(crate) async fn get_projects_with_details_for_student(
             .run(db)
             .await?;
 
+        let fair_id = fairs_repository::get_by_project_id(db, project_id)
+            .await?
+            .map(|fair| fair.fair_id);
+
         result.push((
             project,
             group_deliverables,
             group_components,
             student_deliverables,
             student_components,
+            fair_id,
         ));
     }
 

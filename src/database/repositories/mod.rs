@@ -1,5 +1,6 @@
 pub(crate) mod admins_repository;
 pub(crate) mod coordinator_projects_repository;
+pub(crate) mod fairs_repository;
 pub(crate) mod group_component_implementation_details_repository;
 pub(crate) mod group_deliverable_components_repository;
 pub(crate) mod group_deliverable_selections_repository;
@@ -13,3 +14,4 @@ pub(crate) mod student_deliverable_selections_repository;
 pub(crate) mod student_deliverables_components_repository;
 pub(crate) mod student_deliverables_repository;
 pub(crate) mod students_repository;
+pub(crate) mod transactions_repository;

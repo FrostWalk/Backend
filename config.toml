@@ -5,7 +5,7 @@ db_url = "postgres://postgres:password@localhost"
 jwt_secret = "jwt_super_secret"
 jwt_validity_days = 7
 default_admin_password = "password"
-default_admin_email = "root"
+default_admin_email = "root@admin.it"
 allowed_signup_domains = ["studenti.unitn.it"]
 
 smtp_host = "localhost"

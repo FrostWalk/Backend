@@ -1,4 +1,5 @@
 use crate::api::v1::admins::auth::auth_scope;
+use crate::api::v1::admins::fairs::fairs_scope;
 use crate::api::v1::admins::group_deliverable_components::group_deliverable_components_scope;
 use crate::api::v1::admins::group_deliverable_selections::group_deliverable_selections_scope;
 use crate::api::v1::admins::group_deliverables::group_deliverables_scope;
@@ -14,6 +15,7 @@ use crate::api::v1::admins::users::users_scope;
 use actix_web::{web, Scope};
 
 pub(crate) mod auth;
+pub(crate) mod fairs;
 pub(crate) mod group_deliverable_components;
 pub(crate) mod group_deliverable_selections;
 pub(crate) mod group_deliverables;
@@ -34,6 +36,7 @@ pub(super) fn admins_scope() -> Scope {
         .service(projects_scope())
         .service(security_codes_scope())
         .service(groups_scope())
+        .service(fairs_scope())
         .service(group_deliverable_components_scope())
         .service(group_deliverable_selections_scope())
         .service(group_deliverables_scope())
