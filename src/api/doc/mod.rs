@@ -30,6 +30,7 @@ use crate::api::v1::admins::group_deliverables_and_components::delete::__path_de
 use crate::api::v1::admins::group_deliverables_and_components::read::__path_get_components_for_deliverable_handler as __path_get_group_components_for_group_deliverable_handler;
 use crate::api::v1::admins::group_deliverables_and_components::read::__path_get_deliverables_for_component_handler as __path_get_group_deliverables_for_group_component_handler;
 use crate::api::v1::admins::group_deliverables_and_components::update::__path_update_group_deliverable_component_handler;
+use crate::api::v1::admins::groups::complaints::__path_get_group_complaints;
 use crate::api::v1::admins::groups::details::__path_get_group_details;
 use crate::api::v1::admins::groups::members::{
     __path_add_member as __path_admin_add_member,
@@ -84,6 +85,8 @@ use crate::api::v1::students::auth::{
     reset_password::__path_reset_password_handler as __path_students_reset_password_handler,
     signup::__path_student_signup_handler,
 };
+use crate::api::v1::students::complaints::list::__path_list_group_filed_complaints_handler;
+use crate::api::v1::students::complaints::submit::__path_submit_complaint_handler;
 use crate::api::v1::students::fairs::list::__path_list_transactions_handler;
 use crate::api::v1::students::fairs::purchase::__path_purchase_handler;
 use crate::api::v1::students::group_component_implementation_details::{
@@ -153,6 +156,7 @@ use utoipa_swagger_ui::SwaggerUi;
         remove_coordinator,
         get_project_groups,
         get_group_details,
+        get_group_complaints,
         admin_remove_member,
         transfer_leadership,
         admin_add_member,
@@ -228,6 +232,8 @@ use utoipa_swagger_ui::SwaggerUi;
         fair_report_handler,
         purchase_handler,
         list_transactions_handler,
+        submit_complaint_handler,
+        list_group_filed_complaints_handler,
         leaderboard_handler,
     ),
     tags(
@@ -250,6 +256,7 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "Student Deliverable Selections", description = "Operations for student deliverable selections"),
         (name = "Fairs management", description = "Professor endpoints for creating and managing fairs"),
         (name = "Fair transactions", description = "Group leader endpoints for purchases during the fair"),
+        (name = "Complaints management", description = "Student endpoints for complaints about purchased deliverables"),
         (name = "Fairs leaderboard", description = "Public endpoint for the fair sales leaderboard"),
     ),
     modifiers(&SecurityAddon),
