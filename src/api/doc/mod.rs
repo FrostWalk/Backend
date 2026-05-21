@@ -37,6 +37,13 @@ use crate::api::v1::admins::groups::members::{
     __path_remove_member as __path_admin_remove_member, __path_transfer_leadership,
 };
 use crate::api::v1::admins::groups::read::__path_get_project_groups;
+use crate::api::v1::admins::oral_exam::completions::{
+    __path_bulk_set_group_completions, __path_set_student_completion,
+};
+use crate::api::v1::admins::oral_exam::group_details::__path_get_oral_exam_group_details;
+use crate::api::v1::admins::oral_exam::list_groups::__path_list_oral_exam_groups;
+use crate::api::v1::admins::oral_exam::notes::{__path_delete_note, __path_upsert_note};
+use crate::api::v1::admins::oral_exam::toggle::__path_toggle_oral_exam;
 use crate::api::v1::admins::projects::coordinators::{
     __path_assign_coordinator, __path_list_coordinators, __path_remove_coordinator,
 };
@@ -243,6 +250,13 @@ use utoipa_swagger_ui::SwaggerUi;
         list_project_uploads_handler,
         download_student_upload_handler,
         leaderboard_handler,
+        toggle_oral_exam,
+        list_oral_exam_groups,
+        get_oral_exam_group_details,
+        upsert_note,
+        delete_note,
+        set_student_completion,
+        bulk_set_group_completions,
     ),
     tags(
         (name = "Health", description = "Application health check endpoints for monitoring and Docker"),
@@ -267,6 +281,7 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "Complaints management", description = "Student endpoints for complaints about purchased deliverables"),
         (name = "Student Uploads", description = "Student upload and professor download endpoints for project ZIP submissions"),
         (name = "Fairs leaderboard", description = "Public endpoint for the fair sales leaderboard"),
+        (name = "Admin Oral Exam", description = "Professor endpoints for oral exam mode: group listing, details, notes, and completion tracking"),
     ),
     modifiers(&SecurityAddon),
     info(

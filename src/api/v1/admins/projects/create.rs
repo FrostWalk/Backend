@@ -64,6 +64,7 @@ pub(in crate::api::v1) async fn create_project_handler(
         deliverable_selection_deadline: body.deliverable_selection_deadline,
         upload_deadline: body.upload_deadline,
         active: body.active,
+        oral_exam_enabled: false,
     };
 
     let p = projects_repository::create(&data.db, project)

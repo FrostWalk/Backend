@@ -5,6 +5,7 @@ use crate::api::v1::admins::group_deliverable_selections::group_deliverable_sele
 use crate::api::v1::admins::group_deliverables::group_deliverables_scope;
 use crate::api::v1::admins::group_deliverables_and_components::group_deliverables_components_scope;
 use crate::api::v1::admins::groups::groups_scope;
+use crate::api::v1::admins::oral_exam::oral_exam_scope;
 use crate::api::v1::admins::projects::projects_scope;
 use crate::api::v1::admins::security_codes::security_codes_scope;
 use crate::api::v1::admins::student_deliverable_components::student_deliverable_components_scope;
@@ -22,6 +23,7 @@ pub(crate) mod group_deliverable_selections;
 pub(crate) mod group_deliverables;
 pub(crate) mod group_deliverables_and_components;
 pub(crate) mod groups;
+pub(crate) mod oral_exam;
 pub(crate) mod projects;
 pub(crate) mod security_codes;
 pub(crate) mod student_deliverable_components;
@@ -48,4 +50,5 @@ pub(super) fn admins_scope() -> Scope {
         .service(student_deliverables_scope())
         .service(student_deliverables_components_scope())
         .service(uploads_scope())
+        .service(oral_exam_scope())
 }

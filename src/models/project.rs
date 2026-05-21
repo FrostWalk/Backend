@@ -27,4 +27,5 @@ pub struct Project {
     pub deliverable_selection_deadline: Option<DateTime<Utc>>,
     pub upload_deadline: Option<DateTime<Utc>>,
     pub active: bool,
+    pub oral_exam_enabled: bool,
 }

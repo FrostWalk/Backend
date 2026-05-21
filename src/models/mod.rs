@@ -38,3 +38,7 @@ pub mod student_deliverables_component;
 
 // Upload related models
 pub mod student_upload;
+
+// Oral exam related models
+pub mod oral_exam_completion;
+pub mod oral_exam_note;
