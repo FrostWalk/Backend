@@ -1,7 +1,9 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
+use utoipa::ToSchema;
 use welds::WeldsModel;
 
-#[derive(Debug, Clone, WeldsModel)]
+#[derive(Debug, Clone, Serialize, ToSchema, WeldsModel)]
 #[welds(schema = "public", table = "fairs")]
 pub struct Fair {
     #[welds(primary_key)]
@@ -11,4 +13,5 @@ pub struct Fair {
     pub details: String,
     pub start_date: DateTime<Utc>,
     pub end_date: DateTime<Utc>,
+    pub min_purchases: i32,
 }

@@ -4,13 +4,6 @@ use crate::models::group_deliverables_component::GroupDeliverablesComponent;
 use welds::connections::postgres::PostgresClient;
 use welds::state::DbState;
 
-/// Get all group deliverables components relationships
-pub(crate) async fn get_all(
-    db: &PostgresClient,
-) -> welds::errors::Result<Vec<DbState<GroupDeliverablesComponent>>> {
-    GroupDeliverablesComponent::all().run(db).await
-}
-
 /// Get a group deliverables component relationship by its ID
 pub(crate) async fn get_by_id(
     db: &PostgresClient, id: i32,
@@ -20,26 +13,6 @@ pub(crate) async fn get_by_id(
         .await?;
 
     Ok(rows.pop())
-}
-
-/// Get all components for a specific group deliverable
-pub(crate) async fn get_by_deliverable_id(
-    db: &PostgresClient, deliverable_id: i32,
-) -> welds::errors::Result<Vec<DbState<GroupDeliverablesComponent>>> {
-    GroupDeliverablesComponent::where_col(|gdc| gdc.group_deliverable_id.equal(deliverable_id))
-        .run(db)
-        .await
-}
-
-/// Get all deliverables for a specific component
-pub(crate) async fn get_by_component_id(
-    db: &PostgresClient, component_id: i32,
-) -> welds::errors::Result<Vec<DbState<GroupDeliverablesComponent>>> {
-    GroupDeliverablesComponent::where_col(|gdc| {
-        gdc.group_deliverable_component_id.equal(component_id)
-    })
-    .run(db)
-    .await
 }
 
 /// Check if a relationship exists between a deliverable and component

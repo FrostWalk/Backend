@@ -2,7 +2,6 @@ use crate::app_data::AppData;
 use crate::common::json_error::{error_with_log_id_and_payload, JsonError, ToJsonError};
 use crate::database::repositories::students_repository;
 use crate::jwt::token::create_student_token;
-use crate::logging::payload_capture::capture_response_status;
 use actix_web::cookie::time::Duration;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
@@ -101,9 +100,6 @@ pub(crate) async fn students_login_handler(
             &body,
         )
     })?;
-
-    // Capture successful response status
-    capture_response_status(200);
 
     Ok(HttpResponse::Ok().json(LoginStudentsResponse { token }))
 }

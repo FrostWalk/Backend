@@ -13,10 +13,10 @@ use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use chrono::{DateTime, Duration, Utc};
 use log::error;
 use serde::{Deserialize, Serialize};
-use utoipa::{schema, ToSchema};
+use utoipa::ToSchema;
 
 fn generate_random_code() -> String {
-    use rand::Rng;
+    use rand::RngExt;
 
     let mut rng = rand::rng();
     const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

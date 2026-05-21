@@ -1,7 +1,9 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
+use utoipa::ToSchema;
 use welds::WeldsModel;
 
-#[derive(Debug, Clone, WeldsModel)]
+#[derive(Debug, Clone, Serialize, ToSchema, WeldsModel)]
 #[welds(schema = "public", table = "transactions")]
 pub struct Transaction {
     #[welds(primary_key)]
@@ -10,6 +12,8 @@ pub struct Transaction {
     pub buyer_group_id: i32,
     #[welds(foreign_key = "group_deliverable_selections.group_deliverable_selection_id")]
     pub group_deliverable_selection_id: i32,
+    #[welds(foreign_key = "group_deliverable_components.group_deliverable_component_id")]
+    pub group_deliverable_component_id: i32,
     #[welds(foreign_key = "fairs.fair_id")]
     pub fair_id: i32,
     pub timestamp: DateTime<Utc>,

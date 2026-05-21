@@ -3,6 +3,7 @@ use crate::models::group_deliverable_component::GroupDeliverableComponent;
 use crate::models::project::Project;
 use crate::models::student_deliverable::StudentDeliverable;
 use crate::models::student_deliverable_component::StudentDeliverableComponent;
+use chrono::{DateTime, Utc};
 use welds::connections::postgres::PostgresClient;
 use welds::state::DbState;
 
@@ -51,7 +52,7 @@ pub(crate) async fn create(
 /// Update a project by ID
 pub(crate) async fn update_by_id(
     db: &PostgresClient, project_id: i32, name: Option<String>, max_student_uploads: Option<i32>,
-    max_group_size: Option<i32>, active: Option<bool>,
+    max_group_size: Option<i32>, upload_deadline: Option<DateTime<Utc>>, active: Option<bool>,
 ) -> welds::errors::Result<()> {
     if let Some(name) = name {
         Project::where_col(|p| p.project_id.equal(project_id))
@@ -71,6 +72,12 @@ pub(crate) async fn update_by_id(
             .run(db)
             .await?;
     }
+    if let Some(upload_deadline) = upload_deadline {
+        Project::where_col(|p| p.project_id.equal(project_id))
+            .set(|p| p.upload_deadline, upload_deadline)
+            .run(db)
+            .await?;
+    }
     if let Some(active) = active {
         Project::where_col(|p| p.project_id.equal(project_id))
             .set(|p| p.active, active)
@@ -78,14 +85,6 @@ pub(crate) async fn update_by_id(
             .await?;
     }
     Ok(())
-}
-
-/// Update a project
-pub(crate) async fn update(
-    db: &PostgresClient, mut state: DbState<Project>,
-) -> welds::errors::Result<DbState<Project>> {
-    state.save(db).await?;
-    Ok(state)
 }
 
 /// Get project details with all related entities
@@ -149,8 +148,10 @@ pub(crate) async fn get_projects_with_details_for_student(
         Vec<DbState<GroupDeliverableComponent>>,
         Vec<DbState<StudentDeliverable>>,
         Vec<DbState<StudentDeliverableComponent>>,
+        Option<i32>,
     )>,
 > {
+    use crate::database::repositories::fairs_repository;
     use crate::models::group_member::GroupMember;
 
     // Get projects through group membership
@@ -189,12 +190,17 @@ pub(crate) async fn get_projects_with_details_for_student(
             .run(db)
             .await?;
 
+        let fair_id = fairs_repository::get_by_project_id(db, project_id)
+            .await?
+            .map(|fair| fair.fair_id);
+
         result.push((
             project,
             group_deliverables,
             group_components,
             student_deliverables,
             student_components,
+            fair_id,
         ));
     }
 

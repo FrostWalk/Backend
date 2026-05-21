@@ -2,6 +2,19 @@ use crate::api::health::{__path_health_check, __path_liveness_check};
 use crate::api::v1::admins::auth::forgot_password::__path_forgot_password_handler;
 use crate::api::v1::admins::auth::login::__path_admins_login_handler;
 use crate::api::v1::admins::auth::reset_password::__path_reset_password_handler;
+use crate::api::v1::admins::blacklist::create::__path_add_to_blacklist_handler;
+use crate::api::v1::admins::blacklist::delete::__path_delete_blacklist_handler;
+use crate::api::v1::admins::blacklist::get::__path_get_blacklist_handler;
+use crate::api::v1::admins::blacklist::list::__path_list_blacklist_handler;
+use crate::api::v1::admins::blacklist::update::__path_update_blacklist_handler;
+use crate::api::v1::admins::fairs::create::__path_create_fair_handler;
+use crate::api::v1::admins::fairs::disable::__path_disable_fair_handler;
+use crate::api::v1::admins::fairs::enable::__path_enable_fair_handler;
+use crate::api::v1::admins::fairs::read::{
+    __path_get_fair_by_project_handler, __path_get_fair_handler,
+};
+use crate::api::v1::admins::fairs::report::__path_fair_report_handler;
+use crate::api::v1::admins::fairs::update::__path_update_fair_handler;
 use crate::api::v1::admins::group_deliverable_components::create::__path_create_group_component_handler;
 use crate::api::v1::admins::group_deliverable_components::delete::__path_delete_group_component_handler;
 use crate::api::v1::admins::group_deliverable_components::read::__path_get_all_group_components_handler;
@@ -22,12 +35,20 @@ use crate::api::v1::admins::group_deliverables_and_components::delete::__path_de
 use crate::api::v1::admins::group_deliverables_and_components::read::__path_get_components_for_deliverable_handler as __path_get_group_components_for_group_deliverable_handler;
 use crate::api::v1::admins::group_deliverables_and_components::read::__path_get_deliverables_for_component_handler as __path_get_group_deliverables_for_group_component_handler;
 use crate::api::v1::admins::group_deliverables_and_components::update::__path_update_group_deliverable_component_handler;
+use crate::api::v1::admins::groups::complaints::__path_get_group_complaints;
 use crate::api::v1::admins::groups::details::__path_get_group_details;
 use crate::api::v1::admins::groups::members::{
     __path_add_member as __path_admin_add_member,
     __path_remove_member as __path_admin_remove_member, __path_transfer_leadership,
 };
 use crate::api::v1::admins::groups::read::__path_get_project_groups;
+use crate::api::v1::admins::oral_exam::completions::{
+    __path_bulk_set_group_completions, __path_set_student_completion,
+};
+use crate::api::v1::admins::oral_exam::group_details::__path_get_oral_exam_group_details;
+use crate::api::v1::admins::oral_exam::list_groups::__path_list_oral_exam_groups;
+use crate::api::v1::admins::oral_exam::notes::{__path_delete_note, __path_upsert_note};
+use crate::api::v1::admins::oral_exam::toggle::__path_toggle_oral_exam;
 use crate::api::v1::admins::projects::coordinators::{
     __path_assign_coordinator, __path_list_coordinators, __path_remove_coordinator,
 };
@@ -60,6 +81,8 @@ use crate::api::v1::admins::student_deliverables_and_components::delete::__path_
 use crate::api::v1::admins::student_deliverables_and_components::read::__path_get_components_for_deliverable_handler;
 use crate::api::v1::admins::student_deliverables_and_components::read::__path_get_deliverables_for_component_handler;
 use crate::api::v1::admins::student_deliverables_and_components::update::__path_update_student_deliverable_component_handler;
+use crate::api::v1::admins::uploads::download::__path_download_student_upload_handler;
+use crate::api::v1::admins::uploads::list::__path_list_project_uploads_handler;
 use crate::api::v1::admins::users::create::__path_create_admin_handler;
 use crate::api::v1::admins::users::delete::__path_delete_admin_handler;
 use crate::api::v1::admins::users::me::__path_admins_me_handler;
@@ -68,6 +91,7 @@ use crate::api::v1::admins::users::read::__path_get_one_admin_handler;
 use crate::api::v1::admins::users::test_email::__path_test_email_handler;
 use crate::api::v1::admins::users::update::__path_update_admin_handler;
 use crate::api::v1::admins::users::update_me::__path_update_me_admin_handler;
+use crate::api::v1::public::fairs::leaderboard::__path_leaderboard_handler;
 use crate::api::v1::students::auth::{
     allowed_domains::__path_allowed_domains_handler, confirm::__path_confirm_student_handler,
     forgot_password::__path_forgot_password_handler as __path_students_forgot_password_handler,
@@ -75,6 +99,10 @@ use crate::api::v1::students::auth::{
     reset_password::__path_reset_password_handler as __path_students_reset_password_handler,
     signup::__path_student_signup_handler,
 };
+use crate::api::v1::students::complaints::list::__path_list_group_filed_complaints_handler;
+use crate::api::v1::students::complaints::submit::__path_submit_complaint_handler;
+use crate::api::v1::students::fairs::list::__path_list_transactions_handler;
+use crate::api::v1::students::fairs::purchase::__path_purchase_handler;
 use crate::api::v1::students::group_component_implementation_details::{
     create::__path_create_component_implementation_detail,
     delete::__path_delete_component_implementation_detail,
@@ -97,6 +125,8 @@ use crate::api::v1::students::student_deliverable_selections::{
     read::__path_get_student_deliverable_selection,
     update::__path_update_student_deliverable_selection,
 };
+use crate::api::v1::students::uploads::status::__path_get_upload_status_handler;
+use crate::api::v1::students::uploads::upload::__path_upload_project_zip_handler;
 use crate::api::v1::students::users::me::__path_students_me_handler;
 use crate::api::v1::students::users::update_me::__path_update_me_student_handler;
 use crate::api::version::__path_version_info;
@@ -131,6 +161,11 @@ use utoipa_swagger_ui::SwaggerUi;
         create_admin_handler,
         update_admin_handler,
         delete_admin_handler,
+        add_to_blacklist_handler,
+        list_blacklist_handler,
+        get_blacklist_handler,
+        update_blacklist_handler,
+        delete_blacklist_handler,
         test_email_handler,
         create_project_handler,
         get_all_projects_handler,
@@ -142,6 +177,7 @@ use utoipa_swagger_ui::SwaggerUi;
         remove_coordinator,
         get_project_groups,
         get_group_details,
+        get_group_complaints,
         admin_remove_member,
         transfer_leadership,
         admin_add_member,
@@ -208,12 +244,36 @@ use utoipa_swagger_ui::SwaggerUi;
         get_student_deliverable_selection,
         update_student_deliverable_selection,
         delete_student_deliverable_selection,
+        create_fair_handler,
+        get_fair_handler,
+        get_fair_by_project_handler,
+        update_fair_handler,
+        enable_fair_handler,
+        disable_fair_handler,
+        fair_report_handler,
+        purchase_handler,
+        list_transactions_handler,
+        submit_complaint_handler,
+        list_group_filed_complaints_handler,
+        upload_project_zip_handler,
+        get_upload_status_handler,
+        list_project_uploads_handler,
+        download_student_upload_handler,
+        leaderboard_handler,
+        toggle_oral_exam,
+        list_oral_exam_groups,
+        get_oral_exam_group_details,
+        upsert_note,
+        delete_note,
+        set_student_completion,
+        bulk_set_group_completions,
     ),
     tags(
         (name = "Health", description = "Application health check endpoints for monitoring and Docker"),
         (name = "Version", description = "Application version information endpoints"),
         (name = "Admin authentication", description = "Admin authentication endpoint"),
         (name = "Admin users management", description = "CRUD operations on admins"),
+        (name = "Admin blacklist management", description = "CRUD operations on student blacklist"),
         (name = "Group deliverable components management", description = "CRUD operations on group deliverable components"),
         (name = "Group deliverables management", description = "CRUD operations on group deliverables"),
         (name = "Group deliverables-components management", description = "CRUD operations on group deliverables-components relationships"),
@@ -227,6 +287,12 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "Groups management", description = "CRUD operations on groups and group members"),
         (name = "Group Deliverable Selections", description = "Operations for group deliverable selections"),
         (name = "Student Deliverable Selections", description = "Operations for student deliverable selections"),
+        (name = "Fairs management", description = "Professor endpoints for creating and managing fairs"),
+        (name = "Fair transactions", description = "Group leader endpoints for purchases during the fair"),
+        (name = "Complaints management", description = "Student endpoints for complaints about purchased deliverables"),
+        (name = "Student Uploads", description = "Student upload and professor download endpoints for project ZIP submissions"),
+        (name = "Fairs leaderboard", description = "Public endpoint for the fair sales leaderboard"),
+        (name = "Admin Oral Exam", description = "Professor endpoints for oral exam mode: group listing, details, notes, and completion tracking"),
     ),
     modifiers(&SecurityAddon),
     info(
@@ -242,10 +308,7 @@ pub(crate) fn open_api() -> SwaggerUi {
     let mut doc = ApiDoc::openapi();
     doc.info.title = String::from("Advanced Programming Application Backend API v1");
     doc.info.version = String::from("0.1.0");
-    doc.servers = Some(vec![
-        Server::new("https://dev.advancedprogramming.ovh/api"),
-        Server::new("http://localhost:8080/"),
-    ]);
+    doc.servers = Some(vec![Server::new("http://localhost:8080/")]);
     SwaggerUi::new("/swagger/{_:.*}").url("/swagger-openapi.json", doc)
 }
 

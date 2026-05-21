@@ -26,10 +26,6 @@ pub(crate) struct Config {
     jwt_secret: String,
     /// Seconds after which the token is considered expired, and the cookie is deleted
     jwt_validity_days: i64,
-    /// Mongo's connection string for logs storage
-    logs_mongo_uri: String,
-    /// Mongo's database name for logs storage
-    logs_db_name: String,
     /// Application default admin account password
     default_admin_password: String,
     /// Application default admin account email
@@ -60,6 +56,10 @@ pub(crate) struct Config {
     email_token_secret: String,
     /// Skip email confirmation for student accounts (when true, accounts are immediately active)
     skip_email_confirmation: bool,
+    /// Base directory where uploaded ZIP files are stored
+    uploads_dir: String,
+    /// Maximum allowed upload size in bytes
+    max_upload_size_bytes: u64,
 }
 impl Config {
     /// Loads and validates the application configuration from multiple sources.
@@ -118,6 +118,8 @@ mod tests {
         assert_eq!(config.smtp_username().as_deref(), Some("user@locahost")); // From TOML file
         assert_eq!(config.email_token_secret(), "secret_token"); // From TOML file
         assert!(!config.skip_email_confirmation()); // From TOML file
+        assert_eq!(config.uploads_dir(), "./uploads");
+        assert_eq!(config.max_upload_size_bytes(), 10_485_760);
 
         // Test allowed domains - check actual value from TOML
         let domains = config.allowed_signup_domains();
@@ -189,7 +191,6 @@ mod tests {
 
         // Test that URLs are properly formatted
         assert!(config.db_url().starts_with("postgres://"));
-        assert!(config.logs_mongo_uri().starts_with("mongodb://"));
         assert!(config.frontend_base_url().starts_with("http"));
     }
 
@@ -214,8 +215,6 @@ mod tests {
             "DB_URL",
             "JWT_SECRET",
             "JWT_VALIDITY_DAYS",
-            "LOGS_MONGO_URI",
-            "LOGS_DB_NAME",
             "DEFAULT_ADMIN_PASSWORD",
             "DEFAULT_ADMIN_EMAIL",
             "SMTP_HOST",
@@ -229,6 +228,8 @@ mod tests {
             "EMAIL_FROM",
             "EMAIL_TOKEN_SECRET",
             "SKIP_EMAIL_CONFIRMATION",
+            "UPLOADS_DIR",
+            "MAX_UPLOAD_SIZE_BYTES",
         ];
 
         for var in &vars_to_clear {
@@ -246,8 +247,6 @@ mod tests {
             String::from_utf8_lossy(TEST_JWT_SECRET).to_string(),
         );
         env::set_var("JWT_VALIDITY_DAYS", "1");
-        env::set_var("LOGS_MONGO_URI", "mongodb://localhost:27017");
-        env::set_var("LOGS_DB_NAME", "test_logs");
         env::set_var("DEFAULT_ADMIN_PASSWORD", TEST_PASSWORD);
         env::set_var("DEFAULT_ADMIN_EMAIL", TEST_ADMIN_EMAIL);
         env::set_var("SMTP_HOST", TEST_SMTP_HOST);
@@ -260,5 +259,7 @@ mod tests {
         env::set_var("EMAIL_FROM", "noreply@test.com");
         env::set_var("EMAIL_TOKEN_SECRET", TEST_EMAIL_TOKEN_SECRET);
         env::set_var("SKIP_EMAIL_CONFIRMATION", "true");
+        env::set_var("UPLOADS_DIR", "./uploads");
+        env::set_var("MAX_UPLOAD_SIZE_BYTES", "10485760");
     }
 }

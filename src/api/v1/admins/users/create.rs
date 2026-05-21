@@ -9,7 +9,7 @@ use actix_web::web::{Data, Json};
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use log::{error, warn};
 use password_auth::generate_hash;
-use rand::Rng;
+use rand::RngExt;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 

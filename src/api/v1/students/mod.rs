@@ -1,20 +1,26 @@
 use crate::api::v1::students::auth::auth_scope;
+use crate::api::v1::students::complaints::complaints_scope;
+use crate::api::v1::students::fairs::student_fairs_scope;
 use crate::api::v1::students::group_component_implementation_details::group_component_implementation_details_scope;
 use crate::api::v1::students::group_deliverable_selections::group_deliverable_selections_scope;
 use crate::api::v1::students::groups::groups_scope;
 use crate::api::v1::students::projects::projects_scope;
 use crate::api::v1::students::security_codes::security_codes_scope;
 use crate::api::v1::students::student_deliverable_selections::student_deliverable_selections_scope;
+use crate::api::v1::students::uploads::uploads_scope;
 use crate::api::v1::students::users::users_scope;
 use actix_web::{web, Scope};
 
 pub(crate) mod auth;
+pub(crate) mod complaints;
+pub(crate) mod fairs;
 pub(crate) mod group_component_implementation_details;
 pub(crate) mod group_deliverable_selections;
 pub(crate) mod groups;
 pub(crate) mod projects;
 pub(crate) mod security_codes;
 pub(crate) mod student_deliverable_selections;
+pub(crate) mod uploads;
 pub(crate) mod users;
 
 pub(super) fn students_scope() -> Scope {
@@ -27,4 +33,7 @@ pub(super) fn students_scope() -> Scope {
         .service(projects_scope())
         .service(security_codes_scope())
         .service(groups_scope())
+        .service(complaints_scope())
+        .service(uploads_scope())
+        .service(student_fairs_scope())
 }

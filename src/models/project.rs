@@ -25,5 +25,7 @@ pub struct Project {
     pub max_student_uploads: i32,
     pub max_group_size: i32,
     pub deliverable_selection_deadline: Option<DateTime<Utc>>,
+    pub upload_deadline: Option<DateTime<Utc>>,
     pub active: bool,
+    pub oral_exam_enabled: bool,
 }

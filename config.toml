@@ -4,10 +4,8 @@ workers = 4
 db_url = "postgres://postgres:password@localhost"
 jwt_secret = "jwt_super_secret"
 jwt_validity_days = 7
-logs_mongo_uri = "mongodb://localhost:27017"
-logs_db_name = "logs"
 default_admin_password = "password"
-default_admin_email = "root"
+default_admin_email = "root@admin.it"
 allowed_signup_domains = ["studenti.unitn.it"]
 
 smtp_host = "localhost"
@@ -25,3 +23,5 @@ email_from = "Advanced Programming"
 email_token_secret = "secret_token"
 frontend_base_url = "http://localhost:3000"
 skip_email_confirmation = false
+uploads_dir = "./uploads"
+max_upload_size_bytes = 10485760
