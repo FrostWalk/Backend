@@ -23,3 +23,5 @@ email_from = "Advanced Programming"
 email_token_secret = "secret_token"
 frontend_base_url = "http://localhost:3000"
 skip_email_confirmation = false
+uploads_dir = "./uploads"
+max_upload_size_bytes = 10485760

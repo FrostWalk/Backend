@@ -3,6 +3,7 @@ use crate::models::group_deliverable_component::GroupDeliverableComponent;
 use crate::models::project::Project;
 use crate::models::student_deliverable::StudentDeliverable;
 use crate::models::student_deliverable_component::StudentDeliverableComponent;
+use chrono::{DateTime, Utc};
 use welds::connections::postgres::PostgresClient;
 use welds::state::DbState;
 
@@ -51,7 +52,7 @@ pub(crate) async fn create(
 /// Update a project by ID
 pub(crate) async fn update_by_id(
     db: &PostgresClient, project_id: i32, name: Option<String>, max_student_uploads: Option<i32>,
-    max_group_size: Option<i32>, active: Option<bool>,
+    max_group_size: Option<i32>, upload_deadline: Option<DateTime<Utc>>, active: Option<bool>,
 ) -> welds::errors::Result<()> {
     if let Some(name) = name {
         Project::where_col(|p| p.project_id.equal(project_id))
@@ -68,6 +69,12 @@ pub(crate) async fn update_by_id(
     if let Some(size) = max_group_size {
         Project::where_col(|p| p.project_id.equal(project_id))
             .set(|p| p.max_group_size, size)
+            .run(db)
+            .await?;
+    }
+    if let Some(upload_deadline) = upload_deadline {
+        Project::where_col(|p| p.project_id.equal(project_id))
+            .set(|p| p.upload_deadline, upload_deadline)
             .run(db)
             .await?;
     }

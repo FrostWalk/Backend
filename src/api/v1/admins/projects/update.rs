@@ -4,6 +4,7 @@ use crate::database::repositories::projects_repository;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json, Path};
 use actix_web::HttpResponse;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -12,6 +13,7 @@ pub struct UpdateProjectScheme {
     pub name: Option<String>,
     pub max_student_uploads: Option<i32>,
     pub max_group_size: Option<i32>,
+    pub upload_deadline: Option<DateTime<Utc>>,
     pub active: Option<bool>,
 }
 #[utoipa::path(
@@ -60,6 +62,7 @@ pub(in crate::api::v1) async fn update_project_handler(
         body.name.clone(),
         body.max_student_uploads,
         body.max_group_size,
+        body.upload_deadline,
         body.active,
     )
     .await

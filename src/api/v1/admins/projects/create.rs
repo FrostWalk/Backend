@@ -19,6 +19,8 @@ pub(crate) struct CreateProjectScheme {
     pub max_group_size: i32,
     #[schema(value_type = Option<String>, example = "2025-12-15T23:59:59Z")]
     pub deliverable_selection_deadline: Option<DateTime<Utc>>,
+    #[schema(value_type = Option<String>, example = "2025-12-20T23:59:59Z")]
+    pub upload_deadline: Option<DateTime<Utc>>,
     #[schema(example = true)]
     pub active: bool,
 }
@@ -60,6 +62,7 @@ pub(in crate::api::v1) async fn create_project_handler(
         max_student_uploads: body.max_student_uploads,
         max_group_size: body.max_group_size,
         deliverable_selection_deadline: body.deliverable_selection_deadline,
+        upload_deadline: body.upload_deadline,
         active: body.active,
     };
 

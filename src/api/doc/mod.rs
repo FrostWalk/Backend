@@ -69,6 +69,8 @@ use crate::api::v1::admins::student_deliverables_and_components::delete::__path_
 use crate::api::v1::admins::student_deliverables_and_components::read::__path_get_components_for_deliverable_handler;
 use crate::api::v1::admins::student_deliverables_and_components::read::__path_get_deliverables_for_component_handler;
 use crate::api::v1::admins::student_deliverables_and_components::update::__path_update_student_deliverable_component_handler;
+use crate::api::v1::admins::uploads::download::__path_download_student_upload_handler;
+use crate::api::v1::admins::uploads::list::__path_list_project_uploads_handler;
 use crate::api::v1::admins::users::create::__path_create_admin_handler;
 use crate::api::v1::admins::users::delete::__path_delete_admin_handler;
 use crate::api::v1::admins::users::me::__path_admins_me_handler;
@@ -111,6 +113,8 @@ use crate::api::v1::students::student_deliverable_selections::{
     read::__path_get_student_deliverable_selection,
     update::__path_update_student_deliverable_selection,
 };
+use crate::api::v1::students::uploads::status::__path_get_upload_status_handler;
+use crate::api::v1::students::uploads::upload::__path_upload_project_zip_handler;
 use crate::api::v1::students::users::me::__path_students_me_handler;
 use crate::api::v1::students::users::update_me::__path_update_me_student_handler;
 use crate::api::version::__path_version_info;
@@ -234,6 +238,10 @@ use utoipa_swagger_ui::SwaggerUi;
         list_transactions_handler,
         submit_complaint_handler,
         list_group_filed_complaints_handler,
+        upload_project_zip_handler,
+        get_upload_status_handler,
+        list_project_uploads_handler,
+        download_student_upload_handler,
         leaderboard_handler,
     ),
     tags(
@@ -257,6 +265,7 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "Fairs management", description = "Professor endpoints for creating and managing fairs"),
         (name = "Fair transactions", description = "Group leader endpoints for purchases during the fair"),
         (name = "Complaints management", description = "Student endpoints for complaints about purchased deliverables"),
+        (name = "Student Uploads", description = "Student upload and professor download endpoints for project ZIP submissions"),
         (name = "Fairs leaderboard", description = "Public endpoint for the fair sales leaderboard"),
     ),
     modifiers(&SecurityAddon),

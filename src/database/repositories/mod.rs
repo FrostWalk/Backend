@@ -14,5 +14,6 @@ pub(crate) mod student_deliverable_components_repository;
 pub(crate) mod student_deliverable_selections_repository;
 pub(crate) mod student_deliverables_components_repository;
 pub(crate) mod student_deliverables_repository;
+pub(crate) mod student_uploads_repository;
 pub(crate) mod students_repository;
 pub(crate) mod transactions_repository;
