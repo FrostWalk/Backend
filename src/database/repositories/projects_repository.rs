@@ -87,14 +87,6 @@ pub(crate) async fn update_by_id(
     Ok(())
 }
 
-/// Update a project
-pub(crate) async fn update(
-    db: &PostgresClient, mut state: DbState<Project>,
-) -> welds::errors::Result<DbState<Project>> {
-    state.save(db).await?;
-    Ok(state)
-}
-
 /// Get project details with all related entities
 pub(crate) async fn get_project_details(
     db: &PostgresClient, project_id: i32,

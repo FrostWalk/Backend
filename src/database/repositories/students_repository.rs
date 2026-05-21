@@ -33,11 +33,6 @@ pub(crate) async fn get_by_university_id(
     Ok(rows.pop())
 }
 
-/// Get all students
-pub(crate) async fn get_all(db: &PostgresClient) -> welds::errors::Result<Vec<DbState<Student>>> {
-    Student::all().run(db).await
-}
-
 /// Check if an email already exists
 pub(crate) async fn email_exists(db: &PostgresClient, email: &str) -> welds::errors::Result<bool> {
     let result = get_by_email(db, email).await?;

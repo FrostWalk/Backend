@@ -17,14 +17,6 @@ pub(crate) async fn get_note(
     Ok(rows.pop())
 }
 
-pub(crate) async fn get_notes_for_project(
-    db: &PostgresClient, project_id: i32,
-) -> welds::errors::Result<Vec<DbState<OralExamNote>>> {
-    OralExamNote::where_col(|n| n.project_id.equal(project_id))
-        .run(db)
-        .await
-}
-
 pub(crate) async fn upsert_note(
     db: &PostgresClient, student_id: i32, project_id: i32, note_text: String,
     updated_by_admin_id: i32, now: DateTime<Utc>,

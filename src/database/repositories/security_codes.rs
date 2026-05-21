@@ -14,13 +14,6 @@ pub(crate) async fn security_code_exists(
     Ok(!rows.is_empty())
 }
 
-/// Get all security codes
-pub(crate) async fn get_all(
-    db: &PostgresClient,
-) -> welds::errors::Result<Vec<DbState<SecurityCode>>> {
-    SecurityCode::all().run(db).await
-}
-
 /// Get a security code by its code string
 pub(crate) async fn get_by_code(
     db: &PostgresClient, code: &str,

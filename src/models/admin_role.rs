@@ -18,8 +18,3 @@ pub(crate) enum AvailableAdminRole {
     Professor = 2,
     Coordinator = 3,
 }
-pub(crate) const ALL: [AvailableAdminRole; 3] = [
-    AvailableAdminRole::Root,
-    AvailableAdminRole::Professor,
-    AvailableAdminRole::Coordinator,
-];

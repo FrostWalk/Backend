@@ -2,6 +2,11 @@ use crate::api::health::{__path_health_check, __path_liveness_check};
 use crate::api::v1::admins::auth::forgot_password::__path_forgot_password_handler;
 use crate::api::v1::admins::auth::login::__path_admins_login_handler;
 use crate::api::v1::admins::auth::reset_password::__path_reset_password_handler;
+use crate::api::v1::admins::blacklist::create::__path_add_to_blacklist_handler;
+use crate::api::v1::admins::blacklist::delete::__path_delete_blacklist_handler;
+use crate::api::v1::admins::blacklist::get::__path_get_blacklist_handler;
+use crate::api::v1::admins::blacklist::list::__path_list_blacklist_handler;
+use crate::api::v1::admins::blacklist::update::__path_update_blacklist_handler;
 use crate::api::v1::admins::fairs::create::__path_create_fair_handler;
 use crate::api::v1::admins::fairs::disable::__path_disable_fair_handler;
 use crate::api::v1::admins::fairs::enable::__path_enable_fair_handler;
@@ -156,6 +161,11 @@ use utoipa_swagger_ui::SwaggerUi;
         create_admin_handler,
         update_admin_handler,
         delete_admin_handler,
+        add_to_blacklist_handler,
+        list_blacklist_handler,
+        get_blacklist_handler,
+        update_blacklist_handler,
+        delete_blacklist_handler,
         test_email_handler,
         create_project_handler,
         get_all_projects_handler,
@@ -263,6 +273,7 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "Version", description = "Application version information endpoints"),
         (name = "Admin authentication", description = "Admin authentication endpoint"),
         (name = "Admin users management", description = "CRUD operations on admins"),
+        (name = "Admin blacklist management", description = "CRUD operations on student blacklist"),
         (name = "Group deliverable components management", description = "CRUD operations on group deliverable components"),
         (name = "Group deliverables management", description = "CRUD operations on group deliverables"),
         (name = "Group deliverables-components management", description = "CRUD operations on group deliverables-components relationships"),
