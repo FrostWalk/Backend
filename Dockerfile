@@ -35,10 +35,10 @@ USER app
 
 ENV RUST_BACKTRACE=0
 
-# app environmnet variables
+# app environment variables
 ENV ADDRESS="0.0.0.0"
 ENV PORT=8080
-ENV WORKERS=4
+ENV WORKERS=4b
 ENV DB_URL=""
 ENV JWT_SECRET=""
 ENV JWT_VALIDITY_DAYS=30
