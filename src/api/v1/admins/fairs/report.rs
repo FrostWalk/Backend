@@ -84,7 +84,8 @@ pub(in crate::api::v1) async fn fair_report_handler(
 
     let pool = data.db.as_sqlx_pool();
 
-    let group_row = sqlx::query!("SELECT name FROM groups WHERE group_id = $1", group_id)
+    let group_name = sqlx::query_scalar::<_, String>("SELECT name FROM groups WHERE group_id = $1")
+        .bind(group_id)
         .fetch_optional(pool)
         .await
         .map_err(|e| {
@@ -204,7 +205,7 @@ pub(in crate::api::v1) async fn fair_report_handler(
 
     Ok(HttpResponse::Ok().json(GroupFairReport {
         group_id,
-        group_name: group_row.name,
+        group_name,
         fair_id,
         sold,
         bought,
