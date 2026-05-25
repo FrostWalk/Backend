@@ -21,7 +21,7 @@ log = { version = "0.4.29", features = ["std"] }
 num_enum = "0.7.6"
 tokio = { version = "1.52.3", features = ["macros", "rt-multi-thread", "fs"] }
 welds = { version = "0.4.22", features = ["postgres"] }
-sqlx = { version = "0.8.6", features = ["runtime-tokio", "tls-rustls", "chrono", "postgres"] }
+sqlx = { version = "0.8.6", features = ["runtime-tokio", "chrono", "postgres"] }
 rand = "0.10.1"
 url = "2.5.8"
 lettre = { version = "0.11.22", default-features = false, features = ["tokio1-rustls-tls", "smtp-transport", "builder", "hostname"] }
